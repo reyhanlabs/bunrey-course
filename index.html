@@ -1,0 +1,2888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BunRey English Course</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fredoka One:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Firebase v10 CDN (compat mode = no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root {
+  --bg:       #0f1117;
+  --bg2:      #171b26;
+  --bg3:      #1e2334;
+  --border:   #2a3045;
+  --text:     #e8ecf5;
+  --muted:    #7c87a0;
+  --accent:   #6c63ff;
+  --accent2:  #ff6584;
+  --green:    #00d68f;
+  --yellow:   #ffb347;
+  --red:      #ff4f6d;
+  --blue:     #38bdf8;
+  --purple:   #a78bfa;
+  --glow:     0 0 24px rgba(108,99,255,0.18);
+  --r:        14px;
+  --sidebar-w: 230px;
+}
+[data-theme="light"] {
+  --bg:       #f3f4f8;
+  --bg2:      #ffffff;
+  --bg3:      #eef0f7;
+  --border:   #dde1ee;
+  --text:     #1a1f36;
+  --muted:    #6b7498;
+  --glow:     0 2px 20px rgba(108,99,255,0.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Fredoka One',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;transition:background .3s,color .3s}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width:var(--sidebar-w);min-width:var(--sidebar-w);height:100vh;position:sticky;top:0;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:50;transition:width .25s;overflow:hidden;
+}
+.sb-logo {
+  padding:22px 20px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:11px;flex-shrink:0;
+}
+.sb-logo .mark {
+  width:38px;height:38px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+  box-shadow:0 4px 16px rgba(108,99,255,0.4);
+}
+.sb-logo .brand { font-family:'Fredoka One',sans-serif;font-size:0.9rem;font-weight:800;line-height:1.2 }
+.sb-logo .brand span { font-size:0.68rem;color:var(--muted);font-weight:500;display:block;font-family:'Fredoka One',sans-serif }
+.sb-nav { flex:1;padding:14px 10px;overflow-y:auto }
+.nav-section { font-size:0.65rem;font-weight:700;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;padding:10px 10px 6px }
+.nav-item {
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  cursor:pointer;transition:all .18s;font-size:0.875rem;font-weight:600;color:var(--muted);
+  margin-bottom:2px;white-space:nowrap;
+}
+.nav-item:hover { background:var(--bg3);color:var(--text) }
+.nav-item.active { background:linear-gradient(135deg,rgba(108,99,255,0.18),rgba(108,99,255,0.06));color:var(--accent);border:1px solid rgba(108,99,255,0.2) }
+.nav-item .ico { width:20px;text-align:center;font-size:1rem;flex-shrink:0 }
+.nav-item .badge-count { margin-left:auto;background:var(--red);color:#fff;font-size:0.65rem;font-weight:800;padding:1px 6px;border-radius:20px }
+.sb-footer { padding:14px 10px;border-top:1px solid var(--border) }
+.dark-toggle {
+  display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;
+  cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--muted);
+  background:var(--bg3);border:1px solid var(--border);width:100%;
+  transition:all .18s;
+}
+.dark-toggle:hover { color:var(--text) }
+.toggle-knob {
+  width:34px;height:18px;border-radius:20px;background:var(--border);
+  position:relative;margin-left:auto;transition:background .2s;flex-shrink:0;
+}
+.toggle-knob::after {
+  content:'';position:absolute;width:12px;height:12px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:transform .2s;
+}
+[data-theme="light"] .toggle-knob { background:var(--accent) }
+[data-theme="light"] .toggle-knob::after { transform:translateX(16px) }
+
+/* ── MAIN ── */
+#main { flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden }
+.topbar {
+  height:58px;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 28px;gap:14px;flex-shrink:0;
+  position:sticky;top:0;z-index:40;
+}
+.topbar-title { font-family:'Fredoka One',sans-serif;font-size:1.05rem;font-weight:800 }
+.topbar-right { margin-left:auto;display:flex;align-items:center;gap:10px }
+.btn-topbar {
+  padding:7px 16px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);font-family:'Fredoka One',sans-serif;
+  font-size:0.82rem;font-weight:700;cursor:pointer;transition:all .18s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn-topbar:hover { border-color:var(--accent);color:var(--accent) }
+.btn-topbar.primary { background:var(--accent);border-color:var(--accent);color:#fff }
+.btn-topbar.primary:hover { filter:brightness(1.12);color:#fff }
+.page-content { flex:1;padding:28px;overflow-y:auto }
+.page { display:none }
+.page.active { display:block;animation:fadeIn .25s ease }
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARDS ── */
+.card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px;margin-bottom:20px;transition:box-shadow .2s;
+}
+.card:hover { box-shadow:var(--glow) }
+.card-grid { display:grid;gap:16px }
+.card-grid-2 { grid-template-columns:repeat(auto-fill,minmax(220px,1fr)) }
+.card-grid-4 { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)) }
+
+/* stat cards */
+.stat-card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px 22px;display:flex;flex-direction:column;gap:6px;transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.stat-card::before {
+  content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;
+  border-radius:50%;opacity:0.08;
+}
+.stat-card.s-purple::before { background:var(--accent) }
+.stat-card.s-green::before  { background:var(--green) }
+.stat-card.s-red::before    { background:var(--red) }
+.stat-card.s-blue::before   { background:var(--blue) }
+.stat-card.s-yellow::before { background:var(--yellow) }
+.stat-card:hover { box-shadow:var(--glow);transform:translateY(-2px) }
+.stat-card .ico { font-size:1.6rem;margin-bottom:4px }
+.stat-card .val { font-family:'Fredoka One',sans-serif;font-size:1.9rem;font-weight:800;line-height:1 }
+.stat-card .lbl { font-size:0.78rem;font-weight:600;color:var(--muted) }
+.stat-card .trend { font-size:0.72rem;font-weight:700;margin-top:4px }
+.trend-up { color:var(--green) } .trend-dn { color:var(--red) } .trend-neu { color:var(--muted) }
+
+/* alert cards */
+.alert-card {
+  border-radius:10px;padding:14px 16px;font-size:0.87rem;font-weight:600;
+  display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;
+  border-left:4px solid;
+}
+.alert-warn { background:rgba(255,179,71,0.08);border-color:var(--yellow);color:var(--yellow) }
+.alert-danger { background:rgba(255,79,109,0.08);border-color:var(--red);color:var(--red) }
+.alert-success { background:rgba(0,214,143,0.08);border-color:var(--green);color:var(--green) }
+
+/* ── FORMS ── */
+.form-row { display:grid;grid-template-columns:1fr 1fr;gap:14px }
+@media(max-width:640px){ .form-row{grid-template-columns:1fr} }
+.form-group { display:flex;flex-direction:column;gap:5px;margin-top:12px }
+.form-group label { font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px }
+input[type=text],input[type=date],input[type=number],textarea,select {
+  width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:9px;color:var(--text);font-family:'Fredoka One',sans-serif;font-size:0.9rem;
+  outline:none;transition:border .18s,box-shadow .18s;
+}
+input:focus,textarea:focus,select:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.15) }
+textarea { resize:vertical;min-height:76px }
+input[type=number].rp { text-align:right;font-weight:700 }
+select option { background:var(--bg2) }
+
+/* ── BUTTONS ── */
+.btn {
+  padding:9px 18px;border-radius:9px;border:1px solid var(--border);
+  font-family:'Fredoka One',sans-serif;font-size:0.85rem;font-weight:700;
+  cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:7px;
+  background:var(--bg3);color:var(--text);
+}
+.btn:hover { border-color:var(--accent);color:var(--accent) }
+.btn.primary { background:var(--accent);border-color:var(--accent);color:#fff }
+.btn.primary:hover { filter:brightness(1.1) }
+.btn.danger  { background:rgba(255,79,109,0.12);border-color:rgba(255,79,109,0.3);color:var(--red) }
+.btn.danger:hover  { background:var(--red);color:#fff }
+.btn.success { background:rgba(0,214,143,0.12);border-color:rgba(0,214,143,0.3);color:var(--green) }
+.btn.success:hover { background:var(--green);color:#222 }
+.btn.wa      { background:#25D366;border-color:#25D366;color:#fff }
+.btn.wa:hover{ filter:brightness(1.1) }
+.btn.wa2     { background:#128C7E;border-color:#128C7E;color:#fff }
+.btn.wa3     { background:#075E54;border-color:#075E54;color:#fff }
+.btn.sm { padding:6px 12px;font-size:0.78rem }
+.btn.icon-only { width:32px;height:32px;padding:0;border-radius:8px;justify-content:center }
+.btn-row { display:flex;gap:8px;flex-wrap:wrap;margin-top:16px }
+
+/* ── TABLE ── */
+.tbl-wrap { overflow-x:auto;border-radius:10px;border:1px solid var(--border) }
+table { width:100%;border-collapse:collapse;font-size:0.875rem }
+thead tr { background:var(--bg3) }
+th { padding:11px 14px;text-align:left;font-size:0.72rem;font-weight:700;color:var(--muted);letter-spacing:0.6px;text-transform:uppercase;white-space:nowrap }
+td { padding:11px 14px;border-top:1px solid var(--border);vertical-align:middle }
+tr:hover td { background:rgba(108,99,255,0.04) }
+th.r, td.r { text-align:right }
+td.nowrap { white-space:nowrap }
+
+/* ── BADGES ── */
+.chip {
+  display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;
+  font-size:0.72rem;font-weight:700;letter-spacing:0.3px;
+}
+.chip-green  { background:rgba(0,214,143,0.12);color:var(--green) }
+.chip-red    { background:rgba(255,79,109,0.12);color:var(--red) }
+.chip-yellow { background:rgba(255,179,71,0.12);color:var(--yellow) }
+.chip-blue   { background:rgba(56,189,248,0.12);color:var(--blue) }
+.chip-purple { background:rgba(167,139,250,0.12);color:var(--purple) }
+.chip-muted  { background:var(--bg3);color:var(--muted) }
+
+/* ── MODAL ── */
+.overlay {
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  z-index:200;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.overlay.open { display:flex }
+.modal {
+  background:var(--bg2);border:1px solid var(--border);border-radius:20px;
+  padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;
+  animation:fadeIn .22s ease;box-shadow:0 30px 80px rgba(0,0,0,0.4);
+}
+.modal-title { font-family:'Fredoka One',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:18px }
+.modal-sm { max-width:420px }
+.modal-lg { max-width:640px }
+
+/* ── SECTION HEADER ── */
+.sec-hd { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px }
+.sec-hd h2 { font-family:'Fredoka One',sans-serif;font-size:1.25rem;font-weight:800 }
+.sec-hd .sub { font-size:0.82rem;color:var(--muted);margin-top:2px }
+
+/* ── ABSENSI GRID ── */
+.absen-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px }
+.absen-card {
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:14px 15px;display:flex;flex-direction:column;gap:8px;
+}
+.absen-card .a-name { font-weight:700;font-size:0.9rem }
+.absen-card .a-nick { font-size:0.75rem;color:var(--muted) }
+
+/* ── LESSON CARDS ── */
+.lesson-card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;
+}
+.lesson-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:5px }
+.lesson-dot.planned { background:var(--purple) }
+.lesson-dot.done    { background:var(--green) }
+
+/* ── CHART CONTAINERS ── */
+.chart-box { position:relative;height:220px }
+
+/* ── PROGRESS BAR ── */
+.pbar-wrap { background:var(--bg3);border-radius:20px;height:8px;overflow:hidden }
+.pbar-fill  { height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--blue));transition:width .6s ease }
+
+/* ── EMPTY STATE ── */
+.empty { text-align:center;padding:50px 20px;color:var(--muted) }
+.empty .ei { font-size:3rem;margin-bottom:10px;opacity:0.5 }
+.empty p { font-size:0.9rem;font-weight:600 }
+
+/* ── COLLAPSIBLE FORM ── */
+.form-panel { overflow:hidden;transition:max-height .3s ease,opacity .3s }
+.form-panel.hidden { max-height:0!important;opacity:0;pointer-events:none }
+.form-panel.open   { opacity:1 }
+
+/* ── RECEIPT RENDER PANEL (off-screen) ── */
+#receipt-render-panel {
+  position:fixed;left:-9999px;top:0;width:380px;background:#fff;
+  padding:28px;font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;z-index:-1;
+}
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;
+}
+.filter-bar .form-group { margin-top:0;flex:1;min-width:140px }
+.filter-bar .form-group label { font-size:0.7rem }
+
+/* ── DASHBOARD SCHEDULE ── */
+.schedule-row {
+  display:flex;align-items:center;gap:12px;padding:10px 0;
+  border-bottom:1px solid var(--border);font-size:0.87rem;
+}
+.schedule-row:last-child { border-bottom:none }
+.schedule-day {
+  width:34px;height:34px;border-radius:8px;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;
+  color:var(--accent);flex-shrink:0;
+}
+
+/* ── MOBILE HAMBURGER ── */
+.hamburger { display:none;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;padding:4px }
+@media(max-width:768px){
+  #sidebar { position:fixed;left:-100%;transition:left .25s;box-shadow:4px 0 30px rgba(0,0,0,0.3) }
+  #sidebar.open { left:0 }
+  .hamburger { display:block }
+  .page-content { padding:16px }
+  .topbar { padding:0 16px }
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:5px;height:5px }
+::-webkit-scrollbar-track { background:transparent }
+::-webkit-scrollbar-thumb { background:var(--border);border-radius:10px }
+
+/* ── WA STATUS ── */
+#wa-status { display:none;font-size:0.82rem;font-weight:600;margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--bg3);color:var(--muted) }
+
+/* ── CLASS SWITCHER ── */
+.class-switcher {
+  display:flex;align-items:center;gap:8px;padding:5px 10px 5px 12px;
+  border-radius:10px;background:var(--bg3);border:1px solid var(--border);
+  cursor:pointer;transition:all .18s;font-size:0.82rem;font-weight:700;
+  max-width:200px;
+}
+.class-switcher:hover { border-color:var(--accent);color:var(--accent) }
+.class-switcher .cs-dot {
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+}
+.class-switcher .cs-name { flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
+.class-switcher .cs-arrow { color:var(--muted);font-size:0.7rem;flex-shrink:0 }
+
+/* ── CLASS LIST in modal ── */
+.class-item {
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  background:var(--bg3);border-radius:10px;margin-bottom:8px;
+  border:2px solid transparent;cursor:pointer;transition:all .18s;
+}
+.class-item:hover { border-color:var(--accent);background:var(--bg2) }
+.class-item.active-class { border-color:var(--accent);background:rgba(108,99,255,0.08) }
+.class-item .ci-color {
+  width:14px;height:14px;border-radius:50%;flex-shrink:0;
+}
+.class-item .ci-info { flex:1 }
+.class-item .ci-name { font-weight:800;font-size:0.92rem }
+.class-item .ci-meta { font-size:0.75rem;color:var(--muted);margin-top:2px }
+
+/* ── BULK EVAL GRID ── */
+.bulk-eval-grid { display:flex;flex-direction:column;gap:12px }
+.bulk-eval-card {
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;transition:border-color .2s;
+}
+.bulk-eval-card:focus-within { border-color:var(--accent) }
+.bulk-eval-header { display:flex;align-items:center;gap:12px;margin-bottom:12px }
+.bulk-eval-avatar {
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:1rem;color:#fff;font-weight:800;
+}
+.bulk-eval-name { font-weight:800;font-size:0.95rem }
+.bulk-eval-sub  { font-size:0.75rem;color:var(--muted) }
+.bulk-eval-fields { display:grid;grid-template-columns:80px 1fr 1fr;gap:10px;align-items:start }
+@media(max-width:640px){ .bulk-eval-fields { grid-template-columns:1fr 1fr } }
+.bulk-eval-card.skipped { opacity:0.4 }
+.bulk-eval-card.skipped > *:not(.bulk-skip-row) { pointer-events:none }
+.bulk-progress-bar { height:6px;background:var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px }
+.bulk-progress-fill { height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:10px;transition:width .3s }
+.bulk-quick-fill { background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center }
+.bulk-quick-fill label { font-size:0.78rem;font-weight:700;color:var(--muted);margin:0;white-space:nowrap }
+
+/* ── LOADING SPLASH ── */
+#loading-screen {
+  position:fixed;inset:0;z-index:1000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+#loading-screen .spin {
+  width:44px;height:44px;border-radius:50%;
+  border:3px solid var(--border);
+  border-top-color:var(--accent);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-screen p { font-size:0.87rem;color:var(--muted);font-weight:600 }
+
+/* ── LOGIN SCREEN ── */
+#login-screen {
+  position:fixed;inset:0;z-index:999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+}
+.login-box {
+  background:var(--bg2);border:1px solid var(--border);border-radius:24px;
+  padding:48px 40px;max-width:380px;width:100%;text-align:center;
+  box-shadow:0 30px 80px rgba(0,0,0,0.4);
+}
+.login-mark {
+  width:72px;height:72px;border-radius:20px;margin:0 auto 20px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:2rem;
+  box-shadow:0 8px 30px rgba(108,99,255,0.4);
+}
+.login-title { font-family:'Fredoka One',sans-serif;font-size:1.6rem;font-weight:800;margin-bottom:6px }
+.login-sub { font-size:0.87rem;color:var(--muted);margin-bottom:32px;line-height:1.5 }
+.btn-google {
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  width:100%;padding:13px 20px;border-radius:12px;border:1px solid var(--border);
+  background:var(--bg3);color:var(--text);font-family:'Fredoka One',sans-serif;
+  font-size:0.95rem;font-weight:700;cursor:pointer;transition:all .2s;
+}
+.btn-google:hover { border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.15);color:var(--accent) }
+.btn-google img { width:20px;height:20px }
+.login-err { color:var(--red);font-size:0.82rem;margin-top:14px;min-height:20px }
+
+/* ── SYNC INDICATOR ── */
+.sync-dot {
+  width:8px;height:8px;border-radius:50%;background:var(--green);
+  display:inline-block;margin-right:6px;
+  box-shadow:0 0 6px var(--green);
+}
+.sync-dot.syncing { background:var(--yellow);box-shadow:0 0 6px var(--yellow);animation:pulse .8s infinite alternate }
+.sync-dot.offline { background:var(--red);box-shadow:0 0 6px var(--red) }
+@keyframes pulse{from{opacity:0.4}to{opacity:1}}
+#sync-status { display:flex;align-items:center;font-size:0.75rem;color:var(--muted);font-weight:600 }
+
+/* ── USER CHIP in topbar ── */
+.user-chip {
+  display:flex;align-items:center;gap:8px;padding:5px 12px 5px 6px;
+  border-radius:20px;background:var(--bg3);border:1px solid var(--border);
+  font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .18s;
+}
+.user-chip:hover { border-color:var(--red);color:var(--red) }
+.user-avatar {
+  width:26px;height:26px;border-radius:50%;object-fit:cover;
+  background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:#fff;
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<!-- ══ LOADING SCREEN ══ -->
+<div id="loading-screen">
+  <div style="width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;box-shadow:0 8px 30px rgba(108,99,255,0.4)">🎓</div>
+  <div class="spin"></div>
+  <p>Loading BunRey English Course…</p>
+</div>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-mark">🎓</div>
+    <div class="login-title">BunRey English Course</div>
+    <div class="login-sub">Sign in with your Google account<br>to access your teaching dashboard</div>
+    <button class="btn-google" onclick="signInGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Continue with Google
+    </button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-logo">
+    <div class="mark">🎓</div>
+    <div class="brand">BunRey<span>English Course</span></div>
+  </div>
+  <div class="sb-nav">
+    <div class="nav-section">Main</div>
+    <div class="nav-item active" data-page="dashboard"><span class="ico">🏠</span> Dashboard</div>
+    <div class="nav-item" data-page="students"><span class="ico">👤</span> Students</div>
+    <div class="nav-section">Classes</div>
+    <div class="nav-item" data-page="attendance"><span class="ico">📋</span> Attendance</div>
+    <div class="nav-item" data-page="lessons"><span class="ico">📚</span> Lessons</div>
+    <div class="nav-item" data-page="evaluation"><span class="ico">⭐</span> Evaluation</div>
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" data-page="payment"><span class="ico">💰</span> Payment <span class="badge-count" id="unpaid-badge" style="display:none">!</span></div>
+    <div class="nav-section">Reports</div>
+    <div class="nav-item" data-page="reports"><span class="ico">📤</span> Parent Reports</div>
+    <div class="nav-item" data-page="analytics"><span class="ico">📊</span> Analytics</div>
+    <div class="nav-section">System</div>
+    <div class="nav-item" data-page="backup"><span class="ico">💾</span> Backup & Restore</div>
+  </div>
+  <div class="sb-footer">
+    <button class="dark-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">🌙</span> <span id="theme-label">Dark Mode</span>
+      <div class="toggle-knob"></div>
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <span class="topbar-title" id="topbar-title">Dashboard</span>
+    <div class="topbar-right" id="topbar-actions">
+      <!-- Class Switcher -->
+      <div class="class-switcher" id="class-switcher" onclick="openModal('modal-classes')" style="display:none" title="Switch class">
+        <div class="cs-dot" id="cs-dot"></div>
+        <span class="cs-name" id="cs-name">No Class</span>
+        <span class="cs-arrow">▼</span>
+      </div>
+      <div id="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Synced</span></div>
+      <div class="user-chip" id="user-chip" onclick="signOutUser()" title="Sign out" style="display:none">
+        <img class="user-avatar" id="user-avatar" src="" alt="U">
+        <span id="user-name">Me</span>
+      </div>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <!-- ══════════════════ DASHBOARD ══════════════════ -->
+    <div class="page active" id="page-dashboard">
+      <!-- Period Filter -->
+      <div class="filter-bar" style="margin-bottom:20px">
+        <div class="form-group"><label>📅 From</label><input type="date" id="dash-dari" onchange="renderDashboard()"></div>
+        <div class="form-group"><label>📅 To</label><input type="date" id="dash-sampai" onchange="renderDashboard()"></div>
+        <div class="form-group"><label>📂 Period</label><input type="text" id="dash-periode" placeholder="e.g. June 2025" oninput="renderDashboard()"></div>
+        <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn sm" onclick="clearDashFilter()">✕ Clear</button></div>
+      </div>
+      <div id="dash-alerts"></div>
+      <div class="card-grid card-grid-4" style="margin-bottom:20px" id="dash-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px" id="dash-grid">
+        <div class="card">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px">📅 Today's Schedule</div>
+          <div id="dash-schedule"></div>
+        </div>
+        <div class="card">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px">💰 Recent Payments</div>
+          <div id="dash-payments"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0">
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px">📊 Monthly Revenue</div>
+        <div class="chart-box"><canvas id="chart-revenue"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ STUDENTS ══════════════════ -->
+    <div class="page" id="page-students">
+      <div class="sec-hd">
+        <div><h2>👤 Students</h2><div class="sub">Manage all your students</div></div>
+      </div>
+      <div class="card-grid card-grid-4" id="student-stats" style="margin-bottom:20px"></div>
+      <div class="card">
+        <div class="form-panel hidden" id="form-student" style="max-height:0">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-student-title">Add New Student</div>
+          <input type="hidden" id="s-id">
+          <div class="form-row">
+            <div class="form-group"><label>Full Name *</label><input type="text" id="s-nama" placeholder="e.g. Budi Santoso"></div>
+            <div class="form-group"><label>Nickname</label><input type="text" id="s-nick" placeholder="e.g. Budi"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>School / Class</label><input type="text" id="s-kelas" placeholder="e.g. SD Harapan, Grade 5"></div>
+            <div class="form-group"><label>English Level</label>
+              <select id="s-level">
+                <option value="Beginner">Beginner</option><option value="Elementary">Elementary</option>
+                <option value="Intermediate">Intermediate</option><option value="Upper-Intermediate">Upper-Intermediate</option>
+                <option value="Advanced">Advanced</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Parent's Name</label><input type="text" id="s-namaOrtu" placeholder="e.g. Mr. Ahmad"></div>
+            <div class="form-group"><label>Parent's Phone (WA)</label><input type="text" id="s-hp" placeholder="08xx-xxxx-xxxx"></div>
+          </div>
+          <div class="form-group"><label>Class Days</label><input type="text" id="s-hari" placeholder="e.g. Mon & Wed, 4–5PM"></div>
+          <div class="form-group"><label>Notes</label><textarea id="s-catatan" placeholder="Special needs, allergies, etc."></textarea></div>
+          <div class="btn-row">
+            <button class="btn primary" onclick="saveStudent()">💾 Save Student</button>
+            <button class="btn" onclick="closeStudentForm()">Cancel</button>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Name</th><th>Nickname</th><th>School / Class</th>
+              <th>Level</th><th>Class Days</th><th>Parent</th><th>Phone</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="tbody-students"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="empty-students"><div class="ei">👤</div><p>No students yet. Click "Add Student".</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ ATTENDANCE ══════════════════ -->
+    <div class="page" id="page-attendance">
+      <div class="sec-hd">
+        <div><h2>📋 Attendance</h2><div class="sub">Weekly class attendance tracker</div></div>
+        <button class="btn primary" onclick="saveAbsensi()">💾 Save Attendance</button>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Select Date</label><input type="date" id="absen-date" onchange="loadAbsensi()"></div>
+        <div style="font-size:0.82rem;color:var(--muted);font-weight:600" id="week-label"></div>
+      </div>
+      <div class="card">
+        <div class="absen-grid" id="absen-grid"><div class="empty"><div class="ei">📋</div><p>Add students first.</p></div></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800">Attendance Record</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group" style="margin:0;min-width:120px"><label style="font-size:0.7rem">📅 From</label><input type="date" id="att-f-dari" onchange="renderAttendance()" style="padding:6px 10px;font-size:0.82rem"></div>
+            <div class="form-group" style="margin:0;min-width:120px"><label style="font-size:0.7rem">📅 To</label><input type="date" id="att-f-sampai" onchange="renderAttendance()" style="padding:6px 10px;font-size:0.82rem"></div>
+            <div class="form-group" style="margin:0;min-width:130px"><label style="font-size:0.7rem">👤 Student</label><input type="text" id="att-f-nama" placeholder="Search name…" oninput="renderAttendance()" style="padding:6px 10px;font-size:0.82rem"></div>
+            <div class="form-group" style="margin:0"><label style="font-size:0.7rem">📊 Status</label>
+              <select id="att-f-status" onchange="renderAttendance()" style="padding:6px 10px;font-size:0.82rem;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text)">
+                <option value="">All</option>
+                <option value="Hadir">✅ Present</option>
+                <option value="Izin">📝 Excused</option>
+                <option value="Alpha">❌ Absent</option>
+              </select>
+            </div>
+            <button class="btn sm" onclick="clearAttFilter()" style="margin-bottom:0">✕ Clear</button>
+          </div>
+        </div>
+        <!-- Summary chips -->
+        <div id="att-summary" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Date</th><th>Student</th><th>Status</th><th>Note</th><th></th></tr></thead>
+          <tbody id="tbody-attendance"></tbody></table>
+        </div>
+        <div class="empty" id="empty-attendance"><div class="ei">📋</div><p>No records yet.</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ LESSONS ══════════════════ -->
+    <div class="page" id="page-lessons">
+      <div class="sec-hd">
+        <div><h2>📚 Lessons</h2><div class="sub">Lesson plans and completed material</div></div>
+      </div>
+      <div class="card">
+        <div class="form-panel hidden" id="form-lesson" style="max-height:0">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-lesson-title">Add Lesson</div>
+          <input type="hidden" id="m-id">
+          <div class="form-row">
+            <div class="form-group"><label>Date</label><input type="date" id="m-tanggal"></div>
+            <div class="form-group"><label>Status</label>
+              <select id="m-status"><option value="Rencana">🗓️ Planned</option><option value="Selesai">✅ Completed</option></select>
+            </div>
+          </div>
+          <div class="form-group"><label>Topic / Title *</label><input type="text" id="m-topik" placeholder="e.g. Simple Present Tense"></div>
+          <div class="form-group"><label>Description & Activities</label><textarea id="m-deskripsi" placeholder="Activities: exercises, conversation practice..."></textarea></div>
+          <div class="form-row">
+            <div class="form-group"><label>Reference / Book</label><input type="text" id="m-sumber" placeholder="e.g. Pathway to English p.20-25"></div>
+            <div class="form-group"><label>Target Student</label><select id="m-target"><option value="Semua">All Students</option></select></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" onclick="saveLesson()">💾 Save</button>
+            <button class="btn" onclick="closePanel('form-lesson')">Cancel</button>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+        </div>
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;color:var(--purple);margin-bottom:10px">🗓️ Planned</div>
+        <div id="lesson-planned"></div>
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;color:var(--green);margin:18px 0 10px">✅ Completed</div>
+        <div id="lesson-done"></div>
+        <div class="empty" id="empty-lessons" style="display:none"><div class="ei">📚</div><p>No lessons yet.</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ EVALUATION ══════════════════ -->
+    <div class="page" id="page-evaluation">
+      <div class="sec-hd">
+        <div><h2>⭐ Evaluation</h2><div class="sub">Weekly student evaluations and scores</div></div>
+        <!-- Tab switcher -->
+        <div style="display:flex;gap:6px;background:var(--bg3);padding:4px;border-radius:10px;border:1px solid var(--border)">
+          <button id="eval-tab-single" onclick="switchEvalTab('single')" style="padding:7px 16px;border-radius:7px;border:none;font-family:'Fredoka One',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;transition:all .18s">✏️ Single</button>
+          <button id="eval-tab-bulk" onclick="switchEvalTab('bulk')" style="padding:7px 16px;border-radius:7px;border:none;font-family:'Fredoka One',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted);transition:all .18s">⚡ Bulk Entry</button>
+        </div>
+      </div>
+
+      <!-- SINGLE ENTRY PANEL -->
+      <div id="eval-single-panel">
+        <div class="card">
+          <div class="form-panel hidden" id="form-eval" style="max-height:0">
+            <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-eval-title">Add Evaluation</div>
+            <input type="hidden" id="e-id">
+            <div class="form-row">
+              <div class="form-group"><label>Date</label><input type="date" id="e-tanggal"></div>
+              <div class="form-group"><label>Student *</label><select id="e-siswa"><option value="">-- Select --</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Score (0–100)</label><input type="number" id="e-nilai" placeholder="0–100" min="0" max="100"></div>
+              <div class="form-group"><label>Participation</label>
+                <select id="e-rating">
+                  <option value="5">⭐⭐⭐⭐⭐ Excellent</option><option value="4">⭐⭐⭐⭐ Good</option>
+                  <option value="3">⭐⭐⭐ Average</option><option value="2">⭐⭐ Below Average</option>
+                  <option value="1">⭐ Passive</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group"><label>Progress / Achievement</label><textarea id="e-progress" placeholder="What has the student mastered this week?"></textarea></div>
+            <div class="form-group"><label>Notes & Recommendations</label><textarea id="e-catatan" placeholder="Homework, areas to improve..."></textarea></div>
+            <div class="btn-row">
+              <button class="btn primary" onclick="saveEval()">💾 Save</button>
+              <button class="btn" onclick="closePanel('form-eval')">Cancel</button>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+          </div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Date</th><th>Student</th><th>Score</th><th>Participation</th><th>Progress</th><th>Notes</th><th>Print</th><th></th></tr></thead>
+            <tbody id="tbody-eval"></tbody></table>
+          </div>
+          <div class="empty" id="empty-eval"><div class="ei">⭐</div><p>No evaluations yet.</p></div>
+        </div>
+      </div>
+
+      <!-- BULK ENTRY PANEL -->
+      <div id="eval-bulk-panel" style="display:none">
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:14px">⚡ Bulk Evaluation — All Students</div>
+
+          <!-- Date & Common Topic -->
+          <div class="form-row" style="margin-bottom:12px">
+            <div class="form-group" style="margin:0"><label>Evaluation Date *</label><input type="date" id="bulk-tanggal"></div>
+            <div class="form-group" style="margin:0"><label>Common Topic / Progress (applied to all blank fields)</label>
+              <input type="text" id="bulk-common-progress" placeholder="e.g. Practiced Simple Present Tense — all students completed exercises…">
+            </div>
+          </div>
+
+          <!-- Templates -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+            <div style="font-weight:800;font-size:0.85rem;margin-bottom:10px">📋 Templates</div>
+            <div id="bulk-template-list" style="margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <input type="text" id="bulk-tpl-name" placeholder="Template name…" style="flex:1;min-width:160px;padding:7px 12px;font-size:0.85rem">
+              <button class="btn sm primary" onclick="saveAsTemplate()">💾 Save Current as Template</button>
+            </div>
+          </div>
+
+          <!-- Quick fill bar -->
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:0.78rem;font-weight:700;color:var(--muted);white-space:nowrap">⚡ Quick fill all:</span>
+            <select id="bulk-fill-rating" style="width:auto;padding:6px 10px;font-size:0.82rem;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)">
+              <option value="">— Rating —</option>
+              <option value="5">⭐⭐⭐⭐⭐ Excellent</option><option value="4">⭐⭐⭐⭐ Good</option>
+              <option value="3">⭐⭐⭐ Average</option><option value="2">⭐⭐ Below Avg</option>
+              <option value="1">⭐ Passive</option>
+            </select>
+            <input type="number" id="bulk-fill-score" placeholder="Score" min="0" max="100"
+              style="width:80px;padding:6px 10px;font-size:0.82rem;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)">
+            <button class="btn sm primary" onclick="bulkQuickFill()">Apply to All</button>
+            <button class="btn sm" onclick="bulkReset()">↺ Reset All</button>
+          </div>
+
+          <!-- Progress bar -->
+          <div id="bulk-progress-wrap" style="display:none;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--muted);margin-bottom:5px">
+              <span>Filled: <strong id="bulk-filled-count" style="color:var(--green)">0</strong> / <span id="bulk-total-count">0</span> students</span>
+              <span id="bulk-skip-count"></span>
+            </div>
+            <div class="bulk-progress-bar"><div class="bulk-progress-fill" id="bulk-progress-fill" style="width:0%"></div></div>
+          </div>
+
+          <!-- Student cards -->
+          <div class="bulk-eval-grid" id="bulk-eval-grid">
+            <div class="empty"><div class="ei">👤</div><p>No students. Add students first.</p></div>
+          </div>
+
+          <!-- Save -->
+          <div style="display:flex;align-items:center;gap:16px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
+            <button class="btn primary" style="font-size:1rem;padding:12px 32px" onclick="saveBulkEval()">💾 Save All Evaluations</button>
+            <div id="bulk-save-status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ PAYMENT ══════════════════ -->
+    <div class="page" id="page-payment">
+      <div class="sec-hd">
+        <div><h2>💰 Payment</h2><div class="sub">Tuition tracking & receipts</div></div>
+      </div>
+      <div class="card-grid card-grid-4" id="payment-stats" style="margin-bottom:20px"></div>
+      <div class="card">
+        <div class="form-panel hidden" id="form-payment" style="max-height:0">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-payment-title">Record Payment</div>
+          <input type="hidden" id="b-id">
+          <div class="form-row">
+            <div class="form-group"><label>Student *</label><select id="b-siswa"><option value="">-- Select --</option></select></div>
+            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2025"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Payment Date</label><input type="date" id="b-tanggal"></div>
+            <div class="form-group"><label>Amount Paid (Rp)</label><input type="number" class="rp" id="b-jumlah" placeholder="0" min="0"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Total Invoice (Rp)</label><input type="number" class="rp" id="b-tagihan" placeholder="0" min="0"></div>
+            <div class="form-group"><label>Status</label>
+              <select id="b-status">
+                <option value="Lunas">✅ Paid in Full</option>
+                <option value="Cicil">⚠️ Partial</option>
+                <option value="Belum Bayar">❌ Unpaid</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group"><label>Notes</label><input type="text" id="b-catatan" placeholder="Additional notes..."></div>
+          <div class="btn-row">
+            <button class="btn primary" onclick="savePayment()">💾 Save</button>
+            <button class="btn" onclick="closePaymentForm()">Cancel</button>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+        </div>
+        <!-- Filter bar -->
+        <div class="filter-bar">
+          <div class="form-group"><label>🔍 Student</label><input type="text" id="f-nama" placeholder="Search name…" oninput="renderPayment()"></div>
+          <div class="form-group"><label>📅 From</label><input type="date" id="f-dari" onchange="renderPayment()"></div>
+          <div class="form-group"><label>📅 To</label><input type="date" id="f-sampai" onchange="renderPayment()"></div>
+          <div class="form-group"><label>📂 Period</label><input type="text" id="f-periode" placeholder="June 2025" oninput="renderPayment()"></div>
+          <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn sm" onclick="clearPaymentFilter()">✕ Clear</button></div>
+        </div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Date</th><th>Student</th><th>Period</th>
+            <th class="r">Invoice</th><th class="r">Paid</th>
+            <th>Status</th><th>Notes</th><th></th>
+          </tr></thead>
+          <tbody id="tbody-payment"></tbody></table>
+        </div>
+        <div class="empty" id="empty-payment"><div class="ei">💰</div><p>No payment records yet.</p></div>
+        <div id="payment-total-bar" style="display:none;margin-top:14px;padding:12px 16px;background:var(--bg3);border-radius:10px;display:none;justify-content:space-between;align-items:center;font-weight:700">
+          <span style="color:var(--muted)">Total Collected <span id="payment-filter-tag" style="font-size:0.72rem;color:var(--yellow)"></span></span>
+          <span style="font-family:'Fredoka One',sans-serif;font-size:1.3rem;color:var(--green)" id="payment-total-val">Rp 0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ REPORTS ══════════════════ -->
+    <div class="page" id="page-reports">
+      <div class="sec-hd"><div><h2>📤 Parent Reports</h2><div class="sub">Generate & share progress reports</div></div></div>
+      <div class="filter-bar">
+        <div class="form-group"><label>Student</label><select id="r-siswa" onchange="renderReports()"><option value="">-- All Students --</option></select></div>
+        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2025" oninput="renderReports()"></div>
+      </div>
+      <div id="report-list"></div>
+      <div class="empty" id="empty-reports"><div class="ei">📤</div><p>Add evaluations to generate reports.</p></div>
+    </div>
+
+    <!-- ══════════════════ ANALYTICS ══════════════════ -->
+    <div class="page" id="page-analytics">
+      <div class="sec-hd"><div><h2>📊 Analytics</h2><div class="sub">Insights and trends</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <div class="card">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:14px">📈 Revenue by Month</div>
+          <div class="chart-box"><canvas id="chart-rev2"></canvas></div>
+        </div>
+        <div class="card">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:14px">📋 Attendance Overview</div>
+          <div class="chart-box"><canvas id="chart-attend"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:14px">⭐ Score per Student (Average)</div>
+        <div class="chart-box" style="height:260px"><canvas id="chart-scores"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ BACKUP ══════════════════ -->
+    <div class="page" id="page-backup">
+      <div class="sec-hd"><div><h2>💾 Backup & Restore</h2><div class="sub">Keep your data safe</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="card">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:6px">⬇️ Export Backup</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:18px">Download all your data as a JSON file. Store it safely.</div>
+          <button class="btn primary" onclick="exportBackup()">⬇️ Download Backup (JSON)</button>
+          <div style="margin-top:14px">
+            <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:6px;margin-top:18px">📊 Export to CSV</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px">Export payment data to a spreadsheet-friendly format.</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn success" onclick="exportCSV('bayar')">💰 Payments CSV</button>
+              <button class="btn success" onclick="exportCSV('absensi')">📋 Attendance CSV</button>
+              <button class="btn success" onclick="exportCSV('evaluasi')">⭐ Evaluation CSV</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:6px">⬆️ Restore Backup</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:18px">Import a previously exported JSON backup. This will <strong style="color:var(--red)">merge</strong> with existing data.</div>
+          <label for="restore-file" class="btn" style="cursor:pointer">📂 Choose Backup File</label>
+          <input type="file" id="restore-file" accept=".json" style="display:none" onchange="importBackup(event)">
+          <div id="restore-status" style="margin-top:12px;font-size:0.85rem;color:var(--muted)"></div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+          <div style="font-family:'Fredoka One',sans-serif;font-weight:800;color:var(--red);margin-bottom:6px">⚠️ Danger Zone</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px">Clear all data. Cannot be undone.</div>
+          <button class="btn danger" onclick="clearAllData()">🗑️ Clear All Data</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0">
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:6px">👥 User Access Management</div>
+        <div style="font-size:0.85rem;color:var(--muted);margin-bottom:16px">Manage who can access this shared workspace.</div>
+        <div id="access-panel"><span style="color:var(--muted);font-size:0.85rem">Loading…</span></div>
+      </div>
+      <div class="card" style="margin-top:0">
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:14px">📦 Data Summary</div>
+        <div id="backup-summary"></div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main -->
+
+<!-- ══ SHARED RENDER PANEL for image export ══ -->
+<div id="doc-render-panel" style="position:fixed;left:-9999px;top:0;width:560px;background:#fff;padding:32px;font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;z-index:-1;"></div>
+<!-- ══ RECEIPT RENDER PANEL ══ -->
+<div id="receipt-render-panel"></div>
+
+<!-- ══ MODAL: EVAL PRINT ══ -->
+<div class="overlay" id="modal-eval-print">
+  <div class="modal modal-sm">
+    <div class="modal-title">⭐ Evaluation Report</div>
+    <div id="eval-print-content"></div>
+    <div style="margin-top:20px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">📲 Send to WhatsApp</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn wa sm" onclick="docWaText('eval')">💬 Text</button>
+        <button class="btn wa2 sm" onclick="docWaImage('eval')">🖼️ Image + WA</button>
+        <button class="btn wa3 sm" onclick="docDownloadJPG('eval')">⬇️ Save JPG</button>
+      </div>
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">🖨️ Print / Download</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="docPrint('eval')">🖨️ Print</button>
+        <button class="btn sm primary" onclick="docDownloadPDF('eval')">⬇️ PDF</button>
+        <button class="btn sm success" onclick="docCopyText('eval')">📋 Copy Text</button>
+        <button class="btn sm" onclick="closeModal('modal-eval-print')">Close</button>
+      </div>
+      <div id="doc-status-eval" style="display:none;font-size:0.82rem;font-weight:600;margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--bg3);color:var(--muted)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: LESSON PRINT ══ -->
+<div class="overlay" id="modal-lesson-print">
+  <div class="modal modal-sm">
+    <div class="modal-title">📚 Lesson Plan</div>
+    <div id="lesson-print-content"></div>
+    <div style="margin-top:20px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">📲 Send to WhatsApp</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn wa sm" onclick="docWaText('lesson')">💬 Text</button>
+        <button class="btn wa2 sm" onclick="docWaImage('lesson')">🖼️ Image + WA</button>
+        <button class="btn wa3 sm" onclick="docDownloadJPG('lesson')">⬇️ Save JPG</button>
+      </div>
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">🖨️ Print / Download</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="docPrint('lesson')">🖨️ Print</button>
+        <button class="btn sm primary" onclick="docDownloadPDF('lesson')">⬇️ PDF</button>
+        <button class="btn sm success" onclick="docCopyText('lesson')">📋 Copy Text</button>
+        <button class="btn sm" onclick="closeModal('modal-lesson-print')">Close</button>
+      </div>
+      <div id="doc-status-lesson" style="display:none;font-size:0.82rem;font-weight:600;margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--bg3);color:var(--muted)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: REPORT PRINT ══ -->
+<div class="overlay" id="modal-report-print">
+  <div class="modal modal-sm">
+    <div class="modal-title">📤 Parent Report</div>
+    <div id="report-print-content"></div>
+    <div style="margin-top:20px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">📲 Send to WhatsApp</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn wa sm" onclick="docWaText('report')">💬 Text</button>
+        <button class="btn wa2 sm" onclick="docWaImage('report')">🖼️ Image + WA</button>
+        <button class="btn wa3 sm" onclick="docDownloadJPG('report')">⬇️ Save JPG</button>
+      </div>
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">🖨️ Print / Download</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="docPrint('report')">🖨️ Print</button>
+        <button class="btn sm primary" onclick="docDownloadPDF('report')">⬇️ PDF</button>
+        <button class="btn sm success" onclick="docCopyText('report')">📋 Copy Text</button>
+        <button class="btn sm" onclick="closeModal('modal-report-print')">Close</button>
+      </div>
+      <div id="doc-status-report" style="display:none;font-size:0.82rem;font-weight:600;margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--bg3);color:var(--muted)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: CLASS MANAGER ══ -->
+<div class="overlay" id="modal-classes">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">🏫 My Classes</div>
+    <div id="class-list-ui" style="margin-bottom:18px"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+    <div style="font-weight:800;font-size:0.9rem;margin-bottom:12px">➕ Add New Class</div>
+    <div class="form-group" style="margin-top:0"><label>Class Name *</label>
+      <input type="text" id="new-class-name" placeholder="e.g. Beginner A, Monday Group, Grade 5…">
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-top:8px"><label>Schedule / Days</label>
+        <input type="text" id="new-class-schedule" placeholder="e.g. Mon & Wed 4PM">
+      </div>
+      <div class="form-group" style="margin-top:8px"><label>Color</label>
+        <select id="new-class-color">
+          <option value="#6c63ff">🟣 Purple</option>
+          <option value="#ff6584">🔴 Pink</option>
+          <option value="#00d68f">🟢 Green</option>
+          <option value="#38bdf8">🔵 Blue</option>
+          <option value="#ffb347">🟡 Orange</option>
+          <option value="#a78bfa">💜 Violet</option>
+          <option value="#ff4f6d">❤️ Red</option>
+          <option value="#00b4d8">🩵 Cyan</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="createClass()">＋ Create Class</button>
+      <button class="btn" onclick="closeModal('modal-classes')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: RECEIPT ══ -->
+<div class="overlay" id="modal-receipt">
+  <div class="modal modal-sm">
+    <div class="modal-title">🧾 Payment Receipt</div>
+    <div id="receipt-content"></div>
+    <div style="margin-top:20px">
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">📲 Send to WhatsApp</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn wa sm" onclick="waText()">💬 Text Receipt</button>
+        <button class="btn wa2 sm" id="btn-wa-img" onclick="waImage()">🖼️ Image + WA</button>
+        <button class="btn wa3 sm" onclick="downloadPNG()">⬇️ Save PNG</button>
+      </div>
+      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">🖨️ Print / Download</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="printReceipt()">🖨️ Print</button>
+        <button class="btn sm primary" onclick="downloadPDF()">⬇️ PDF</button>
+        <button class="btn sm success" onclick="copyReceipt()">📋 Copy Text</button>
+        <button class="btn sm" onclick="closeModal('modal-receipt')">Close</button>
+      </div>
+      <div id="wa-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: EDIT PAYMENT ══ (kept for openEditBayar compat) -->
+<div class="overlay" id="modal-bayar" style="display:none"></div>
+
+<script>
+// ════════════════════════════════════════════════
+//  FIREBASE INIT
+// ════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDDYShhgA7hq0mV-Eg99zRPFwl0o9-yIR4",
+  authDomain: "bunrey-course.firebaseapp.com",
+  projectId: "bunrey-course",
+  storageBucket: "bunrey-course.firebasestorage.app",
+  messagingSenderId: "848186212308",
+  appId: "1:848186212308:web:b2a2ca9c376378dd562041",
+  measurementId: "G-VHBE747MSE"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ── Persist login across refresh & browser close ──
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .catch(e => console.error('Persistence error:', e));
+
+let currentUser = null;
+let userDocRef  = null;
+
+// ════════════════════════════════════════════════
+//  CLASS STATE
+// ════════════════════════════════════════════════
+let currentClassId   = null;   // e.g. 'class_abc123'
+let currentClassName = '';
+let classesList      = [];     // [{id, name, schedule, color, createdAt}]
+
+// Firestore path for class data
+function classDataRef(classId){
+  return db.collection('workspace').doc(classId);
+}
+
+// ════════════════════════════════════════════════
+//  WHITELIST
+// ════════════════════════════════════════════════
+const ALLOWED_EMAILS = [];
+function isEmailAllowed(email){
+  if(!email) return false;
+  return ALLOWED_EMAILS.some(e => e.toLowerCase() === email.toLowerCase());
+}
+
+// ════════════════════════════════════════════════
+//  SYNC INDICATOR
+// ════════════════════════════════════════════════
+function setSyncing(){ document.getElementById('sync-dot').className='sync-dot syncing'; document.getElementById('sync-label').textContent='Saving…' }
+function setSynced() { document.getElementById('sync-dot').className='sync-dot';         document.getElementById('sync-label').textContent='Synced' }
+function setSyncErr(){ document.getElementById('sync-dot').className='sync-dot offline'; document.getElementById('sync-label').textContent='Offline' }
+
+// ════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════
+function signInGoogle(){
+  document.getElementById('login-err').textContent='';
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(e=>{
+    document.getElementById('login-err').textContent='❌ ' + e.message;
+  });
+}
+function signOutUser(){
+  if(!confirm('Sign out?')) return;
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(async user => {
+  document.getElementById('loading-screen').style.display = 'none';
+  if(user){
+    const allowed = await checkAccess(user);
+    if(!allowed){
+      await auth.signOut();
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('login-err').textContent = '⛔ Access denied. Email ' + user.email + ' is not authorized.';
+      return;
+    }
+    currentUser = user;
+    document.getElementById('login-screen').style.display = 'none';
+    const chip = document.getElementById('user-chip');
+    chip.style.display = 'flex';
+    document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || 'Me';
+    const av = document.getElementById('user-avatar');
+    if(user.photoURL){ av.src=user.photoURL; av.style.background='none'; }
+    else { av.src=''; av.textContent=user.displayName?.[0]||'U'; }
+    // Load classes, then load first/last used class
+    await loadClasses();
+    console.log('✅ Logged in:', user.email);
+  } else {
+    currentUser = null; userDocRef = null; currentClassId = null;
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('user-chip').style.display = 'none';
+    document.getElementById('class-switcher').style.display = 'none';
+  }
+});
+
+async function checkAccess(user){
+  if(isEmailAllowed(user.email)) return true;
+  try{
+    const accessDoc = await db.collection('workspace').doc('access').get();
+    if(accessDoc.exists){
+      const data = accessDoc.data();
+      if(data.owner === user.email) return true;
+      const allowed = data.allowed_emails || [];
+      return allowed.some(e => e.toLowerCase() === user.email.toLowerCase());
+    } else {
+      await db.collection('workspace').doc('access').set({
+        owner: user.email,
+        allowed_emails: [user.email],
+        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+      return true;
+    }
+  } catch(e){ console.error('Access check error:', e); return true; }
+}
+
+// ════════════════════════════════════════════════
+//  CLASSES MANAGEMENT
+// ════════════════════════════════════════════════
+async function loadClasses(){
+  try{
+    const snap = await db.collection('workspace').doc('classes').get();
+    classesList = snap.exists ? (snap.data().list || []) : [];
+
+    // First-time migration: check if old workspace/shared exists → move to first class
+    if(classesList.length === 0){
+      await migrateOldWorkspace();
+    }
+
+    // If still no classes, prompt to create one
+    if(classesList.length === 0){
+      document.getElementById('class-switcher').style.display = 'flex';
+      updateClassSwitcherUI();
+      openModal('modal-classes');
+      renderClassListUI();
+      return;
+    }
+
+    // Restore last used class from localStorage
+    const lastId = localStorage.getItem('lastClassId');
+    const found  = classesList.find(c=>c.id===lastId);
+    await switchClass(found ? found.id : classesList[0].id);
+    document.getElementById('class-switcher').style.display = 'flex';
+    renderClassListUI();
+  } catch(e){
+    console.error('Load classes error:', e);
+    setSyncErr();
+  }
+}
+
+async function migrateOldWorkspace(){
+  try{
+    const oldSnap = await db.collection('workspace').doc('shared').get();
+    if(!oldSnap.exists) return;
+    const oldData = oldSnap.data();
+    if(!(oldData.siswa||[]).length && !(oldData.bayar||[]).length) return;
+    // Create a default class and move data there
+    const classId = 'class_' + uid();
+    const newClass = { id:classId, name:'Class A', schedule:'', color:'#6c63ff', createdAt: new Date().toISOString() };
+    classesList = [newClass];
+    await db.collection('workspace').doc('classes').set({ list: classesList });
+    await db.collection('workspace').doc(classId).set({...oldData, migratedAt: firebase.firestore.FieldValue.serverTimestamp()});
+    console.log('✅ Migrated old workspace → Class A ('+classId+')');
+  } catch(e){ console.error('Migration error:', e); }
+}
+
+async function saveClassesList(){
+  await db.collection('workspace').doc('classes').set({ list: classesList });
+}
+
+async function switchClass(classId){
+  const cls = classesList.find(c=>c.id===classId);
+  if(!cls) return;
+  currentClassId   = classId;
+  currentClassName = cls.name;
+  userDocRef = db.collection('workspace').doc(classId);
+  localStorage.setItem('lastClassId', classId);
+  updateClassSwitcherUI(cls);
+  // Clear data before loading new class
+  siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+  renderAll(); renderDashboard();
+  await loadFromFirestore();
+  closeModal('modal-classes');
+}
+
+function updateClassSwitcherUI(cls){
+  const dot  = document.getElementById('cs-dot');
+  const name = document.getElementById('cs-name');
+  if(cls){ dot.style.background=cls.color||'var(--accent)'; name.textContent=cls.name; }
+  else    { dot.style.background='var(--muted)'; name.textContent='Select Class'; }
+}
+
+function renderClassListUI(){
+  const el = document.getElementById('class-list-ui');
+  if(!el) return;
+  if(!classesList.length){
+    el.innerHTML='<div style="color:var(--muted);font-size:0.87rem;text-align:center;padding:12px">No classes yet. Create your first class below.</div>'; return;
+  }
+  el.innerHTML = classesList.map(c=>`
+    <div class="class-item ${c.id===currentClassId?'active-class':''}" onclick="switchClass('${c.id}')">
+      <div class="ci-color" style="background:${c.color||'#6c63ff'}"></div>
+      <div class="ci-info">
+        <div class="ci-name">${c.name} ${c.id===currentClassId?'<span class="chip chip-purple" style="font-size:0.65rem">Active</span>':''}</div>
+        <div class="ci-meta">${c.schedule||'No schedule set'}</div>
+      </div>
+      <div style="display:flex;gap:6px" onclick="event.stopPropagation()">
+        <button class="btn sm icon-only" title="Edit" onclick="editClass('${c.id}')">✏️</button>
+        <button class="btn danger sm icon-only" title="Delete" onclick="deleteClass('${c.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+async function createClass(){
+  const name = document.getElementById('new-class-name').value.trim();
+  if(!name){ alert('Class name is required!'); return; }
+  const newClass = {
+    id: 'class_' + uid(),
+    name,
+    schedule: document.getElementById('new-class-schedule').value.trim(),
+    color:    document.getElementById('new-class-color').value,
+    createdAt: new Date().toISOString(),
+  };
+  classesList.push(newClass);
+  await saveClassesList();
+  document.getElementById('new-class-name').value    = '';
+  document.getElementById('new-class-schedule').value= '';
+  renderClassListUI();
+  // Auto-switch to new class
+  await switchClass(newClass.id);
+  document.getElementById('class-switcher').style.display='flex';
+}
+
+async function deleteClass(classId){
+  if(classesList.length<=1){ alert('Cannot delete the last class.'); return; }
+  const cls = classesList.find(c=>c.id===classId);
+  if(!confirm(`Delete class "${cls?.name}"?\n\nAll students, attendance, evaluations and payments in this class will be permanently deleted.`)) return;
+  // Delete class data document
+  try{ await db.collection('workspace').doc(classId).delete(); }catch(e){ console.error(e); }
+  classesList = classesList.filter(c=>c.id!==classId);
+  await saveClassesList();
+  renderClassListUI();
+  // If deleted current class, switch to first remaining
+  if(classId === currentClassId){
+    await switchClass(classesList[0].id);
+  }
+}
+
+function editClass(classId){
+  const cls = classesList.find(c=>c.id===classId);
+  if(!cls) return;
+  const newName = prompt('Class name:', cls.name);
+  if(!newName || !newName.trim()) return;
+  const newSched = prompt('Schedule:', cls.schedule||'');
+  cls.name     = newName.trim();
+  cls.schedule = (newSched||'').trim();
+  saveClassesList();
+  renderClassListUI();
+  if(classId===currentClassId){ currentClassName=cls.name; updateClassSwitcherUI(cls); }
+}
+
+// ════════════════════════════════════════════════
+//  WHITELIST MANAGEMENT
+// ════════════════════════════════════════════════
+async function getAccessList(){
+  try{ const doc=await db.collection('workspace').doc('access').get(); return doc.exists?doc.data():null; }catch(e){return null;}
+}
+async function addAllowedEmail(email){
+  if(!email||!currentUser) return;
+  email=email.trim().toLowerCase();
+  const doc=await db.collection('workspace').doc('access').get();
+  const data=doc.data()||{};
+  if(data.owner!==currentUser.email){ alert('Only the owner can manage access.'); return; }
+  const list=data.allowed_emails||[];
+  if(list.includes(email)){ alert('Email already in list.'); return; }
+  list.push(email);
+  await db.collection('workspace').doc('access').update({allowed_emails:list});
+  renderAccessPanel(); alert('✅ '+email+' added!');
+}
+async function removeAllowedEmail(email){
+  if(!currentUser) return;
+  const doc=await db.collection('workspace').doc('access').get();
+  const data=doc.data()||{};
+  if(data.owner!==currentUser.email){ alert('Only the owner can manage access.'); return; }
+  if(email===data.owner){ alert('Cannot remove owner.'); return; }
+  const list=(data.allowed_emails||[]).filter(e=>e!==email);
+  await db.collection('workspace').doc('access').update({allowed_emails:list});
+  renderAccessPanel();
+}
+async function renderAccessPanel(){
+  const panel=document.getElementById('access-panel'); if(!panel) return;
+  const data=await getAccessList();
+  if(!data){ panel.innerHTML='<span style="color:var(--muted)">Loading…</span>'; return; }
+  const isOwner=currentUser?.email===data.owner;
+  const emails=data.allowed_emails||[];
+  panel.innerHTML=`
+    <div style="margin-bottom:12px;font-size:0.82rem;color:var(--muted)">👑 <strong>Owner:</strong> ${data.owner} ${isOwner?'<span class="chip chip-purple" style="margin-left:6px">You</span>':''}</div>
+    <div style="margin-bottom:14px">${emails.map(e=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px;margin-bottom:6px;font-size:0.87rem">
+        <span>📧 ${e} ${e===data.owner?'<span class="chip chip-purple">owner</span>':''}</span>
+        ${isOwner&&e!==data.owner?`<button class="btn danger sm" onclick="removeAllowedEmail('${e}')">Remove</button>`:''}
+      </div>`).join('')}</div>
+    ${isOwner?`<div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="email" id="new-email-input" placeholder="email@gmail.com" style="flex:1;min-width:200px">
+      <button class="btn primary" onclick="addAllowedEmail(document.getElementById('new-email-input').value)">＋ Add Email</button>
+    </div>`:'<div style="color:var(--muted);font-size:0.85rem">Contact the owner to add/remove users.</div>'}`;
+}
+
+// ════════════════════════════════════════════════
+//  FIRESTORE DATA LAYER — CLASS-SCOPED
+// ════════════════════════════════════════════════
+const COLS = ['siswa','absensi','materi','evaluasi','bayar'];
+
+async function loadFromFirestore(){
+  if(!userDocRef){ setSyncErr(); return; }
+  try{
+    setSyncing();
+    const snap = await userDocRef.get();
+    if(snap.exists){
+      const d = snap.data();
+      siswaList    = d.siswa    || [];
+      absensiList  = d.absensi  || [];
+      materiList   = d.materi   || [];
+      evaluasiList = d.evaluasi || [];
+      bayarList    = d.bayar    || [];
+    } else {
+      siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+    }
+    setSynced();
+    renderAll(); renderDashboard(); loadAbsensi();
+  } catch(e){
+    setSyncErr();
+    console.error('Load error', e);
+    siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+    renderAll(); renderDashboard(); loadAbsensi();
+  }
+}
+
+let _saveTimer = null;
+function saveToFirestore(){
+  if(!userDocRef){ setSyncErr(); return; }
+  clearTimeout(_saveTimer);
+  setSyncing();
+  _saveTimer = setTimeout(()=>{ _flushToFirestore(); }, 400);
+}
+async function _flushToFirestore(){
+  if(!userDocRef) return;
+  clearTimeout(_saveTimer);
+  setSyncing();
+  try{
+    await userDocRef.set({
+      siswa:siswaList, absensi:absensiList, materi:materiList,
+      evaluasi:evaluasiList, bayar:bayarList,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    },{merge:true});
+    setSynced();
+    console.log('✅ Saved → '+currentClassName+' | students:'+siswaList.length);
+  } catch(e){
+    setSyncErr();
+    console.error('❌ Save failed:', e.code, e.message);
+    throw e;
+  }
+}
+
+// localStorage helpers (fallback only)
+const lsGet = k => { try{ return JSON.parse(localStorage.getItem(k)||'[]') }catch(e){return []} };
+
+// Legacy migrate (runs once if old-style localStorage data exists)
+async function migrateLocalStorage(){
+  const lsSiswa = lsGet('siswa');
+  if(!lsSiswa.length) return;
+  if(!userDocRef) return;
+  const snap = await userDocRef.get();
+  if(snap.exists && (snap.data().siswa||[]).length > 0) return;
+  siswaList=lsSiswa; absensiList=lsGet('absensi'); materiList=lsGet('materi');
+  evaluasiList=lsGet('evaluasi'); bayarList=lsGet('bayar');
+  await _flushToFirestore();
+  COLS.forEach(k => localStorage.removeItem(k));
+  renderAll(); renderDashboard();
+  console.log('✅ Migrated localStorage → Firestore class');
+}
+
+// ════════════════════════════════════════════════
+//  DB wrapper
+// ════════════════════════════════════════════════
+const DB = {
+  set: (k, v) => {
+    if(k==='siswa')    siswaList    = v;
+    if(k==='absensi')  absensiList  = v;
+    if(k==='materi')   materiList   = v;
+    if(k==='evaluasi') evaluasiList = v;
+    if(k==='bayar')    bayarList    = v;
+    saveToFirestore();
+  }
+};
+
+// ════════════════════════════════════════════════
+//  LISTS (populated by loadFromFirestore)
+// ════════════════════════════════════════════════
+let siswaList    = [];
+let absensiList  = [];
+let materiList   = [];
+let evaluasiList = [];
+let bayarList    = [];
+
+// ════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════
+const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+const fmt  = n => 'Rp ' + Number(n||0).toLocaleString('id-ID');
+const stars = n => '⭐'.repeat(Number(n)||0);
+const tglFmt = d => d ? new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+const chip = (txt,cls) => `<span class="chip ${cls}">${txt}</span>`;
+const levelChip = l => {
+  const map={Beginner:'chip-muted',Elementary:'chip-blue',Intermediate:'chip-green','Upper-Intermediate':'chip-purple',Advanced:'chip-red'};
+  return chip(l, map[l]||'chip-muted');
+};
+
+function openModal(id){ document.getElementById(id).classList.add('open') }
+function closeModal(id){ document.getElementById(id).classList.remove('open') }
+document.querySelectorAll('.overlay').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open') }));
+
+function openPanel(id, maxH='800px'){
+  const p=document.getElementById(id);
+  p.classList.remove('hidden'); p.classList.add('open');
+  p.style.maxHeight=maxH;
+}
+function closePanel(id){
+  const p=document.getElementById(id);
+  p.classList.add('hidden'); p.classList.remove('open');
+  p.style.maxHeight='0';
+}
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+const pageNames = {
+  dashboard:'Dashboard', students:'Students', attendance:'Attendance',
+  lessons:'Lessons', evaluation:'Evaluation', payment:'Payment',
+  reports:'Parent Reports', analytics:'Analytics', backup:'Backup & Restore'
+};
+const pageActions = {
+  students: `<button class="btn-topbar primary" onclick="openStudentForm()">＋ Add Student</button>`,
+  lessons:  `<button class="btn-topbar primary" onclick="resetLessonForm();openPanel('form-lesson','700px')">＋ Add Lesson</button>`,
+  evaluation:`<button class="btn-topbar primary" onclick="resetEvalForm();openPanel('form-eval','700px');switchEvalTab('single')">＋ Add Evaluation</button>`,
+  payment:  `<button class="btn-topbar primary" onclick="openPaymentForm()">＋ Record Payment</button>`,
+};
+
+function navigate(page){
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.page===page);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('topbar-title').textContent = pageNames[page]||'';
+  // preserve sync+user in topbar-actions by only injecting the action button separately
+  const actEl = document.getElementById('topbar-actions');
+  // replace only the action button slot (first child before sync-status)
+  const existing = document.getElementById('page-action-btn');
+  if(existing) existing.remove();
+  if(pageActions[page]){
+    const tmp=document.createElement('div');
+    tmp.id='page-action-btn'; tmp.style.display='contents';
+    tmp.innerHTML=pageActions[page];
+    actEl.insertBefore(tmp, actEl.firstChild);
+  }
+  if(page==='dashboard') renderDashboard();
+  if(page==='analytics') renderAnalytics();
+  if(page==='reports')   renderReports();
+  if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
+  if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
+}
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.page)));
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open') }
+
+// ════════════════════════════════════════════════
+//  THEME
+// ════════════════════════════════════════════════
+let darkMode = localStorage.getItem('theme')!=='light';
+function applyTheme(){
+  document.body.dataset.theme = darkMode?'dark':'light';
+  document.getElementById('theme-icon').textContent  = darkMode?'🌙':'☀️';
+  document.getElementById('theme-label').textContent = darkMode?'Dark Mode':'Light Mode';
+  localStorage.setItem('theme', darkMode?'dark':'light');
+}
+function toggleTheme(){ darkMode=!darkMode; applyTheme(); }
+applyTheme();
+
+// ════════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════════
+let chartRevInst;
+function clearDashFilter(){
+  ['dash-dari','dash-sampai','dash-periode'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const today = new Date().toISOString().slice(0,10);
+  const todayDay = new Date().toLocaleDateString('en-US',{weekday:'short'});
+
+  // Read filters
+  const fDari    = document.getElementById('dash-dari')?.value    || '';
+  const fSampai  = document.getElementById('dash-sampai')?.value  || '';
+  const fPeriode = (document.getElementById('dash-periode')?.value || '').trim().toLowerCase();
+  const isFiltered = fDari || fSampai || fPeriode;
+
+  // Filter payment list
+  let filteredPay = [...bayarList];
+  if(fDari)    filteredPay = filteredPay.filter(b=>b.tanggal>=fDari);
+  if(fSampai)  filteredPay = filteredPay.filter(b=>b.tanggal<=fSampai);
+  if(fPeriode) filteredPay = filteredPay.filter(b=>(b.periode||'').toLowerCase().includes(fPeriode));
+
+  const totalStudents = siswaList.length;
+  const totalRevenue  = filteredPay.reduce((s,b)=>s+b.jumlah,0);
+  const unpaid        = filteredPay.filter(b=>b.status==='Belum Bayar').length;
+
+  // Attendance filtered
+  let filteredAtt = [...absensiList];
+  if(fDari)   filteredAtt = filteredAtt.filter(a=>a.tanggal>=fDari);
+  if(fSampai) filteredAtt = filteredAtt.filter(a=>a.tanggal<=fSampai);
+  const todayAtt      = absensiList.filter(a=>a.tanggal===today);
+  const presentToday  = todayAtt.filter(a=>a.status==='Hadir').length;
+  const presentFiltered = filteredAtt.filter(a=>a.status==='Hadir').length;
+  const filterLabel   = isFiltered ? ' <span style="font-size:0.65rem;color:var(--yellow)">(filtered)</span>' : '';
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card s-purple"><div class="ico">👤</div><div class="val">${totalStudents}</div><div class="lbl">Total Students</div></div>
+    <div class="stat-card s-green"><div class="ico">💰</div><div class="val" style="font-size:${totalRevenue>9999999?'1rem':'1.3rem'}">${fmt(totalRevenue)}</div><div class="lbl">Revenue${filterLabel}</div></div>
+    <div class="stat-card s-red"><div class="ico">⚠️</div><div class="val">${unpaid}</div><div class="lbl">Unpaid Bills${filterLabel}</div><div class="trend ${unpaid>0?'trend-dn':'trend-up'}">${unpaid>0?'Needs attention':'All clear!'}</div></div>
+    <div class="stat-card s-blue"><div class="ico">📋</div><div class="val">${isFiltered?presentFiltered+'/'+filteredAtt.length:presentToday+'/'+(todayAtt.length||totalStudents)}</div><div class="lbl">${isFiltered?'Present (filtered)':'Present Today'}</div></div>
+  `;
+
+  const alerts=[];
+  if(unpaid>0) alerts.push(`<div class="alert-card alert-danger">⚠️ <span>${unpaid} student(s) have unpaid bills${isFiltered?' in selected period':''}.  <a href="#" onclick="navigate('payment');return false" style="color:inherit;text-decoration:underline">View Payment</a></span></div>`);
+  const noEvalThisWeek = siswaList.filter(s=>{
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+    return !evaluasiList.find(e=>e.siswaId===s.id && new Date(e.tanggal)>=weekAgo);
+  });
+  if(noEvalThisWeek.length>0 && siswaList.length>0) alerts.push(`<div class="alert-card alert-warn">📝 ${noEvalThisWeek.length} student(s) have no evaluation this week.</div>`);
+  document.getElementById('dash-alerts').innerHTML = alerts.join('');
+
+  const todayStudents = siswaList.filter(s=>(s.hari||'').toLowerCase().includes(todayDay.toLowerCase())||
+    (s.hari||'').toLowerCase().includes(new Date().toLocaleDateString('en-US',{weekday:'long'}).toLowerCase()));
+  const schedEl = document.getElementById('dash-schedule');
+  if(todayStudents.length===0){
+    schedEl.innerHTML=`<div style="color:var(--muted);font-size:0.87rem;text-align:center;padding:20px">No classes scheduled for today.</div>`;
+  } else {
+    schedEl.innerHTML = todayStudents.map(s=>`
+      <div class="schedule-row">
+        <div class="schedule-day">${todayDay}</div>
+        <div><div style="font-weight:700;font-size:0.87rem">${s.nama}</div><div style="font-size:0.75rem;color:var(--muted)">${s.hari||''}</div></div>
+        ${levelChip(s.level)}
+      </div>`).join('');
+  }
+
+  const recentPay = filteredPay.sort((a,b)=>b.tanggal.localeCompare(a.tanggal)).slice(0,5);
+  const payEl = document.getElementById('dash-payments');
+  if(recentPay.length===0){
+    payEl.innerHTML=`<div style="color:var(--muted);font-size:0.87rem;text-align:center;padding:20px">No payments${isFiltered?' in selected period':''} recorded.</div>`;
+  } else {
+    payEl.innerHTML = recentPay.map(b=>`
+      <div class="schedule-row">
+        <div><div style="font-weight:700;font-size:0.87rem">${b.namaSiswa}</div><div style="font-size:0.75rem;color:var(--muted)">${tglFmt(b.tanggal)} · ${b.periode||'-'}</div></div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-weight:800;font-size:0.9rem;color:var(--green)">${fmt(b.jumlah)}</div>
+          ${b.status==='Lunas'?chip('Paid','chip-green'):b.status==='Cicil'?chip('Partial','chip-yellow'):chip('Unpaid','chip-red')}
+        </div>
+      </div>`).join('');
+  }
+  renderRevenueChart('chart-revenue', fDari, fSampai, fPeriode);
+}
+
+function getMonthlyRevenue(fDari='', fSampai='', fPeriode=''){
+  const months={};
+  let list = [...bayarList];
+  if(fDari)    list=list.filter(b=>b.tanggal>=fDari);
+  if(fSampai)  list=list.filter(b=>b.tanggal<=fSampai);
+  if(fPeriode) list=list.filter(b=>(b.periode||'').toLowerCase().includes(fPeriode));
+  list.forEach(b=>{
+    if(!b.tanggal) return;
+    const d=new Date(b.tanggal);
+    const k=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+    months[k]=(months[k]||0)+b.jumlah;
+  });
+  const sorted=Object.keys(months).sort().slice(-12);
+  return {
+    labels:sorted.map(k=>{ const[y,m]=k.split('-'); return new Date(y,m-1).toLocaleString('en',{month:'short',year:'2-digit'}) }),
+    data:sorted.map(k=>months[k]||0),
+  };
+}
+
+function renderRevenueChart(canvasId, fDari='', fSampai='', fPeriode=''){
+  const {labels,data}=getMonthlyRevenue(fDari, fSampai, fPeriode);
+  const ctx=document.getElementById(canvasId)?.getContext('2d');
+  if(!ctx) return;
+  if(window['_chart_'+canvasId]) window['_chart_'+canvasId].destroy();
+  window['_chart_'+canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{ labels, datasets:[{label:'Revenue (Rp)',data,backgroundColor:'rgba(108,99,255,0.7)',borderColor:'rgba(108,99,255,1)',borderWidth:2,borderRadius:6}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
+      scales:{y:{ticks:{color:'#7c87a0',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},x:{ticks:{color:'#7c87a0'},grid:{display:false}}}
+    }
+  });
+}
+
+// ════════════════════════════════════════════════
+//  STUDENTS
+// ════════════════════════════════════════════════
+function openStudentForm(){
+  document.getElementById('form-student-title').textContent='Add New Student';
+  document.getElementById('s-id').value='';
+  ['s-nama','s-nick','s-kelas','s-hp','s-hari','s-catatan','s-namaOrtu'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('s-level').value='Beginner';
+  openPanel('form-student','900px');
+}
+function closeStudentForm(){ closePanel('form-student') }
+function openEditStudent(id){
+  const s=siswaList.find(x=>x.id===id); if(!s) return;
+  document.getElementById('form-student-title').textContent='Edit Student';
+  document.getElementById('s-id').value=s.id;
+  document.getElementById('s-nama').value=s.nama||'';
+  document.getElementById('s-nick').value=s.nick||'';
+  document.getElementById('s-kelas').value=s.kelas||'';
+  document.getElementById('s-level').value=s.level||'Beginner';
+  document.getElementById('s-hp').value=s.hp||'';
+  document.getElementById('s-hari').value=s.hari||'';
+  document.getElementById('s-namaOrtu').value=s.namaOrtu||'';
+  document.getElementById('s-catatan').value=s.catatan||'';
+  openPanel('form-student','900px');
+  document.getElementById('form-student').scrollIntoView({behavior:'smooth'});
+}
+function saveStudent(){
+  const nama=document.getElementById('s-nama').value.trim();
+  if(!nama){ alert('Full name is required!'); return; }
+  const id=document.getElementById('s-id').value;
+  const data={
+    nama, nick:document.getElementById('s-nick').value.trim(),
+    kelas:document.getElementById('s-kelas').value.trim(),
+    level:document.getElementById('s-level').value,
+    hp:document.getElementById('s-hp').value.trim(),
+    hari:document.getElementById('s-hari').value.trim(),
+    namaOrtu:document.getElementById('s-namaOrtu').value.trim(),
+    catatan:document.getElementById('s-catatan').value.trim(),
+  };
+  if(id){ const i=siswaList.findIndex(s=>s.id===id); if(i>-1) siswaList[i]={...siswaList[i],...data}; }
+  else siswaList.push({id:uid(),...data});
+  DB.set('siswa',siswaList);
+  closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge();
+}
+function deleteStudent(id){
+  if(!confirm('Delete this student?')) return;
+  siswaList=siswaList.filter(s=>s.id!==id);
+  DB.set('siswa',siswaList); renderStudents(); updateSelects();
+}
+function renderStudents(){
+  const tbody=document.getElementById('tbody-students');
+  const empty=document.getElementById('empty-students');
+  const stats=document.getElementById('student-stats');
+  tbody.innerHTML='';
+  if(!siswaList.length){ empty.style.display='block'; stats.innerHTML=''; return; }
+  empty.style.display='none';
+  const levels={};
+  siswaList.forEach(s=>levels[s.level]=(levels[s.level]||0)+1);
+  stats.innerHTML=`
+    <div class="stat-card s-purple"><div class="ico">👤</div><div class="val">${siswaList.length}</div><div class="lbl">Total Students</div></div>
+    ${Object.entries(levels).map(([l,n])=>`<div class="stat-card s-blue"><div class="val">${n}</div><div class="lbl">${l}</div></div>`).join('')}
+  `;
+  siswaList.forEach((s,i)=>{
+    tbody.innerHTML+=`<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><strong>${s.nama}</strong></td>
+      <td>${s.nick?`<span class="chip chip-yellow">${s.nick}</span>`:'-'}</td>
+      <td style="color:var(--muted);font-size:0.83rem">${s.kelas||'-'}</td>
+      <td>${levelChip(s.level)}</td>
+      <td style="font-size:0.83rem;color:var(--muted)">${s.hari||'-'}</td>
+      <td style="font-size:0.83rem">${s.namaOrtu||'-'}</td>
+      <td style="font-size:0.83rem;color:var(--muted)">${s.hp||'-'}</td>
+      <td class="nowrap">
+        <button class="btn sm" onclick="openEditStudent('${s.id}')" style="margin-right:4px">✏️</button>
+        <button class="btn danger sm" onclick="deleteStudent('${s.id}')">🗑️</button>
+      </td>
+    </tr>`;
+  });
+}
+
+// ════════════════════════════════════════════════
+//  ATTENDANCE
+// ════════════════════════════════════════════════
+function loadAbsensi(){
+  const d=document.getElementById('absen-date').value; if(!d) return;
+  const dt=new Date(d), day=dt.getDay();
+  const mon=new Date(dt); mon.setDate(dt.getDate()-(day===0?6:day-1));
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  document.getElementById('week-label').textContent=
+    `Week: ${mon.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${sun.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+  const grid=document.getElementById('absen-grid');
+  if(!siswaList.length){ grid.innerHTML='<div class="empty"><div class="ei">📋</div><p>Add students first.</p></div>'; return; }
+  const existing={};
+  absensiList.filter(a=>a.tanggal===d).forEach(a=>existing[a.siswaId]=a);
+  grid.innerHTML=siswaList.map(s=>`
+    <div class="absen-card">
+      <div class="a-name">👤 ${s.nama}</div>
+      ${s.nick?`<div class="a-nick">${s.nick}</div>`:''}
+      <select id="att-${s.id}">
+        <option value="Hadir" ${existing[s.id]?.status==='Hadir'?'selected':''}>✅ Present</option>
+        <option value="Izin"  ${existing[s.id]?.status==='Izin'?'selected':''}>📝 Excused</option>
+        <option value="Alpha" ${existing[s.id]?.status==='Alpha'?'selected':''}>❌ Absent</option>
+      </select>
+      <input type="text" placeholder="Note (optional)" id="att-ket-${s.id}" value="${existing[s.id]?.keterangan||''}">
+    </div>`).join('');
+}
+function saveAbsensi(){
+  const d=document.getElementById('absen-date').value;
+  if(!d){ alert('Select a date!'); return; }
+  if(!siswaList.length){ alert('No students found!'); return; }
+  absensiList=absensiList.filter(a=>a.tanggal!==d);
+  siswaList.forEach(s=>{
+    absensiList.push({
+      id:uid(),tanggal:d,siswaId:s.id,namaSiswa:s.nama,
+      status:document.getElementById(`att-${s.id}`)?.value||'Hadir',
+      keterangan:document.getElementById(`att-ket-${s.id}`)?.value||'',
+    });
+  });
+  DB.set('absensi',absensiList); renderAttendance(); alert('✅ Attendance saved!');
+}
+function clearAttFilter(){
+  ['att-f-dari','att-f-sampai','att-f-nama'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  const st=document.getElementById('att-f-status'); if(st) st.value='';
+  renderAttendance();
+}
+
+function renderAttendance(){
+  const tbody  = document.getElementById('tbody-attendance');
+  const empty  = document.getElementById('empty-attendance');
+  const sumEl  = document.getElementById('att-summary');
+  tbody.innerHTML='';
+
+  const fDari   = document.getElementById('att-f-dari')?.value   || '';
+  const fSampai = document.getElementById('att-f-sampai')?.value || '';
+  const fNama   = (document.getElementById('att-f-nama')?.value  || '').trim().toLowerCase();
+  const fStatus = document.getElementById('att-f-status')?.value || '';
+
+  let list = [...absensiList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  if(fDari)   list = list.filter(a=>a.tanggal>=fDari);
+  if(fSampai) list = list.filter(a=>a.tanggal<=fSampai);
+  if(fNama)   list = list.filter(a=>a.namaSiswa.toLowerCase().includes(fNama));
+  if(fStatus) list = list.filter(a=>a.status===fStatus);
+
+  // Summary
+  if(sumEl){
+    const present = list.filter(a=>a.status==='Hadir').length;
+    const excused = list.filter(a=>a.status==='Izin').length;
+    const absent  = list.filter(a=>a.status==='Alpha').length;
+    const total   = list.length;
+    sumEl.innerHTML = total ? `
+      <span class="chip chip-muted">${total} records</span>
+      <span class="chip chip-green">✅ Present: ${present}</span>
+      <span class="chip chip-yellow">📝 Excused: ${excused}</span>
+      <span class="chip chip-red">❌ Absent: ${absent}</span>
+      ${total>0?`<span class="chip chip-blue">📊 Rate: ${Math.round((present/total)*100)}%</span>`:''}
+    ` : '';
+  }
+
+  if(!absensiList.length){ empty.style.display='block'; return; }
+  empty.style.display = list.length ? 'none' : 'block';
+
+  list.forEach(a=>{
+    const c=a.status==='Hadir'?'chip-green':a.status==='Izin'?'chip-yellow':'chip-red';
+    const l=a.status==='Hadir'?'Present':a.status==='Izin'?'Excused':'Absent';
+    tbody.innerHTML+=`<tr>
+      <td>${tglFmt(a.tanggal)}</td>
+      <td><strong>${a.namaSiswa}</strong></td>
+      <td>${chip(l,c)}</td>
+      <td style="color:var(--muted);font-size:0.83rem">${a.keterangan||'-'}</td>
+      <td class="nowrap">
+        <button class="btn sm icon-only" title="Edit" onclick="editAttendance('${a.id}')" style="margin-right:4px">✏️</button>
+        <button class="btn danger sm icon-only" title="Delete" onclick="deleteAttendance('${a.id}')">🗑️</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function editAttendance(id){
+  const a = absensiList.find(x=>x.id===id); if(!a) return;
+  document.getElementById('att-edit-id').value       = a.id;
+  document.getElementById('att-edit-tanggal').value  = a.tanggal;
+  document.getElementById('att-edit-nama').textContent = a.namaSiswa;
+  document.getElementById('att-edit-status').value   = a.status;
+  document.getElementById('att-edit-note').value     = a.keterangan||'';
+  openModal('modal-att-edit');
+}
+
+function saveAttEdit(){
+  const id = document.getElementById('att-edit-id').value;
+  const idx = absensiList.findIndex(a=>a.id===id);
+  if(idx===-1) return;
+  absensiList[idx] = {
+    ...absensiList[idx],
+    status:     document.getElementById('att-edit-status').value,
+    keterangan: document.getElementById('att-edit-note').value.trim(),
+  };
+  DB.set('absensi', absensiList);
+  closeModal('modal-att-edit');
+  renderAttendance();
+}
+
+function deleteAttendance(id){
+  if(!confirm('Delete this attendance record?')) return;
+  absensiList = absensiList.filter(a=>a.id!==id);
+  DB.set('absensi', absensiList);
+  renderAttendance();
+}
+
+// ════════════════════════════════════════════════
+//  LESSONS
+// ════════════════════════════════════════════════
+function resetLessonForm(){
+  document.getElementById('form-lesson-title').textContent='Add Lesson';
+  document.getElementById('m-id').value='';
+  document.getElementById('m-tanggal').value=new Date().toISOString().slice(0,10);
+  document.getElementById('m-status').value='Rencana';
+  ['m-topik','m-deskripsi','m-sumber'].forEach(i=>document.getElementById(i).value='');
+}
+function openEditLesson(id){
+  const m=materiList.find(x=>x.id===id); if(!m) return;
+  document.getElementById('form-lesson-title').textContent='Edit Lesson';
+  document.getElementById('m-id').value=m.id;
+  document.getElementById('m-tanggal').value=m.tanggal||'';
+  document.getElementById('m-status').value=m.status||'Rencana';
+  document.getElementById('m-topik').value=m.topik||'';
+  document.getElementById('m-deskripsi').value=m.deskripsi||'';
+  document.getElementById('m-sumber').value=m.sumber||'';
+  document.getElementById('m-target').value=m.target||'Semua';
+  openPanel('form-lesson','700px');
+  document.getElementById('form-lesson').scrollIntoView({behavior:'smooth'});
+}
+function saveLesson(){
+  const topik=document.getElementById('m-topik').value.trim();
+  if(!topik){ alert('Topic is required!'); return; }
+  const id=document.getElementById('m-id').value;
+  const data={
+    tanggal:document.getElementById('m-tanggal').value,
+    status:document.getElementById('m-status').value, topik,
+    deskripsi:document.getElementById('m-deskripsi').value.trim(),
+    sumber:document.getElementById('m-sumber').value.trim(),
+    target:document.getElementById('m-target').value,
+  };
+  if(id){ const i=materiList.findIndex(m=>m.id===id); if(i>-1) materiList[i]={...materiList[i],...data}; }
+  else materiList.push({id:uid(),...data});
+  DB.set('materi',materiList);
+  document.getElementById('m-id').value='';
+  ['m-topik','m-deskripsi','m-sumber'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('form-lesson-title').textContent='Add Lesson';
+  closePanel('form-lesson'); renderLessons();
+}
+function deleteLesson(id){
+  if(!confirm('Delete this lesson?')) return;
+  materiList=materiList.filter(m=>m.id!==id); DB.set('materi',materiList); renderLessons();
+}
+function renderLessons(){
+  const rencana=materiList.filter(m=>m.status==='Rencana').sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
+  const selesai=materiList.filter(m=>m.status==='Selesai').sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  const makeCard=(m)=>`
+    <div class="lesson-card">
+      <div class="lesson-dot ${m.status==='Rencana'?'planned':'done'}"></div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:0.92rem">${m.topik}</div>
+        <div style="font-size:0.77rem;color:var(--muted);margin-top:3px">${tglFmt(m.tanggal)} · ${m.target==='Semua'?'All Students':m.target||'All'}</div>
+        ${m.deskripsi?`<div style="font-size:0.85rem;color:var(--muted);margin-top:8px">${m.deskripsi}</div>`:''}
+        ${m.sumber?`<div style="font-size:0.77rem;color:var(--accent);margin-top:5px">📎 ${m.sumber}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn sm icon-only" title="Print" onclick="showLessonPrint('${m.id}')">🖨️</button>
+        <button class="btn sm icon-only" title="Edit" onclick="openEditLesson('${m.id}')">✏️</button>
+        <button class="btn danger sm icon-only" title="Delete" onclick="deleteLesson('${m.id}')">🗑️</button>
+      </div>
+    </div>`;
+  document.getElementById('lesson-planned').innerHTML=rencana.length?rencana.map(makeCard).join(''):'<div style="color:var(--muted);font-size:0.85rem;padding:10px 0">No planned lessons.</div>';
+  document.getElementById('lesson-done').innerHTML=selesai.length?selesai.map(makeCard).join(''):'<div style="color:var(--muted);font-size:0.85rem;padding:10px 0">No completed lessons.</div>';
+  document.getElementById('empty-lessons').style.display=materiList.length?'none':'block';
+}
+
+// ════════════════════════════════════════════════
+//  EVALUATION
+// ════════════════════════════════════════════════
+function resetEvalForm(){
+  document.getElementById('form-eval-title').textContent='Add Evaluation';
+  document.getElementById('e-id').value='';
+  document.getElementById('e-tanggal').value=new Date().toISOString().slice(0,10);
+  document.getElementById('e-siswa').value='';
+  document.getElementById('e-rating').value='5';
+  ['e-nilai','e-progress','e-catatan'].forEach(i=>document.getElementById(i).value='');
+}
+function openEditEval(id){
+  const e=evaluasiList.find(x=>x.id===id); if(!e) return;
+  document.getElementById('form-eval-title').textContent='Edit Evaluation';
+  document.getElementById('e-id').value=e.id;
+  document.getElementById('e-tanggal').value=e.tanggal||'';
+  document.getElementById('e-siswa').value=e.siswaId||'';
+  document.getElementById('e-nilai').value=e.nilai||'';
+  document.getElementById('e-rating').value=e.rating||'5';
+  document.getElementById('e-progress').value=e.progress||'';
+  document.getElementById('e-catatan').value=e.catatan||'';
+  openPanel('form-eval','700px');
+  document.getElementById('form-eval').scrollIntoView({behavior:'smooth'});
+}
+function saveEval(){
+  const siswaId=document.getElementById('e-siswa').value;
+  if(!siswaId){ alert('Select a student!'); return; }
+  const s=siswaList.find(x=>x.id===siswaId);
+  const id=document.getElementById('e-id').value;
+  const data={
+    tanggal:document.getElementById('e-tanggal').value,
+    siswaId, namaSiswa:s?.nama||'-',
+    nilai:document.getElementById('e-nilai').value,
+    rating:document.getElementById('e-rating').value,
+    progress:document.getElementById('e-progress').value.trim(),
+    catatan:document.getElementById('e-catatan').value.trim(),
+  };
+  if(id){ const i=evaluasiList.findIndex(e=>e.id===id); if(i>-1) evaluasiList[i]={...evaluasiList[i],...data}; }
+  else evaluasiList.push({id:uid(),...data});
+  DB.set('evaluasi',evaluasiList);
+  document.getElementById('e-id').value='';
+  ['e-nilai','e-progress','e-catatan'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('form-eval-title').textContent='Add Evaluation';
+  closePanel('form-eval'); renderEval();
+}
+function deleteEval(id){
+  if(!confirm('Delete?')) return;
+  evaluasiList=evaluasiList.filter(e=>e.id!==id); DB.set('evaluasi',evaluasiList); renderEval();
+}
+function renderEval(){
+  const tbody=document.getElementById('tbody-eval');
+  const empty=document.getElementById('empty-eval');
+  tbody.innerHTML='';
+  const sorted=[...evaluasiList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  if(!sorted.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  sorted.forEach(e=>{
+    const n=Number(e.nilai||0);
+    const nc=n>=80?'var(--green)':n>=60?'var(--yellow)':'var(--red)';
+    tbody.innerHTML+=`<tr>
+      <td style="color:var(--muted);font-size:0.83rem">${tglFmt(e.tanggal)}</td>
+      <td><strong>${e.namaSiswa}</strong></td>
+      <td><span style="font-family:'Fredoka One',sans-serif;font-size:1.1rem;font-weight:800;color:${nc}">${e.nilai||'-'}</span></td>
+      <td style="font-size:1rem">${stars(e.rating)}</td>
+      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.progress||'-'}</td>
+      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.catatan||'-'}</td>
+      <td class="nowrap">
+        <button class="btn sm" style="margin-right:4px" onclick="showEvalPrint('${e.id}')">🖨️</button>
+        <button class="btn sm icon-only" title="Edit" onclick="openEditEval('${e.id}')" style="margin-right:4px">✏️</button>
+        <button class="btn danger sm icon-only" onclick="deleteEval('${e.id}')">🗑️</button>
+      </td>
+    </tr>`;
+  });
+}
+
+// ════════════════════════════════════════════════
+//  PAYMENT
+// ════════════════════════════════════════════════
+function openPaymentForm(id){
+  const b=id?bayarList.find(x=>x.id===id):null;
+  document.getElementById('b-id').value=b?.id||'';
+  document.getElementById('b-periode').value=b?.periode||'';
+  document.getElementById('b-tanggal').value=b?.tanggal||new Date().toISOString().slice(0,10);
+  document.getElementById('b-jumlah').value=b?.jumlah||'';
+  document.getElementById('b-tagihan').value=b?.tagihan||'';
+  document.getElementById('b-status').value=b?.status||'Lunas';
+  document.getElementById('b-catatan').value=b?.catatan||'';
+  if(b){
+    const opts=siswaList.map(s=>`<option value="${s.id}"${s.id===b.siswaId?' selected':''}>${s.nama}</option>`).join('');
+    document.getElementById('b-siswa').innerHTML=opts;
+  } else {
+    document.getElementById('b-siswa').value='';
+  }
+  openPanel('form-payment','700px');
+}
+function closePaymentForm(){ closePanel('form-payment') }
+function openEditBayar(id){ openPaymentForm(id) }
+function savePayment(){
+  const siswaId=document.getElementById('b-siswa').value;
+  if(!siswaId){ alert('Select a student!'); return; }
+  const s=siswaList.find(x=>x.id===siswaId);
+  const id=document.getElementById('b-id').value;
+  const data={
+    siswaId, namaSiswa:s?.nama||'-',
+    periode:document.getElementById('b-periode').value.trim(),
+    tanggal:document.getElementById('b-tanggal').value,
+    jumlah:Number(document.getElementById('b-jumlah').value)||0,
+    tagihan:Number(document.getElementById('b-tagihan').value)||0,
+    status:document.getElementById('b-status').value,
+    catatan:document.getElementById('b-catatan').value.trim(),
+  };
+  if(id){ const i=bayarList.findIndex(b=>b.id===id); if(i>-1) bayarList[i]={...bayarList[i],...data}; }
+  else bayarList.push({id:uid(),...data});
+  DB.set('bayar',bayarList);
+  closePaymentForm(); renderPayment(); updateUnpaidBadge();
+}
+function deletePayment(id){
+  if(!confirm('Delete this payment?')) return;
+  bayarList=bayarList.filter(b=>b.id!==id); DB.set('bayar',bayarList); renderPayment(); updateUnpaidBadge();
+}
+function deleteBayar(id){ deletePayment(id) }
+function clearPaymentFilter(){
+  ['f-nama','f-dari','f-sampai','f-periode'].forEach(i=>document.getElementById(i).value='');
+  renderPayment();
+}
+function renderPayment(){
+  const tbody=document.getElementById('tbody-payment');
+  const empty=document.getElementById('empty-payment');
+  const totalBar=document.getElementById('payment-total-bar');
+  tbody.innerHTML='';
+  const fNama=(document.getElementById('f-nama')?.value||'').trim().toLowerCase();
+  const fDari=document.getElementById('f-dari')?.value||'';
+  const fSampai=document.getElementById('f-sampai')?.value||'';
+  const fPer=(document.getElementById('f-periode')?.value||'').trim().toLowerCase();
+  let list=[...bayarList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  if(fNama)   list=list.filter(b=>b.namaSiswa.toLowerCase().includes(fNama));
+  if(fDari)   list=list.filter(b=>b.tanggal>=fDari);
+  if(fSampai) list=list.filter(b=>b.tanggal<=fSampai);
+  if(fPer)    list=list.filter(b=>(b.periode||'').toLowerCase().includes(fPer));
+  const isF=fNama||fDari||fSampai||fPer;
+  if(!bayarList.length){ empty.style.display='block'; totalBar.style.display='none'; return; }
+  empty.style.display=list.length?'none':'block';
+  totalBar.style.display='flex';
+  const total=list.reduce((s,b)=>s+b.jumlah,0);
+  document.getElementById('payment-total-val').textContent=fmt(total);
+  document.getElementById('payment-filter-tag').textContent=isF?'(filtered)':'';
+  list.forEach(b=>{
+    const sc=b.status==='Lunas'?'chip-green':b.status==='Cicil'?'chip-yellow':'chip-red';
+    const sl=b.status==='Lunas'?'Paid':b.status==='Cicil'?'Partial':'Unpaid';
+    tbody.innerHTML+=`<tr>
+      <td style="color:var(--muted);font-size:0.83rem">${tglFmt(b.tanggal)}</td>
+      <td><strong>${b.namaSiswa}</strong></td>
+      <td style="color:var(--muted);font-size:0.83rem">${b.periode||'-'}</td>
+      <td class="r" style="font-size:0.87rem">${fmt(b.tagihan)}</td>
+      <td class="r" style="font-weight:800;color:var(--green)">${fmt(b.jumlah)}</td>
+      <td>${chip(sl,sc)}</td>
+      <td style="font-size:0.82rem;color:var(--muted)">${b.catatan||'-'}</td>
+      <td class="nowrap">
+        <button class="btn sm" onclick="openPaymentForm('${b.id}')" style="margin-right:4px">✏️</button>
+        <button class="btn sm" onclick="showReceipt('${b.id}')" style="margin-right:4px">🧾</button>
+        <button class="btn danger sm icon-only" onclick="deletePayment('${b.id}')">🗑️</button>
+      </td>
+    </tr>`;
+  });
+}
+function updateUnpaidBadge(){
+  const n=bayarList.filter(b=>b.status==='Belum Bayar').length;
+  const el=document.getElementById('unpaid-badge');
+  el.style.display=n>0?'inline':'none';
+}
+
+// ════════════════════════════════════════════════
+//  RECEIPT
+// ════════════════════════════════════════════════
+function _buildReceiptBodyHTML(b,siswa){
+  const rno='BREC-'+b.id.slice(-6).toUpperCase();
+  const stc=b.status==='Lunas'?'#00d68f':b.status==='Cicil'?'#ffb347':'#ff4f6d';
+  const stl=b.status==='Lunas'?'✅ PAID IN FULL':b.status==='Cicil'?'⚠️ PARTIAL':'❌ UNPAID';
+  const rows=[
+    ['Student',b.namaSiswa],
+    siswa?.nick?['Nickname',siswa.nick]:null,
+    siswa?.namaOrtu?['Parent',siswa.namaOrtu]:null,
+    ['Period',b.periode||'-'],['Payment Date',tglFmt(b.tanggal)],
+    ['Total Invoice',fmt(b.tagihan)],
+  ].filter(Boolean);
+  return {rno,stc,stl,rows};
+}
+function showReceipt(id){
+  const b=bayarList.find(x=>x.id===id); if(!b) return;
+  const siswa=siswaList.find(s=>s.id===b.siswaId);
+  const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
+  const html=`
+    <div style="text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:2px dashed var(--border)">
+      <div style="font-family:'Fredoka One',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)">🎓 BunRey English Course</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:3px">Tuition Payment Receipt</div>
+      <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">No: ${rno}</div>
+    </div>
+    ${rows.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:0.88rem;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">${k}</span><strong>${v}</strong></div>`).join('')}
+    <div style="display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid var(--accent);margin-top:8px;color:var(--accent)"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
+    <div style="text-align:center;margin:10px 0;font-weight:800;color:${stc}">${stl}</div>
+    ${b.catatan?`<div style="font-size:0.78rem;text-align:center;color:var(--muted)">Note: ${b.catatan}</div>`:''}
+    <div style="text-align:center;margin-top:16px;font-size:0.75rem;color:var(--muted)">Thank you for your trust! 🌟<br><strong style="color:var(--accent)">BunRey English Course</strong></div>`;
+  document.getElementById('receipt-content').innerHTML=html;
+  document.getElementById('modal-receipt').dataset.receiptId=id;
+  document.getElementById('modal-receipt').dataset.receiptText=
+    `🎓 BUN REY ENGLISH COURSE\nPayment Receipt — ${rno}\n\n${rows.map(([k,v])=>k.padEnd(14)+': '+v).join('\n')}\n\nAmount Paid    : ${fmt(b.jumlah)}\nStatus         : ${b.status}\n${b.catatan?'Note           : '+b.catatan+'\n':''}\nThank you for your trust! 🌟`;
+  document.getElementById('wa-status').style.display='none';
+  openModal('modal-receipt');
+}
+function _buildReceiptPrintHTML(b,siswa){
+  const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${rno}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:32px;max-width:380px;margin:auto;color:#1a1f36;background:#fff}@page{size:A5 portrait;margin:12mm}.hdr{text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:3px dashed #ddd}.logo{font-size:1.4rem;font-weight:800;color:#6c63ff}.sub{font-size:0.78rem;color:#888;margin-top:3px}.no{font-size:0.7rem;color:#bbb;margin-top:2px}.row{display:flex;justify-content:space-between;padding:7px 0;font-size:0.87rem;border-bottom:1px solid #f0f0f0}.row span{color:#888}.row strong{text-align:right;padding-left:10px}.total{display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid #6c63ff;margin-top:8px;color:#6c63ff}.status{text-align:center;margin:12px 0;font-weight:800}.footer{text-align:center;margin-top:18px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa;line-height:1.8}.footer strong{color:#6c63ff}</style></head><body>
+  <div class="hdr"><div class="logo">🎓 BunRey English Course</div><div class="sub">Tuition Payment Receipt</div><div class="no">No: ${rno}</div></div>
+  ${rows.map(([k,v])=>`<div class="row"><span>${k}</span><strong>${v}</strong></div>`).join('')}
+  <div class="total"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
+  <div class="status" style="color:${stc}">${stl}</div>
+  ${b.catatan?`<div style="font-size:0.75rem;color:#888;text-align:center">Note: ${b.catatan}</div>`:''}
+  <div class="footer">Thank you for your trust! 🌟<br><strong>BunRey English Course</strong></div>
+  </body></html>`;
+}
+function _buildReceiptRenderHTML(b,siswa){
+  const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
+  return `<div style="text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:3px dashed #ddd"><div style="font-size:1.45rem;font-weight:800;color:#6c63ff">🎓 BunRey English Course</div><div style="font-size:0.8rem;color:#888;margin-top:3px">Tuition Payment Receipt</div><div style="font-size:0.7rem;color:#bbb;margin-top:2px">No: ${rno}</div></div>
+  ${rows.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:0.87rem;border-bottom:1px solid #f0f0f0"><span style="color:#888">${k}</span><strong>${v}</strong></div>`).join('')}
+  <div style="display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid #6c63ff;margin-top:8px;color:#6c63ff"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
+  <div style="text-align:center;margin:12px 0;font-weight:800;color:${stc}">${stl}</div>
+  ${b.catatan?`<div style="font-size:0.75rem;color:#888;text-align:center">Note: ${b.catatan}</div>`:''}
+  <div style="text-align:center;margin-top:18px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa;line-height:1.8">Thank you for your trust! 🌟<br><strong style="color:#6c63ff">BunRey English Course</strong></div>`;
+}
+async function _renderToCanvas(b,siswa){
+  const panel=document.getElementById('receipt-render-panel');
+  panel.innerHTML=_buildReceiptRenderHTML(b,siswa);
+  await new Promise(r=>setTimeout(r,150));
+  const canvas=await html2canvas(panel,{scale:3,useCORS:true,backgroundColor:'#ffffff',width:380,windowWidth:380});
+  panel.innerHTML=''; return canvas;
+}
+function printReceipt(){
+  const id=document.getElementById('modal-receipt').dataset.receiptId;
+  const b=bayarList.find(x=>x.id===id); if(!b) return;
+  const siswa=siswaList.find(s=>s.id===b.siswaId);
+  const w=window.open('','_blank','width=500,height=720');
+  w.document.write(_buildReceiptPrintHTML(b,siswa)+`<script>window.onload=function(){window.print();}<\/script>`);
+  w.document.close();
+}
+function downloadPDF(){
+  const id=document.getElementById('modal-receipt').dataset.receiptId;
+  const b=bayarList.find(x=>x.id===id); if(!b) return;
+  const siswa=siswaList.find(s=>s.id===b.siswaId);
+  const w=window.open('','_blank','width=500,height=720');
+  w.document.write(_buildReceiptPrintHTML(b,siswa)+`<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script>`);
+  w.document.close();
+}
+async function downloadPNG(){
+  const id=document.getElementById('modal-receipt').dataset.receiptId;
+  const b=bayarList.find(x=>x.id===id); if(!b) return;
+  const siswa=siswaList.find(s=>s.id===b.siswaId);
+  const ws=document.getElementById('wa-status');
+  ws.style.display='block'; ws.textContent='⏳ Generating image…';
+  try{
+    const canvas=await _renderToCanvas(b,siswa);
+    const a=document.createElement('a');
+    a.download='Receipt-BREC-'+b.id.slice(-6).toUpperCase()+'.png';
+    a.href=canvas.toDataURL('image/png'); a.click();
+    ws.textContent='✅ Saved to Downloads.';
+    setTimeout(()=>ws.style.display='none',4000);
+  }catch(e){ ws.textContent='❌ Failed. Try Print instead.' }
+}
+function waText(){
+  const text=document.getElementById('modal-receipt').dataset.receiptText||'';
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+async function waImage(){
+  const id=document.getElementById('modal-receipt').dataset.receiptId;
+  const b=bayarList.find(x=>x.id===id); if(!b) return;
+  const siswa=siswaList.find(s=>s.id===b.siswaId);
+  const ws=document.getElementById('wa-status');
+  const btn=document.getElementById('btn-wa-img');
+  ws.style.display='block'; ws.textContent='⏳ Generating image…'; btn.disabled=true;
+  try{
+    const canvas=await _renderToCanvas(b,siswa);
+    const a=document.createElement('a');
+    a.download='Receipt-BREC-'+b.id.slice(-6).toUpperCase()+'.png';
+    a.href=canvas.toDataURL('image/png'); a.click();
+    await new Promise(r=>setTimeout(r,600));
+    const hp=(siswa?.hp||'').replace(/\D/g,'');
+    const waUrl=hp?`https://wa.me/62${hp.replace(/^0/,'')}?text=${encodeURIComponent('Receipt for '+b.namaSiswa)}`:`https://wa.me/?text=${encodeURIComponent('Receipt for '+b.namaSiswa)}`;
+    window.open(waUrl,'_blank');
+    ws.innerHTML='✅ Image saved → WhatsApp opened → tap 📎 → Gallery to attach.';
+    setTimeout(()=>ws.style.display='none',7000);
+  }catch(e){ ws.textContent='❌ Failed. Try Save PNG.' }
+  btn.disabled=false;
+}
+function copyReceipt(){
+  const text=document.getElementById('modal-receipt').dataset.receiptText||'';
+  navigator.clipboard.writeText(text).then(()=>alert('✅ Copied!'));
+}
+
+// ════════════════════════════════════════════════
+//  REPORTS
+// ════════════════════════════════════════════════
+const _reportTexts={};
+function renderReports(){
+  const fS=document.getElementById('r-siswa').value;
+  const fP=(document.getElementById('r-periode').value||'').trim().toLowerCase();
+  const cont=document.getElementById('report-list');
+  const empty=document.getElementById('empty-reports');
+  const targets=fS?siswaList.filter(s=>s.id===fS):siswaList;
+  let html='', any=false;
+  targets.forEach(siswa=>{
+    let evals=evaluasiList.filter(e=>e.siswaId===siswa.id);
+    let att=absensiList.filter(a=>a.siswaId===siswa.id);
+    let pays=bayarList.filter(b=>b.siswaId===siswa.id);
+    if(fP) pays=pays.filter(b=>(b.periode||'').toLowerCase().includes(fP));
+    if(!evals.length&&!att.length) return;
+    any=true;
+    const latEval=evals.sort((a,b)=>b.tanggal.localeCompare(a.tanggal))[0];
+    const avgScore=evals.length?Math.round(evals.reduce((s,e)=>s+Number(e.nilai||0),0)/evals.length):null;
+    const present=att.filter(a=>a.status==='Hadir').length;
+    const attPct=att.length?Math.round((present/att.length)*100):null;
+    const latPay=pays.sort((a,b)=>b.tanggal.localeCompare(a.tanggal))[0];
+    const sc=avgScore>=80?'var(--green)':avgScore>=60?'var(--yellow)':'var(--red)';
+    const key='rpt_'+siswa.id;
+    const now=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+    let txt=`🎓 *BUN REY ENGLISH COURSE*\n📋 *Student Progress Report*\n📅 ${now}\n${'━'.repeat(28)}\n\n`;
+    txt+=`👤 *Student:* ${siswa.nama}${siswa.nick?' ('+siswa.nick+')':''}\n`;
+    if(siswa.kelas) txt+=`🏫 *School:* ${siswa.kelas}\n`;
+    txt+=`📊 *Level:* ${siswa.level}\n\n`;
+    if(avgScore!==null) txt+=`✏️ *Average Score:* ${avgScore}/100\n`;
+    if(attPct!==null) txt+=`📋 *Attendance:* ${attPct}% (${present}/${att.length})\n`;
+    if(latEval){ txt+=`\n⭐ *Latest Eval (${tglFmt(latEval.tanggal)})*\nScore: ${latEval.nilai}/100  Participation: ${stars(latEval.rating)}\n`; if(latEval.progress) txt+=`Progress: ${latEval.progress}\n`; if(latEval.catatan) txt+=`Notes: ${latEval.catatan}\n`; }
+    if(latPay){ txt+=`\n💰 *Payment — ${latPay.periode||'-'}*\nInvoice: ${fmt(latPay.tagihan)}\nPaid: ${fmt(latPay.jumlah)}\nStatus: ${latPay.status}\n`; }
+    txt+=`\n${'━'.repeat(28)}\nThank you for your trust & support! 🌟\n— BunRey English Course 🎓`;
+    _reportTexts[key]=txt;
+    html+=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
+      <div style="background:linear-gradient(135deg,var(--accent),var(--accent2));padding:20px 24px">
+        <div style="font-family:'Fredoka One',sans-serif;font-size:1.3rem;font-weight:800;color:#fff">👤 ${siswa.nama}${siswa.nick?` <span style="opacity:0.75;font-size:1rem">(${siswa.nick})</span>`:''}</div>
+        <div style="font-size:0.82rem;color:rgba(255,255,255,0.8);margin-top:3px">${siswa.kelas||''} · ${siswa.level} · ${siswa.hari||''}</div>
+      </div>
+      <div style="padding:20px 24px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:18px">
+          ${avgScore!==null?`<div class="stat-card"><div class="val" style="color:${sc}">${avgScore}</div><div class="lbl">Avg Score</div></div>`:''}
+          ${attPct!==null?`<div class="stat-card"><div class="val" style="color:var(--blue)">${attPct}%</div><div class="lbl">Attendance</div></div>`:''}
+          ${evals.length?`<div class="stat-card"><div class="val" style="color:var(--purple)">${evals.length}</div><div class="lbl">Evaluations</div></div>`:''}
+          ${latEval?`<div class="stat-card"><div class="val" style="font-size:1.1rem">${stars(latEval.rating)}</div><div class="lbl">Participation</div></div>`:''}
+        </div>
+        ${attPct!==null?`<div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Attendance Rate</div><div class="pbar-wrap" style="margin-bottom:16px"><div class="pbar-fill" style="width:${attPct}%"></div></div>`:''}
+        ${latEval?`<div style="font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px">⭐ Latest Evaluation (${tglFmt(latEval.tanggal)})</div><div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:0.87rem;margin-bottom:16px">${latEval.progress?`<div><strong>Progress:</strong> ${latEval.progress}</div>`:''} ${latEval.catatan?`<div style="margin-top:5px"><strong>Notes:</strong> ${latEval.catatan}</div>`:`<span style="color:var(--muted)">No details.</span>`}</div>`:''}
+        ${latPay?`<div style="background:var(--bg3);border-radius:10px;padding:14px;font-size:0.87rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px"><span>Invoice: <strong>${fmt(latPay.tagihan)}</strong></span><span>Paid: <strong style="color:var(--green)">${fmt(latPay.jumlah)}</strong></span>${latPay.status==='Lunas'?chip('Paid','chip-green'):latPay.status==='Cicil'?chip('Partial','chip-yellow'):chip('Unpaid','chip-red')}</div>`:''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn wa" onclick="window.open('https://wa.me/?text='+encodeURIComponent(_reportTexts['${key}']),'_blank')">💬 Share via WhatsApp</button>
+          <button class="btn" onclick="showReportPrint('${siswa.id}')">🖨️ Print Report</button>
+          <button class="btn" onclick="navigator.clipboard.writeText(_reportTexts['${key}']).then(()=>alert('✅ Copied!'))">📋 Copy</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  if(!any){ cont.innerHTML=''; empty.style.display='block'; }
+  else { cont.innerHTML=html; empty.style.display='none'; }
+}
+
+// ════════════════════════════════════════════════
+//  ANALYTICS
+// ════════════════════════════════════════════════
+function renderAnalytics(){
+  renderRevenueChart('chart-rev2');
+  const present=absensiList.filter(a=>a.status==='Hadir').length;
+  const excused=absensiList.filter(a=>a.status==='Izin').length;
+  const absent=absensiList.filter(a=>a.status==='Alpha').length;
+  const ctx2=document.getElementById('chart-attend')?.getContext('2d');
+  if(ctx2){ if(window._chartAttend) window._chartAttend.destroy();
+    window._chartAttend=new Chart(ctx2,{type:'doughnut',data:{labels:['Present','Excused','Absent'],datasets:[{data:[present,excused,absent],backgroundColor:['rgba(0,214,143,0.8)','rgba(255,179,71,0.8)','rgba(255,79,109,0.8)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#7c87a0',font:{size:11}}}}}}); }
+  const students=siswaList.map(s=>{ const evals=evaluasiList.filter(e=>e.siswaId===s.id); const avg=evals.length?Math.round(evals.reduce((t,e)=>t+Number(e.nilai||0),0)/evals.length):0; return {name:s.nick||s.nama.split(' ')[0],avg}; }).filter(s=>s.avg>0);
+  const ctx3=document.getElementById('chart-scores')?.getContext('2d');
+  if(ctx3&&students.length){ if(window._chartScores) window._chartScores.destroy();
+    window._chartScores=new Chart(ctx3,{type:'bar',data:{labels:students.map(s=>s.name),datasets:[{label:'Avg Score',data:students.map(s=>s.avg),backgroundColor:'rgba(167,139,250,0.7)',borderColor:'rgba(167,139,250,1)',borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{max:100,ticks:{color:'#7c87a0'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#7c87a0'},grid:{display:false}}}}}); }
+}
+
+// ════════════════════════════════════════════════
+//  BACKUP & RESTORE
+// ════════════════════════════════════════════════
+function exportBackup(){
+  const data={
+    className: currentClassName,
+    classId:   currentClassId,
+    siswa:siswaList, absensi:absensiList, materi:materiList,
+    evaluasi:evaluasiList, bayar:bayarList,
+    exportedAt:new Date().toISOString()
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  const safeName = (currentClassName||'class').replace(/\s+/g,'-');
+  a.href=URL.createObjectURL(blob);
+  a.download='BunRey-'+safeName+'-Backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function importBackup(e){
+  const file=e.target.files[0]; if(!file) return;
+  const statusEl = document.getElementById('restore-status');
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    // Show saving overlay — prevent accidental interaction
+    statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Reading file…</span>';
+    try{
+      const data=JSON.parse(ev.target.result);
+      // Merge data
+      if(data.siswa)    { siswaList   =data.siswa.map(n=>({...n})); }
+      if(data.absensi)  { absensiList =data.absensi.map(n=>({...n})); }
+      if(data.materi)   { materiList  =data.materi.map(n=>({...n})); }
+      if(data.evaluasi) { evaluasiList=data.evaluasi.map(n=>({...n})); }
+      if(data.bayar)    { bayarList   =data.bayar.map(n=>({...n})); }
+
+      statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Saving to cloud… <strong>do not refresh!</strong></span>';
+
+      // Immediate flush — await fully
+      await _flushToFirestore();
+
+      statusEl.innerHTML=`<span style="color:var(--green)">
+        ✅ <strong>Import complete!</strong> 
+        ${siswaList.length} students, ${bayarList.length} payments saved to cloud.<br>
+        <span style="font-size:0.8rem;opacity:0.8">You can now refresh safely.</span>
+      </span>`;
+
+      renderAll(); renderBackupSummary();
+    }catch(err){
+      statusEl.innerHTML='<span style="color:var(--red)">❌ Error: '+err.message+'</span>';
+      console.error('Import error:', err);
+    }
+  };
+  reader.readAsText(file);
+}
+function exportCSV(key){
+  let rows=[],headers=[];
+  if(key==='bayar'){ headers=['Date','Student','Period','Invoice','Paid','Status','Notes']; rows=bayarList.map(b=>[tglFmt(b.tanggal),b.namaSiswa,b.periode||'',b.tagihan,b.jumlah,b.status,b.catatan||'']); }
+  else if(key==='absensi'){ headers=['Date','Student','Status','Note']; rows=absensiList.map(a=>[tglFmt(a.tanggal),a.namaSiswa,a.status,a.keterangan||'']); }
+  else if(key==='evaluasi'){ headers=['Date','Student','Score','Rating','Progress','Notes']; rows=evaluasiList.map(e=>[tglFmt(e.tanggal),e.namaSiswa,e.nilai,e.rating,e.progress||'',e.catatan||'']); }
+  const csv=[headers,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='BunRey-'+key+'-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+}
+function clearAllData(){
+  if(!confirm('⚠️ This will delete ALL data permanently. Are you sure?')) return;
+  if(!confirm('Last chance! Click OK to permanently erase all data.')) return;
+  siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+  saveToFirestore();
+  renderAll(); renderBackupSummary(); alert('✅ All data cleared.');
+}
+function renderBackupSummary(){
+  document.getElementById('backup-summary').innerHTML=`
+    <div style="font-size:0.82rem;color:var(--muted);margin-bottom:12px">
+      📂 Active class: <strong style="color:var(--accent)">${currentClassName||'—'}</strong>
+      &nbsp;·&nbsp; ${classesList.length} total class(es)
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px">
+      <div class="stat-card s-purple"><div class="val">${siswaList.length}</div><div class="lbl">Students</div></div>
+      <div class="stat-card s-blue"><div class="val">${absensiList.length}</div><div class="lbl">Attendance Records</div></div>
+      <div class="stat-card s-green"><div class="val">${materiList.length}</div><div class="lbl">Lessons</div></div>
+      <div class="stat-card s-yellow"><div class="val">${evaluasiList.length}</div><div class="lbl">Evaluations</div></div>
+      <div class="stat-card s-red"><div class="val">${bayarList.length}</div><div class="lbl">Payments</div></div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════
+//  SELECT SYNC
+// ════════════════════════════════════════════════
+function updateSelects(){
+  const opts=siswaList.map(s=>`<option value="${s.id}">${s.nama}${s.nick?' ('+s.nick+')':''}</option>`).join('');
+  document.getElementById('e-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
+  document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
+  document.getElementById('m-target').innerHTML='<option value="Semua">All Students</option>'+opts;
+  document.getElementById('r-siswa').innerHTML='<option value="">-- All Students --</option>'+opts;
+}
+
+// ════════════════════════════════════════════════
+//  RENDER ALL
+// ════════════════════════════════════════════════
+function renderAll(){
+  renderStudents(); renderAttendance(); renderLessons();
+  renderEval(); renderPayment(); updateSelects(); updateUnpaidBadge();
+}
+
+// ════════════════════════════════════════════════
+//  DOCUMENT PRINT / EXPORT (Eval, Lesson, Report)
+// ════════════════════════════════════════════════
+
+// ── Storage for current doc being printed ──
+const _docStore = { eval:{html:'',text:'',title:''}, lesson:{html:'',text:'',title:''}, report:{html:'',text:'',title:''} };
+
+// ── Shared print HTML wrapper ──
+function _docPrintHTML(bodyHTML, title){
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;padding:28px;max-width:600px;margin:auto;color:#1a1f36;background:#fff}
+    @page{size:A4;margin:14mm}
+    h1{font-size:1.3rem;color:#6c63ff;margin-bottom:4px}
+    .sub{font-size:0.78rem;color:#888;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #eee}
+    .row{display:flex;justify-content:space-between;padding:7px 0;font-size:0.87rem;border-bottom:1px solid #f0f0f0}
+    .row span{color:#888}.row strong{text-align:right}
+    .section{margin:14px 0 6px;font-size:0.72rem;font-weight:800;color:#6c63ff;text-transform:uppercase;letter-spacing:0.8px}
+    .block{background:#f7f8fc;border-radius:8px;padding:12px 14px;font-size:0.87rem;margin-bottom:12px;line-height:1.6}
+    .score{font-size:1.6rem;font-weight:800;color:#6c63ff}
+    .footer{text-align:center;margin-top:20px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa}
+    .footer strong{color:#6c63ff}
+    .chip{display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;background:#eef0ff;color:#6c63ff}
+    .stars{font-size:1.1rem}
+  </style></head><body>
+  ${bodyHTML}
+  <div class="footer">BunRey English Course 🎓</div>
+  </body></html>`;
+}
+
+// ── EVALUATION PRINT ──
+function showEvalPrint(id){
+  const e = evaluasiList.find(x=>x.id===id); if(!e) return;
+  const s = siswaList.find(x=>x.id===e.siswaId);
+  const n = Number(e.nilai||0);
+  const nc = n>=80?'#00d68f':n>=60?'#ffb347':'#ff4f6d';
+  const ratingLabels=['','Passive','Below Average','Average','Good','Excellent'];
+  const bodyHTML=`
+    <h1>⭐ Evaluation Report</h1>
+    <div class="sub">BunRey English Course · ${tglFmt(e.tanggal)}</div>
+    <div class="row"><span>Student</span><strong>${e.namaSiswa}</strong></div>
+    ${s?.nick?`<div class="row"><span>Nickname</span><strong>${s.nick}</strong></div>`:''}
+    ${s?.kelas?`<div class="row"><span>School / Class</span><strong>${s.kelas}</strong></div>`:''}
+    ${s?.namaOrtu?`<div class="row"><span>Parent</span><strong>${s.namaOrtu}</strong></div>`:''}
+    <div class="row"><span>Date</span><strong>${tglFmt(e.tanggal)}</strong></div>
+    <div class="row"><span>Level</span><strong>${s?.level||'-'}</strong></div>
+    <div style="text-align:center;margin:16px 0 10px">
+      <div class="score" style="color:${nc}">${e.nilai||'-'}</div>
+      <div style="font-size:0.75rem;color:#888;margin-top:2px">Score / 100</div>
+    </div>
+    <div class="row"><span>Participation</span><strong><span class="stars">${stars(e.rating)}</span> ${ratingLabels[e.rating]||''}</strong></div>
+    ${e.progress?`<div class="section">Progress / Achievement</div><div class="block">${e.progress}</div>`:''}
+    ${e.catatan?`<div class="section">Notes & Recommendations</div><div class="block">${e.catatan}</div>`:''}
+  `;
+  const txt=`⭐ EVALUATION REPORT — BUNREY ENGLISH COURSE\n${'─'.repeat(36)}\nStudent  : ${e.namaSiswa}${s?.nick?' ('+s.nick+')':''}\n${s?.kelas?'School   : '+s.kelas+'\n':''}${s?.namaOrtu?'Parent   : '+s.namaOrtu+'\n':''}Date     : ${tglFmt(e.tanggal)}\nLevel    : ${s?.level||'-'}\nScore    : ${e.nilai||'-'}/100\nRating   : ${stars(e.rating)} ${ratingLabels[e.rating]||''}\n${e.progress?'\n📈 Progress:\n'+e.progress+'\n':''}${e.catatan?'\n📝 Notes:\n'+e.catatan+'\n':''}\n${'─'.repeat(36)}\nBunRey English Course 🎓`;
+  _docStore.eval = { html:bodyHTML, text:txt, title:'Evaluation-'+e.namaSiswa+'-'+e.tanggal };
+  document.getElementById('eval-print-content').innerHTML = `<div style="font-size:0.87rem;line-height:1.7;color:var(--text)">${bodyHTML}</div>`;
+  document.getElementById('doc-status-eval').style.display='none';
+  openModal('modal-eval-print');
+}
+
+// ── LESSON PRINT ──
+function showLessonPrint(id){
+  const m = materiList.find(x=>x.id===id); if(!m) return;
+  const statusLabel = m.status==='Selesai'?'✅ Completed':'🗓️ Planned';
+  const bodyHTML=`
+    <h1>📚 Lesson Plan</h1>
+    <div class="sub">BunRey English Course · ${tglFmt(m.tanggal)}</div>
+    <div class="row"><span>Topic</span><strong>${m.topik}</strong></div>
+    <div class="row"><span>Date</span><strong>${tglFmt(m.tanggal)}</strong></div>
+    <div class="row"><span>Status</span><strong>${statusLabel}</strong></div>
+    <div class="row"><span>Target</span><strong>${m.target==='Semua'?'All Students':m.target||'All Students'}</strong></div>
+    ${m.sumber?`<div class="row"><span>Reference</span><strong>${m.sumber}</strong></div>`:''}
+    ${m.deskripsi?`<div class="section">Description & Activities</div><div class="block">${m.deskripsi}</div>`:''}
+  `;
+  const txt=`📚 LESSON PLAN — BUNREY ENGLISH COURSE\n${'─'.repeat(36)}\nTopic    : ${m.topik}\nDate     : ${tglFmt(m.tanggal)}\nStatus   : ${m.status}\nTarget   : ${m.target==='Semua'?'All Students':m.target||'All Students'}\n${m.sumber?'Ref      : '+m.sumber+'\n':''}${m.deskripsi?'\n📝 Description:\n'+m.deskripsi+'\n':''}\n${'─'.repeat(36)}\nBunRey English Course 🎓`;
+  _docStore.lesson = { html:bodyHTML, text:txt, title:'Lesson-'+m.topik.replace(/\s+/g,'-').slice(0,30) };
+  document.getElementById('lesson-print-content').innerHTML = `<div style="font-size:0.87rem;line-height:1.7;color:var(--text)">${bodyHTML}</div>`;
+  document.getElementById('doc-status-lesson').style.display='none';
+  openModal('modal-lesson-print');
+}
+
+// ── REPORT PRINT ──
+function showReportPrint(siswaId){
+  const siswa = siswaList.find(s=>s.id===siswaId); if(!siswa) return;
+  const evals = evaluasiList.filter(e=>e.siswaId===siswaId);
+  const att   = absensiList.filter(a=>a.siswaId===siswaId);
+  const pays  = bayarList.filter(b=>b.siswaId===siswaId);
+  const latEval  = evals.sort((a,b)=>b.tanggal.localeCompare(a.tanggal))[0];
+  const latPay   = pays.sort((a,b)=>b.tanggal.localeCompare(a.tanggal))[0];
+  const avgScore = evals.length?Math.round(evals.reduce((s,e)=>s+Number(e.nilai||0),0)/evals.length):null;
+  const present  = att.filter(a=>a.status==='Hadir').length;
+  const attPct   = att.length?Math.round((present/att.length)*100):null;
+  const sc = avgScore>=80?'#00d68f':avgScore>=60?'#ffb347':'#ff4f6d';
+  const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const ratingLabels=['','Passive','Below Average','Average','Good','Excellent'];
+
+  const bodyHTML=`
+    <h1>📤 Student Progress Report</h1>
+    <div class="sub">BunRey English Course · ${now}</div>
+    <div class="row"><span>Student</span><strong>${siswa.nama}${siswa.nick?' ('+siswa.nick+')':''}</strong></div>
+    ${siswa.kelas?`<div class="row"><span>School / Class</span><strong>${siswa.kelas}</strong></div>`:''}
+    ${siswa.namaOrtu?`<div class="row"><span>Parent</span><strong>${siswa.namaOrtu}</strong></div>`:''}
+    <div class="row"><span>Level</span><strong><span class="chip">${siswa.level}</span></strong></div>
+    ${siswa.hari?`<div class="row"><span>Class Days</span><strong>${siswa.hari}</strong></div>`:''}
+    ${avgScore!==null?`<div style="text-align:center;margin:16px 0 10px"><div class="score" style="color:${sc}">${avgScore}</div><div style="font-size:0.75rem;color:#888">Average Score / 100</div></div>`:''}
+    ${attPct!==null?`<div class="row"><span>Attendance</span><strong>${attPct}% (${present}/${att.length} sessions)</strong></div>`:''}
+    ${evals.length?`<div class="row"><span>Total Evaluations</span><strong>${evals.length}</strong></div>`:''}
+    ${latEval?`
+    <div class="section">⭐ Latest Evaluation (${tglFmt(latEval.tanggal)})</div>
+    <div class="block">
+      Score: <strong>${latEval.nilai}/100</strong> &nbsp;|&nbsp; Participation: <span class="stars">${stars(latEval.rating)}</span> ${ratingLabels[latEval.rating]||''}<br>
+      ${latEval.progress?'<br><strong>Progress:</strong> '+latEval.progress:''}
+      ${latEval.catatan?'<br><strong>Notes:</strong> '+latEval.catatan:''}
+    </div>`:''}
+    ${latPay?`
+    <div class="section">💰 Payment — ${latPay.periode||'-'}</div>
+    <div class="block">
+      Invoice: <strong>${fmt(latPay.tagihan)}</strong> &nbsp;|&nbsp; Paid: <strong>${fmt(latPay.jumlah)}</strong> &nbsp;|&nbsp; Status: <strong>${latPay.status}</strong>
+    </div>`:''}
+  `;
+  const key='rpt_'+siswa.id;
+  const txt = _reportTexts[key] || `📤 PARENT REPORT — ${siswa.nama}\nBunRey English Course\n${now}`;
+  _docStore.report = { html:bodyHTML, text:txt, title:'Report-'+siswa.nama.replace(/\s+/g,'-') };
+  document.getElementById('report-print-content').innerHTML = `<div style="font-size:0.87rem;line-height:1.7;color:var(--text)">${bodyHTML}</div>`;
+  document.getElementById('doc-status-report').style.display='none';
+  openModal('modal-report-print');
+}
+
+// ── SHARED PRINT/EXPORT ACTIONS ──
+function docPrint(type){
+  const d=_docStore[type]; if(!d.html) return;
+  const w=window.open('','_blank','width=680,height=900');
+  w.document.write(_docPrintHTML(d.html, d.title));
+  w.document.write(`<script>window.onload=function(){window.print();}<\/script>`);
+  w.document.close();
+}
+
+function docDownloadPDF(type){
+  const d=_docStore[type]; if(!d.html) return;
+  const w=window.open('','_blank','width=680,height=900');
+  w.document.write(_docPrintHTML(d.html, d.title));
+  w.document.write(`<script>window.onload=function(){setTimeout(function(){window.print();},600);}<\/script>`);
+  w.document.close();
+}
+
+async function docDownloadJPG(type){
+  const d=_docStore[type]; if(!d.html) return;
+  const statusEl = document.getElementById('doc-status-'+type);
+  statusEl.style.display='block'; statusEl.textContent='⏳ Generating image…';
+  const panel = document.getElementById('doc-render-panel');
+  panel.innerHTML = `<div style="font-family:Arial,sans-serif;color:#1a1f36">${d.html}<div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa">BunRey English Course 🎓</div></div>`;
+  await new Promise(r=>setTimeout(r,150));
+  try{
+    const canvas = await html2canvas(panel,{scale:2.5,useCORS:true,backgroundColor:'#ffffff',width:560,windowWidth:560});
+    panel.innerHTML='';
+    const a=document.createElement('a');
+    a.download=d.title+'.jpg';
+    a.href=canvas.toDataURL('image/jpeg',0.92); a.click();
+    statusEl.textContent='✅ Image saved to Downloads!';
+    setTimeout(()=>statusEl.style.display='none',4000);
+  }catch(e){
+    panel.innerHTML='';
+    statusEl.textContent='❌ Failed. Try Print instead.';
+  }
+}
+
+function docWaText(type){
+  const text=_docStore[type]?.text||'';
+  window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+}
+
+async function docWaImage(type){
+  const d=_docStore[type]; if(!d.html) return;
+  const statusEl = document.getElementById('doc-status-'+type);
+  statusEl.style.display='block'; statusEl.textContent='⏳ Generating image…';
+  const panel = document.getElementById('doc-render-panel');
+  panel.innerHTML = `<div style="font-family:Arial,sans-serif;color:#1a1f36">${d.html}<div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa">BunRey English Course 🎓</div></div>`;
+  await new Promise(r=>setTimeout(r,150));
+  try{
+    const canvas = await html2canvas(panel,{scale:2.5,useCORS:true,backgroundColor:'#ffffff',width:560,windowWidth:560});
+    panel.innerHTML='';
+    const a=document.createElement('a');
+    a.download=d.title+'.jpg'; a.href=canvas.toDataURL('image/jpeg',0.92); a.click();
+    await new Promise(r=>setTimeout(r,600));
+    window.open('https://wa.me/?text='+encodeURIComponent('📎 Please see attached image from BunRey English Course'),'_blank');
+    statusEl.innerHTML='✅ Image saved → WhatsApp opened → tap 📎 → Gallery to attach & send.';
+    setTimeout(()=>statusEl.style.display='none',7000);
+  }catch(e){
+    panel.innerHTML='';
+    statusEl.textContent='❌ Failed. Try Save JPG.';
+  }
+}
+
+function docCopyText(type){
+  const text=_docStore[type]?.text||'';
+  navigator.clipboard.writeText(text).then(()=>alert('✅ Copied! Paste into WhatsApp.'));
+}
+// ════════════════════════════════════════════════
+//  BULK EVALUATION — Manual + Template + Copy
+// ════════════════════════════════════════════════
+let _currentEvalTab = 'single';
+
+function switchEvalTab(tab){
+  _currentEvalTab = tab;
+  const isBulk = tab === 'bulk';
+  document.getElementById('eval-single-panel').style.display = isBulk ? 'none' : 'block';
+  document.getElementById('eval-bulk-panel').style.display   = isBulk ? 'block' : 'none';
+  const btnSingle = document.getElementById('eval-tab-single');
+  const btnBulk   = document.getElementById('eval-tab-bulk');
+  btnSingle.style.background = isBulk ? 'transparent' : 'var(--accent)';
+  btnSingle.style.color      = isBulk ? 'var(--muted)'  : '#fff';
+  btnBulk.style.background   = isBulk ? 'var(--accent)' : 'transparent';
+  btnBulk.style.color        = isBulk ? '#fff' : 'var(--muted)';
+  if(isBulk) renderBulkEvalGrid();
+}
+
+// ── Templates stored in memory ──
+let _evalTemplates = JSON.parse(localStorage.getItem('evalTemplates')||'[]');
+function saveEvalTemplates(){ localStorage.setItem('evalTemplates', JSON.stringify(_evalTemplates)); }
+
+function renderBulkEvalGrid(){
+  const grid = document.getElementById('bulk-eval-grid');
+  if(!siswaList.length){
+    grid.innerHTML='<div class="empty"><div class="ei">👤</div><p>No students. Add students first.</p></div>';
+    return;
+  }
+  document.getElementById('bulk-total-count').textContent = siswaList.length;
+  document.getElementById('bulk-progress-wrap').style.display='block';
+  renderTemplateList();
+  grid.innerHTML = siswaList.map(s=>`
+    <div class="bulk-eval-card" id="bulk-card-${s.id}">
+      <div class="bulk-eval-header">
+        <div class="bulk-eval-avatar">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
+        <div style="flex:1">
+          <div class="bulk-eval-name">${s.nama}${s.nick?` <span style="color:var(--muted);font-size:0.8rem">(${s.nick})</span>`:''}</div>
+          <div class="bulk-eval-sub">${s.kelas||''} · ${s.level}</div>
+        </div>
+        <!-- Copy from another student -->
+        <select onchange="copyFromStudent('${s.id}',this.value);this.value=''"
+          style="font-size:0.75rem;padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);max-width:130px">
+          <option value="">📋 Copy from…</option>
+          ${siswaList.filter(x=>x.id!==s.id).map(x=>`<option value="${x.id}">${x.nick||x.nama.split(' ')[0]}</option>`).join('')}
+        </select>
+        <!-- Skip toggle -->
+        <label style="display:flex;align-items:center;gap:5px;font-size:0.75rem;color:var(--muted);cursor:pointer;font-weight:700;text-transform:none;letter-spacing:0;margin-left:6px;white-space:nowrap">
+          <input type="checkbox" id="bulk-skip-${s.id}" onchange="toggleBulkSkip('${s.id}')" style="width:auto;margin:0">Skip
+        </label>
+      </div>
+      <div id="bulk-fields-${s.id}">
+        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:10px;margin-bottom:8px">
+          <div class="form-group" style="margin:0">
+            <label>Score</label>
+            <input type="number" id="bulk-nilai-${s.id}" placeholder="0–100" min="0" max="100"
+              oninput="updateBulkProgress()" style="text-align:center;font-weight:800;font-size:1rem">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Participation</label>
+            <select id="bulk-rating-${s.id}">
+              <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+              <option value="4">⭐⭐⭐⭐ Good</option>
+              <option value="3" selected>⭐⭐⭐ Average</option>
+              <option value="2">⭐⭐ Below Average</option>
+              <option value="1">⭐ Passive</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Individual Notes</label>
+            <input type="text" id="bulk-catatan-${s.id}" placeholder="Optional…">
+          </div>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Progress (leave blank to use Common Topic)</label>
+          <input type="text" id="bulk-progress-${s.id}" placeholder="Individual progress… or leave blank">
+        </div>
+      </div>
+    </div>`).join('');
+  updateBulkProgress();
+}
+
+function toggleBulkSkip(siswaId){
+  const card    = document.getElementById('bulk-card-'+siswaId);
+  const fields  = document.getElementById('bulk-fields-'+siswaId);
+  const skipped = document.getElementById('bulk-skip-'+siswaId).checked;
+  card.style.opacity = skipped ? '0.4' : '1';
+  fields.style.pointerEvents = skipped ? 'none' : 'auto';
+  updateBulkProgress();
+}
+
+// Copy nilai/rating/notes from one student to another
+function copyFromStudent(targetId, sourceId){
+  if(!sourceId) return;
+  const n = document.getElementById('bulk-nilai-'+sourceId)?.value;
+  const r = document.getElementById('bulk-rating-'+sourceId)?.value;
+  const c = document.getElementById('bulk-catatan-'+sourceId)?.value;
+  const p = document.getElementById('bulk-progress-'+sourceId)?.value;
+  if(n) document.getElementById('bulk-nilai-'+targetId).value    = n;
+  if(r) document.getElementById('bulk-rating-'+targetId).value   = r;
+  if(c) document.getElementById('bulk-catatan-'+targetId).value  = c;
+  if(p) document.getElementById('bulk-progress-'+targetId).value = p;
+  updateBulkProgress();
+  // Flash highlight
+  const card = document.getElementById('bulk-card-'+targetId);
+  card.style.borderColor = 'var(--accent)';
+  card.style.boxShadow   = '0 0 0 3px rgba(108,99,255,0.2)';
+  setTimeout(()=>{ card.style.borderColor=''; card.style.boxShadow=''; }, 1200);
+}
+
+// ── Quick fill all ──
+function bulkQuickFill(){
+  const rating = document.getElementById('bulk-fill-rating').value;
+  const score  = document.getElementById('bulk-fill-score').value;
+  siswaList.forEach(s=>{
+    if(document.getElementById('bulk-skip-'+s.id)?.checked) return;
+    if(rating) document.getElementById('bulk-rating-'+s.id).value = rating;
+    if(score)  document.getElementById('bulk-nilai-'+s.id).value  = score;
+  });
+  updateBulkProgress();
+}
+
+function bulkReset(){
+  if(!confirm('Reset all fields?')) return;
+  siswaList.forEach(s=>{
+    const skip = document.getElementById('bulk-skip-'+s.id);
+    if(skip){ skip.checked=false; toggleBulkSkip(s.id); }
+    ['bulk-nilai-','bulk-catatan-','bulk-progress-'].forEach(p=>{
+      const el=document.getElementById(p+s.id); if(el) el.value='';
+    });
+    const r=document.getElementById('bulk-rating-'+s.id); if(r) r.value='3';
+  });
+  updateBulkProgress();
+}
+
+function updateBulkProgress(){
+  let filled=0, skipped=0;
+  siswaList.forEach(s=>{
+    if(document.getElementById('bulk-skip-'+s.id)?.checked){ skipped++; return; }
+    if(document.getElementById('bulk-nilai-'+s.id)?.value) filled++;
+  });
+  const active = siswaList.length - skipped;
+  const pct = active>0 ? Math.round((filled/active)*100) : 0;
+  const fc = document.getElementById('bulk-filled-count'); if(fc) fc.textContent=filled;
+  const tc = document.getElementById('bulk-total-count');  if(tc) tc.textContent=siswaList.length;
+  const pf = document.getElementById('bulk-progress-fill'); if(pf) pf.style.width=pct+'%';
+  const sc = document.getElementById('bulk-skip-count');   if(sc) sc.textContent=skipped>0?skipped+' skipped':'';
+}
+
+// ── TEMPLATES ──
+function renderTemplateList(){
+  const el = document.getElementById('bulk-template-list');
+  if(!el) return;
+  if(!_evalTemplates.length){
+    el.innerHTML='<span style="color:var(--muted);font-size:0.82rem">No templates saved yet.</span>'; return;
+  }
+  el.innerHTML = _evalTemplates.map((t,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1;font-size:0.85rem">
+        <strong>${t.name}</strong>
+        <span style="color:var(--muted);font-size:0.75rem;margin-left:6px">Score:${t.nilai||'—'} · ${['','⭐','⭐⭐','⭐⭐⭐','⭐⭐⭐⭐','⭐⭐⭐⭐⭐'][t.rating]||'—'}</span>
+      </div>
+      <button class="btn sm" onclick="applyTemplate(${i})">Apply All</button>
+      <button class="btn danger sm icon-only" onclick="deleteTemplate(${i})">🗑️</button>
+    </div>`).join('');
+}
+
+function saveAsTemplate(){
+  const name = document.getElementById('bulk-tpl-name').value.trim();
+  if(!name){ alert('Enter a template name!'); return; }
+  // Grab values from first non-skipped student as template baseline
+  const first = siswaList.find(s=>!document.getElementById('bulk-skip-'+s.id)?.checked);
+  if(!first){ alert('No active student to save template from.'); return; }
+  const tpl = {
+    name,
+    nilai:    document.getElementById('bulk-nilai-'+first.id)?.value||'',
+    rating:   document.getElementById('bulk-rating-'+first.id)?.value||'3',
+    progress: document.getElementById('bulk-common-progress')?.value||'',
+    catatan:  document.getElementById('bulk-catatan-'+first.id)?.value||'',
+  };
+  _evalTemplates.push(tpl);
+  saveEvalTemplates();
+  document.getElementById('bulk-tpl-name').value='';
+  renderTemplateList();
+  alert('✅ Template "'+name+'" saved!');
+}
+
+function applyTemplate(idx){
+  const t = _evalTemplates[idx]; if(!t) return;
+  if(t.progress) document.getElementById('bulk-common-progress').value = t.progress;
+  siswaList.forEach(s=>{
+    if(document.getElementById('bulk-skip-'+s.id)?.checked) return;
+    if(t.nilai)   document.getElementById('bulk-nilai-'+s.id).value   = t.nilai;
+    if(t.rating)  document.getElementById('bulk-rating-'+s.id).value  = t.rating;
+    if(t.catatan) document.getElementById('bulk-catatan-'+s.id).value = t.catatan;
+  });
+  updateBulkProgress();
+}
+
+function deleteTemplate(idx){
+  if(!confirm('Delete this template?')) return;
+  _evalTemplates.splice(idx,1);
+  saveEvalTemplates();
+  renderTemplateList();
+}
+
+// ── SAVE ALL ──
+async function saveBulkEval(){
+  const tanggal = document.getElementById('bulk-tanggal').value;
+  if(!tanggal){ alert('Please select an evaluation date first!'); return; }
+  const commonProgress = document.getElementById('bulk-common-progress')?.value.trim()||'';
+  const statusEl = document.getElementById('bulk-save-status');
+  statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Saving…</span>';
+  let saved=0, skipped=0;
+  siswaList.forEach(s=>{
+    if(document.getElementById('bulk-skip-'+s.id)?.checked){ skipped++; return; }
+    const nilai    = document.getElementById('bulk-nilai-'+s.id)?.value||'';
+    const rating   = document.getElementById('bulk-rating-'+s.id)?.value||'3';
+    const catatan  = document.getElementById('bulk-catatan-'+s.id)?.value.trim()||'';
+    const progress = document.getElementById('bulk-progress-'+s.id)?.value.trim()||commonProgress;
+    // Update existing or push new
+    const existIdx = evaluasiList.findIndex(e=>e.siswaId===s.id && e.tanggal===tanggal);
+    const entry = { id:existIdx>-1?evaluasiList[existIdx].id:uid(), tanggal, siswaId:s.id, namaSiswa:s.nama, nilai, rating, progress, catatan };
+    if(existIdx>-1) evaluasiList[existIdx]=entry;
+    else evaluasiList.push(entry);
+    saved++;
+  });
+  DB.set('evaluasi', evaluasiList);
+  renderEval();
+  statusEl.innerHTML=`<span style="color:var(--green)">✅ ${saved} evaluations saved!${skipped>0?' ('+skipped+' skipped)':''}</span>`;
+  // Toast notification
+  const toast=document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:28px;right:28px;background:var(--green);color:#111;padding:13px 24px;border-radius:12px;font-weight:800;font-size:0.92rem;z-index:9999;box-shadow:0 8px 30px rgba(0,214,143,0.4);animation:fadeIn .3s ease';
+  toast.textContent='✅ '+saved+' evaluations saved!';
+  document.body.appendChild(toast);
+  setTimeout(()=>{ toast.remove(); statusEl.innerHTML=''; }, 3500);
+}
+
+function init(){
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('absen-date').value=today;
+  document.getElementById('m-tanggal').value=today;
+  document.getElementById('e-tanggal').value=today;
+  document.getElementById('b-tanggal').value=today;
+  const bt=document.getElementById('bulk-tanggal'); if(bt) bt.value=today;
+}
+init();
+</script>
+
+<!-- ══ MODAL: EDIT ATTENDANCE ══ -->
+<div class="overlay" id="modal-att-edit">
+  <div class="modal modal-sm">
+    <div class="modal-title">✏️ Edit Attendance</div>
+    <input type="hidden" id="att-edit-id">
+    <div style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--accent)" id="att-edit-nama"></div>
+    <div class="form-group" style="margin-top:0">
+      <label>Date</label>
+      <input type="date" id="att-edit-tanggal" disabled style="opacity:0.55;cursor:not-allowed">
+    </div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="att-edit-status">
+        <option value="Hadir">✅ Present</option>
+        <option value="Izin">📝 Excused</option>
+        <option value="Alpha">❌ Absent</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Note (optional)</label>
+      <input type="text" id="att-edit-note" placeholder="e.g. Sick, family event…">
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="saveAttEdit()">💾 Save Changes</button>
+      <button class="btn" onclick="closeModal('modal-att-edit')">Cancel</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
