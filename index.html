@@ -1014,6 +1014,39 @@ td.nowrap { white-space:nowrap }
   </div>
 </div>
 
+<!-- ══ MODAL: EDIT CLASS ══ -->
+<div class="overlay" id="modal-edit-class">
+  <div class="modal modal-sm">
+    <div class="modal-title">✏️ Edit Class</div>
+    <input type="hidden" id="edit-cls-id">
+    <div class="form-group" style="margin-top:0">
+      <label>Class Name *</label>
+      <input type="text" id="edit-cls-name" placeholder="e.g. Beginner A, Monday Group">
+    </div>
+    <div class="form-group">
+      <label>Schedule / Days</label>
+      <input type="text" id="edit-cls-schedule" placeholder="e.g. Mon & Wed 4–5PM">
+    </div>
+    <div class="form-group">
+      <label>Color Tag</label>
+      <select id="edit-cls-color">
+        <option value="#6c63ff">🟣 Purple</option>
+        <option value="#ff6584">🔴 Pink</option>
+        <option value="#00d68f">🟢 Green</option>
+        <option value="#38bdf8">🔵 Blue</option>
+        <option value="#ffb347">🟡 Orange</option>
+        <option value="#a78bfa">💜 Violet</option>
+        <option value="#ff4f6d">❤️ Red</option>
+        <option value="#00b4d8">🩵 Cyan</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="saveEditClass()">💾 Save Changes</button>
+      <button class="btn" onclick="closeModal('modal-edit-class')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL: RECEIPT ══ -->
 <div class="overlay" id="modal-receipt">
   <div class="modal modal-sm">
@@ -1291,14 +1324,29 @@ async function deleteClass(classId){
 function editClass(classId){
   const cls = classesList.find(c=>c.id===classId);
   if(!cls) return;
-  const newName = prompt('Class name:', cls.name);
-  if(!newName || !newName.trim()) return;
-  const newSched = prompt('Schedule:', cls.schedule||'');
-  cls.name     = newName.trim();
-  cls.schedule = (newSched||'').trim();
-  saveClassesList();
+  document.getElementById('edit-cls-id').value       = cls.id;
+  document.getElementById('edit-cls-name').value     = cls.name     || '';
+  document.getElementById('edit-cls-schedule').value = cls.schedule || '';
+  document.getElementById('edit-cls-color').value    = cls.color    || '#6c63ff';
+  openModal('modal-edit-class');
+}
+
+async function saveEditClass(){
+  const id  = document.getElementById('edit-cls-id').value;
+  const idx = classesList.findIndex(c=>c.id===id);
+  if(idx===-1) return;
+  const name = document.getElementById('edit-cls-name').value.trim();
+  if(!name){ alert('Class name is required!'); return; }
+  classesList[idx].name     = name;
+  classesList[idx].schedule = document.getElementById('edit-cls-schedule').value.trim();
+  classesList[idx].color    = document.getElementById('edit-cls-color').value;
+  await saveClassesList();
   renderClassListUI();
-  if(classId===currentClassId){ currentClassName=cls.name; updateClassSwitcherUI(cls); }
+  if(id === currentClassId){
+    currentClassName = name;
+    updateClassSwitcherUI(classesList[idx]);
+  }
+  closeModal('modal-edit-class');
 }
 
 // ════════════════════════════════════════════════
