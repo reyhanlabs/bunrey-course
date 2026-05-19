@@ -1,0 +1,49 @@
+{
+  "name": "BunRey English Course",
+  "short_name": "BunRey",
+  "description": "Teacher management app for BunRey English Course",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#6c63ff",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%236c63ff'/><text y='400' x='60' font-size='380'>🎓</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Students",
+      "url": "/?page=students",
+      "description": "View student list"
+    },
+    {
+      "name": "Attendance",
+      "url": "/?page=attendance",
+      "description": "Record attendance"
+    },
+    {
+      "name": "Payment",
+      "url": "/?page=payment",
+      "description": "Manage payments"
+    }
+  ]
+}
