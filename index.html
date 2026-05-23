@@ -2288,16 +2288,22 @@ function renderPayment(){
     const sesiHutang         = totalSesiHadir - totalSesiTerbayar;
     const totalRevenue       = bayarList.reduce((s,b)=>s+b.jumlah, 0);
 
-    // Outstanding balance = sum of (tagihan - jumlah) for unpaid/partial payments
-    const outstanding = bayarList
-      .filter(b=>b.status!=='Lunas')
-      .reduce((s,b)=>s + Math.max(0,(b.tagihan||0)-(b.jumlah||0)), 0);
+    // Outstanding = unpaid sessions × fee per student (accurate, session-based)
+    let outstanding = 0;
+    siswaList.forEach(s => {
+      const fee = s.feePerSesi || 0;
+      if(!fee) return; // skip students with no fee set
+      const unpaidCount = absensiList.filter(a =>
+        a.siswaId === s.id && a.status === 'Hadir' && !paidSesiIds.has(a.id)
+      ).length;
+      outstanding += unpaidCount * fee;
+    });
 
     statsEl.innerHTML = `
       <div class="stat-card s-green"><div class="ico">💰</div><div class="val" style="font-size:${totalRevenue>9999999?'1rem':'1.3rem'}">${fmt(totalRevenue)}</div><div class="lbl">Total Revenue</div></div>
       <div class="stat-card s-blue"><div class="ico">📅</div><div class="val">${totalSesiTerbayar}<span style="font-size:1rem;color:var(--muted)">/${totalSesiHadir}</span></div><div class="lbl">Sessions Paid</div></div>
       <div class="stat-card ${sesiHutang>0?'s-yellow':'s-green'}"><div class="ico">⚠️</div><div class="val">${sesiHutang}</div><div class="lbl">Unpaid Sessions</div><div class="trend ${sesiHutang>0?'trend-dn':'trend-up'}">${sesiHutang>0?'Needs attention':'All clear!'}</div></div>
-      <div class="stat-card ${outstanding>0?'s-red':'s-green'}"><div class="ico">🧾</div><div class="val" style="font-size:${outstanding>9999999?'1rem':'1.3rem'}">${outstanding>0?fmt(outstanding):'✅'}</div><div class="lbl">Outstanding Balance</div></div>
+      <div class="stat-card ${outstanding>0?'s-red':'s-green'}"><div class="ico">🧾</div><div class="val" style="font-size:${outstanding>9999999?'1rem':'1.3rem'}">${outstanding>0?fmt(outstanding):'✅'}</div><div class="lbl">Outstanding Balance</div>${outstanding===0&&sesiHutang>0?'<div class="trend trend-neu" style="font-size:0.68rem">Set fee/session in student profile</div>':''}</div>
     `;
   }
 
