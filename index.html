@@ -597,7 +597,10 @@ td.nowrap { white-space:nowrap }
             <div class="form-group"><label>Parent's Name</label><input type="text" id="s-namaOrtu" placeholder="e.g. Mr. Ahmad"></div>
             <div class="form-group"><label>Parent's Phone (WA)</label><input type="text" id="s-hp" placeholder="08xx-xxxx-xxxx"></div>
           </div>
-          <div class="form-group"><label>Class Days</label><input type="text" id="s-hari" placeholder="e.g. Mon & Wed, 4–5PM"></div>
+          <div class="form-row">
+            <div class="form-group"><label>Class Days</label><input type="text" id="s-hari" placeholder="e.g. Mon & Wed, 4–5PM"></div>
+            <div class="form-group"><label>Fee / Session (Rp)</label><input type="number" id="s-fee" placeholder="e.g. 75000" min="0" style="width:100%"></div>
+          </div>
           <div class="form-group"><label>Notes</label><textarea id="s-catatan" placeholder="Special needs, allergies, etc."></textarea></div>
           <div class="btn-row">
             <button class="btn primary" onclick="saveStudent()">💾 Save Student</button>
@@ -1772,7 +1775,7 @@ function renderRevenueChart(canvasId, fDari='', fSampai='', fPeriode=''){
 function openStudentForm(){
   document.getElementById('form-student-title').textContent='Add New Student';
   document.getElementById('s-id').value='';
-  ['s-nama','s-nick','s-kelas','s-hp','s-hari','s-catatan','s-namaOrtu'].forEach(i=>document.getElementById(i).value='');
+  ['s-nama','s-nick','s-kelas','s-hp','s-hari','s-catatan','s-namaOrtu','s-fee'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('s-level').value='Beginner';
   openPanel('form-student','900px');
 }
@@ -1789,6 +1792,7 @@ function openEditStudent(id){
   document.getElementById('s-hari').value=s.hari||'';
   document.getElementById('s-namaOrtu').value=s.namaOrtu||'';
   document.getElementById('s-catatan').value=s.catatan||'';
+  document.getElementById('s-fee').value=s.feePerSesi||'';
   openPanel('form-student','900px');
   document.getElementById('form-student').scrollIntoView({behavior:'smooth'});
 }
@@ -1804,6 +1808,7 @@ function saveStudent(){
     hari:document.getElementById('s-hari').value.trim(),
     namaOrtu:document.getElementById('s-namaOrtu').value.trim(),
     catatan:document.getElementById('s-catatan').value.trim(),
+    feePerSesi:Number(document.getElementById('s-fee').value)||0,
   };
   if(id){ const i=siswaList.findIndex(s=>s.id===id); if(i>-1) siswaList[i]={...siswaList[i],...data}; }
   else siswaList.push({id:uid(),...data});
@@ -2381,7 +2386,7 @@ function renderHutangSesi(){
 
   let anyUnpaid = false;
   siswaList
-    .filter(s => !fNama || s.nama.toLowerCase().includes(fNama))
+    .filter(s => !fNama || s.nama.toLowerCase().includes(fNama) || (s.nick||'').toLowerCase().includes(fNama))
     .forEach(siswa => {
       const sesiHadir = absensiList
         .filter(a => a.siswaId === siswa.id && a.status === 'Hadir')
@@ -2390,12 +2395,18 @@ function renderHutangSesi(){
       if(!unpaidSesi.length) return;
       anyUnpaid = true;
       const pctPaid = sesiHadir.length ? Math.round(((sesiHadir.length - unpaidSesi.length)/sesiHadir.length)*100) : 0;
+      const fee = siswa.feePerSesi || 0;
+      const totalHutang = fee ? unpaidSesi.length * fee : null;
+      const feeInfo = fee
+        ? `<span style="color:var(--red);font-weight:700">Total: Rp ${totalHutang.toLocaleString('id-ID')}</span>`
+        : `<span style="color:var(--muted);font-size:0.75rem">⚠️ Set fee/session in student profile</span>`;
       listEl.innerHTML += `
         <div class="sesi-tracker-card">
           <div class="st-header">
             <div>
-              <div class="st-name">👤 ${siswa.nama}${siswa.nick?' <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>':''}</div>
+              <div class="st-name">👤 ${siswa.nama}${siswa.nick ? ` <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>` : ''}</div>
               <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidSesi.length} unpaid session(s) · ${sesiHadir.length} total present · ${pctPaid}% paid</div>
+              <div style="margin-top:4px;font-size:0.8rem">${feeInfo}</div>
             </div>
             <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Record Payment</button>
           </div>
@@ -2405,7 +2416,6 @@ function renderHutangSesi(){
           </div>
         </div>`;
     });
-
   emptyEl.style.display = anyUnpaid ? 'none' : 'block';
 }
 
