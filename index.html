@@ -811,8 +811,8 @@ td.nowrap { white-space:nowrap }
 
       <!-- Tab Bar -->
       <div class="pay-tab-bar">
-        <button class="pay-tab active" id="ptab-rekap" onclick="switchPayTab('rekap')">📋 Rekap Pembayaran</button>
-        <button class="pay-tab" id="ptab-hutang" onclick="switchPayTab('hutang')">⚠️ Hutang Sesi</button>
+        <button class="pay-tab active" id="ptab-rekap" onclick="switchPayTab('rekap')">📋 Payment History</button>
+        <button class="pay-tab" id="ptab-hutang" onclick="switchPayTab('hutang')">⚠️ Unpaid Sessions</button>
       </div>
 
       <!-- TAB: REKAP PEMBAYARAN -->
@@ -830,11 +830,11 @@ td.nowrap { white-space:nowrap }
           <div class="form-group" id="sesi-picker-group">
             <label>📅 Sesi yang Dibayar <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(pilih sesi dari absensi)</span></label>
             <div id="sesi-picker-wrap" style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg3);max-height:220px;overflow-y:auto">
-              <div style="color:var(--muted);font-size:0.83rem">Pilih siswa terlebih dahulu untuk melihat sesi tersedia.</div>
+              <div style="color:var(--muted);font-size:0.83rem">Select a student to see their available sessions.</div>
             </div>
             <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn sm" onclick="selectAllSesi(true)">☑️ Pilih Semua</button>
-              <button class="btn sm" onclick="selectAllSesi(false)">☐ Kosongkan</button>
+              <button class="btn sm" onclick="selectAllSesi(true)">☑️ Select All</button>
+              <button class="btn sm" onclick="selectAllSesi(false)">☐ Clear All</button>
               <span id="sesi-selected-count" style="font-size:0.8rem;color:var(--muted);align-self:center"></span>
             </div>
           </div>
@@ -870,7 +870,7 @@ td.nowrap { white-space:nowrap }
         </div>
         <div class="tbl-wrap">
           <table><thead><tr>
-            <th>Date</th><th>Student</th><th>Period</th><th>Sesi Terbayar</th>
+            <th>Date</th><th>Student</th><th>Period</th><th>Sessions Paid</th>
             <th class="r">Invoice</th><th class="r">Paid</th>
             <th>Status</th><th>Notes</th><th></th>
           </tr></thead>
@@ -887,13 +887,13 @@ td.nowrap { white-space:nowrap }
       <!-- TAB: HUTANG SESI -->
       <div id="ptab-panel-hutang" style="display:none">
         <div class="card">
-          <div style="font-weight:800;font-size:1rem;margin-bottom:4px">⚠️ Sesi Belum Dibayar per Siswa</div>
+          <div style="font-weight:800;font-size:1rem;margin-bottom:4px">⚠️ Unpaid Sessions per Student</div>
           <div style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">Daftar sesi absensi yang belum terkait dengan pembayaran apapun.</div>
           <div class="filter-bar" style="margin-bottom:16px">
-            <div class="form-group"><label>🔍 Filter Siswa</label><input type="text" id="hutang-f-nama" placeholder="Cari nama…" oninput="renderHutangSesi()"></div>
+            <div class="form-group"><label>🔍 Filter Student</label><input type="text" id="hutang-f-nama" placeholder="Search name…" oninput="renderHutangSesi()"></div>
           </div>
           <div id="hutang-sesi-list"></div>
-          <div class="empty" id="empty-hutang"><div class="ei">✅</div><p>Semua sesi sudah terbayar!</p></div>
+          <div class="empty" id="empty-hutang"><div class="ei">✅</div><p>All sessions have been paid!</p></div>
         </div>
       </div>
 
@@ -2139,7 +2139,7 @@ function loadSesiForPayment(){
   const siswaId = document.getElementById('b-siswa').value;
   const wrap    = document.getElementById('sesi-picker-wrap');
   const countEl = document.getElementById('sesi-selected-count');
-  if(!siswaId){ wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">Pilih siswa terlebih dahulu.</div>'; return; }
+  if(!siswaId){ wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">Please select a student first.</div>'; return; }
 
   // Get all sessions for this student (sorted newest first)
   const sesiSiswa = absensiList
@@ -2159,7 +2159,7 @@ function loadSesiForPayment(){
   }
 
   if(!sesiSiswa.length){
-    wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">Belum ada catatan kehadiran (Hadir) untuk siswa ini.</div>';
+    wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">No attendance records (Present) found for this student yet.</div>';
     return;
   }
 
@@ -2167,12 +2167,12 @@ function loadSesiForPayment(){
     const isPaid = paidSesiIds.has(a.id);
     const label  = tglFmt(a.tanggal) + (a.keterangan ? ' · '+a.keterangan : '');
     return `<div class="sesi-row" onclick="toggleSesiCheck('${a.id}')">
-      <div class="sesi-check ${isPaid?'checked disabled':''}  " id="scheck-${a.id}" title="${isPaid?'Sudah dibayar di transaksi lain':''}">
+      <div class="sesi-check ${isPaid?'checked disabled':''}  " id="scheck-${a.id}" title="${isPaid?'Already paid in another transaction':''}">
         ${isPaid?'✓':''}
       </div>
       <div style="flex:1">
         <div style="font-size:0.87rem;font-weight:700">${label}</div>
-        ${isPaid?`<div style="font-size:0.72rem;color:var(--green)">✅ Sudah terbayar</div>`:'<div style="font-size:0.72rem;color:var(--muted)">Belum terbayar</div>'}
+        ${isPaid?`<div style="font-size:0.72rem;color:var(--green)">✅ Already paid</div>`:'<div style="font-size:0.72rem;color:var(--muted)">Not yet paid</div>'}
       </div>
     </div>`;
   }).join('');
@@ -2191,7 +2191,7 @@ function toggleSesiCheck(sesiId){
 function updateSesiCount(){
   const checked = document.querySelectorAll('#sesi-picker-wrap .sesi-check.checked:not(.disabled)').length;
   const countEl = document.getElementById('sesi-selected-count');
-  if(countEl) countEl.textContent = checked > 0 ? `${checked} sesi dipilih` : '';
+  if(countEl) countEl.textContent = checked > 0 ? `${checked} session(s) selected` : '';
 }
 
 function selectAllSesi(select){
@@ -2276,23 +2276,31 @@ function clearPaymentFilter(){
   renderPayment();
 }
 function renderPayment(){
-  // Render stats
+  // ── Render stats ──
   const statsEl = document.getElementById('payment-stats');
   if(statsEl){
+    // Build global paid sesiIds set
     const paidSesiIds = new Set();
     bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
-    const totalSesiHadir = absensiList.filter(a=>a.status==='Hadir').length;
-    const totalSesiTerbayar = absensiList.filter(a=>a.status==='Hadir' && paidSesiIds.has(a.id)).length;
-    const totalRevenue = bayarList.reduce((s,b)=>s+b.jumlah,0);
-    const unpaidCount = bayarList.filter(b=>b.status==='Belum Bayar').length;
-    const sesiHutang = totalSesiHadir - totalSesiTerbayar;
+
+    const totalSesiHadir     = absensiList.filter(a=>a.status==='Hadir').length;
+    const totalSesiTerbayar  = absensiList.filter(a=>a.status==='Hadir' && paidSesiIds.has(a.id)).length;
+    const sesiHutang         = totalSesiHadir - totalSesiTerbayar;
+    const totalRevenue       = bayarList.reduce((s,b)=>s+b.jumlah, 0);
+
+    // Outstanding balance = sum of (tagihan - jumlah) for unpaid/partial payments
+    const outstanding = bayarList
+      .filter(b=>b.status!=='Lunas')
+      .reduce((s,b)=>s + Math.max(0,(b.tagihan||0)-(b.jumlah||0)), 0);
+
     statsEl.innerHTML = `
       <div class="stat-card s-green"><div class="ico">💰</div><div class="val" style="font-size:${totalRevenue>9999999?'1rem':'1.3rem'}">${fmt(totalRevenue)}</div><div class="lbl">Total Revenue</div></div>
-      <div class="stat-card s-blue"><div class="ico">📅</div><div class="val">${totalSesiTerbayar}<span style="font-size:1rem;color:var(--muted)">/${totalSesiHadir}</span></div><div class="lbl">Sesi Terbayar</div></div>
-      <div class="stat-card ${sesiHutang>0?'s-yellow':'s-green'}"><div class="ico">⚠️</div><div class="val">${sesiHutang}</div><div class="lbl">Sesi Belum Bayar</div><div class="trend ${sesiHutang>0?'trend-dn':'trend-up'}">${sesiHutang>0?'Perlu perhatian':'Semua lunas!'}</div></div>
-      <div class="stat-card ${unpaidCount>0?'s-red':'s-green'}"><div class="ico">🧾</div><div class="val">${unpaidCount}</div><div class="lbl">Tagihan Belum Lunas</div></div>
+      <div class="stat-card s-blue"><div class="ico">📅</div><div class="val">${totalSesiTerbayar}<span style="font-size:1rem;color:var(--muted)">/${totalSesiHadir}</span></div><div class="lbl">Sessions Paid</div></div>
+      <div class="stat-card ${sesiHutang>0?'s-yellow':'s-green'}"><div class="ico">⚠️</div><div class="val">${sesiHutang}</div><div class="lbl">Unpaid Sessions</div><div class="trend ${sesiHutang>0?'trend-dn':'trend-up'}">${sesiHutang>0?'Needs attention':'All clear!'}</div></div>
+      <div class="stat-card ${outstanding>0?'s-red':'s-green'}"><div class="ico">🧾</div><div class="val" style="font-size:${outstanding>9999999?'1rem':'1.3rem'}">${outstanding>0?fmt(outstanding):'✅'}</div><div class="lbl">Outstanding Balance</div></div>
     `;
   }
+
   const tbody=document.getElementById('tbody-payment');
   const empty=document.getElementById('empty-payment');
   const totalBar=document.getElementById('payment-total-bar');
@@ -2307,23 +2315,23 @@ function renderPayment(){
   if(fSampai) list=list.filter(b=>b.tanggal<=fSampai);
   if(fPer)    list=list.filter(b=>(b.periode||'').toLowerCase().includes(fPer));
   const isF=fNama||fDari||fSampai||fPer;
-  if(!bayarList.length){ empty.style.display='block'; totalBar.style.display='none'; return; }
+  if(!bayarList.length){ empty.style.display='block'; if(totalBar) totalBar.style.display='none'; return; }
   empty.style.display=list.length?'none':'block';
-  totalBar.style.display='flex';
+  if(totalBar) totalBar.style.display='flex';
   const total=list.reduce((s,b)=>s+b.jumlah,0);
   document.getElementById('payment-total-val').textContent=fmt(total);
   document.getElementById('payment-filter-tag').textContent=isF?'(filtered)':'';
   list.forEach(b=>{
     const sc=b.status==='Lunas'?'chip-green':b.status==='Cicil'?'chip-yellow':'chip-red';
     const sl=b.status==='Lunas'?'Paid':b.status==='Cicil'?'Partial':'Unpaid';
-    // Build sesi chips
+    // Build session chips
     let sesiHtml = '-';
     if(b.sesiIds && b.sesiIds.length){
       const chips = b.sesiIds.map(sid=>{
         const a = absensiList.find(x=>x.id===sid);
         return a ? `<span class="session-chip paid" title="${tglFmt(a.tanggal)}">${tglFmt(a.tanggal)}</span>` : '';
       }).filter(Boolean).join('');
-      sesiHtml = chips || `<span style="color:var(--muted);font-size:0.78rem">${b.sesiIds.length} sesi</span>`;
+      sesiHtml = chips || `<span style="color:var(--muted);font-size:0.78rem">${b.sesiIds.length} session(s)</span>`;
     }
     tbody.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:0.83rem">${tglFmt(b.tanggal)}</td>
@@ -2343,9 +2351,13 @@ function renderPayment(){
   });
 }
 function updateUnpaidBadge(){
-  const n=bayarList.filter(b=>b.status==='Belum Bayar').length;
+  const paidSesiIds = new Set();
+  bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
+  const n = siswaList.filter(s=>{
+    return absensiList.some(a=>a.siswaId===s.id && a.status==='Hadir' && !paidSesiIds.has(a.id));
+  }).length;
   const el=document.getElementById('unpaid-badge');
-  el.style.display=n>0?'inline':'none';
+  if(el){ el.style.display=n>0?'inline':'none'; if(n>0) el.textContent=n; }
 }
 
 // ════════════════════════════════════════════════
@@ -2377,9 +2389,9 @@ function renderHutangSesi(){
           <div class="st-header">
             <div>
               <div class="st-name">👤 ${siswa.nama}${siswa.nick?' <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>':''}</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidSesi.length} sesi belum dibayar · ${sesiHadir.length} total hadir · ${pctPaid}% terbayar</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidSesi.length} unpaid session(s) · ${sesiHadir.length} total present · ${pctPaid}% paid</div>
             </div>
-            <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Catat Bayar</button>
+            <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Record Payment</button>
           </div>
           <div class="pbar-wrap" style="margin-bottom:10px"><div class="pbar-fill" style="width:${pctPaid}%"></div></div>
           <div class="st-sessions">
@@ -2431,7 +2443,7 @@ function _buildReceiptBodyHTML(b,siswa){
       const a = absensiList.find(x=>x.id===id);
       return a ? tglFmt(a.tanggal) : id;
     }).join(', ');
-    rows.push(['Sesi Terbayar ('+b.sesiIds.length+'x)', sesiLabels]);
+    rows.push(['Sessions Paid ('+b.sesiIds.length+'x)', sesiLabels]);
   }
   return {rno,stc,stl,rows};
 }
