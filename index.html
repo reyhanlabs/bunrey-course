@@ -868,8 +868,27 @@ td.nowrap { white-space:nowrap }
           <div class="form-group"><label>🔍 Student</label><input type="text" id="f-nama" placeholder="Search name…" oninput="renderPayment()"></div>
           <div class="form-group"><label>📅 From</label><input type="date" id="f-dari" onchange="renderPayment()"></div>
           <div class="form-group"><label>📅 To</label><input type="date" id="f-sampai" onchange="renderPayment()"></div>
-          <div class="form-group"><label>📂 Period</label><input type="text" id="f-periode" placeholder="June 2025" oninput="renderPayment()"></div>
-          <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn sm" onclick="clearPaymentFilter()">✕ Clear</button></div>
+          <div class="form-group"><label>📋 Sessions Paid</label>
+            <select id="f-sessions" onchange="renderPayment()" style="border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text);padding:10px 13px;font-size:0.9rem">
+              <option value="">All</option>
+              <option value="has">Has Sessions</option>
+              <option value="none">No Sessions Linked</option>
+            </select>
+          </div>
+          <div class="form-group"><label>📂 Status</label>
+            <select id="f-status" onchange="renderPayment()" style="border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text);padding:10px 13px;font-size:0.9rem">
+              <option value="">All Status</option>
+              <option value="Lunas">✅ Paid</option>
+              <option value="Cicil">⚠️ Partial</option>
+              <option value="Belum Bayar">❌ Unpaid</option>
+            </select>
+          </div>
+          <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
+            <div style="display:flex;gap:6px">
+              <button class="btn sm" onclick="setCurrentMonthFilter()" title="Show current month only">📅 This Month</button>
+              <button class="btn sm" onclick="clearPaymentFilter()">✕ Clear</button>
+            </div>
+          </div>
         </div>
         <div class="tbl-wrap">
           <table><thead><tr>
@@ -891,7 +910,7 @@ td.nowrap { white-space:nowrap }
       <div id="ptab-panel-hutang" style="display:none">
         <div class="card">
           <div style="font-weight:800;font-size:1rem;margin-bottom:4px">⚠️ Unpaid Sessions per Student</div>
-          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">Daftar sesi absensi yang belum terkait dengan pembayaran apapun.</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:16px">Sessions marked as Present that have not been linked to any payment.</div>
           <div class="filter-bar" style="margin-bottom:16px">
             <div class="form-group"><label>🔍 Filter Student</label><input type="text" id="hutang-f-nama" placeholder="Search name…" oninput="renderHutangSesi()"></div>
           </div>
@@ -1631,6 +1650,7 @@ function navigate(page){
   if(page==='analytics') renderAnalytics();
   if(page==='reports')   renderReports();
   if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
+  if(page==='payment') { setCurrentMonthFilter(); }
   if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
 }
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.page)));
@@ -2276,8 +2296,24 @@ function deletePayment(id){
   bayarList=bayarList.filter(b=>b.id!==id); DB.set('bayar',bayarList); renderPayment(); updateUnpaidBadge();
 }
 function deleteBayar(id){ deletePayment(id) }
+function setCurrentMonthFilter(){
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const firstDay = `${y}-${m}-01`;
+  const lastDay  = `${y}-${m}-${new Date(y,now.getMonth()+1,0).getDate().toString().padStart(2,'0')}`;
+  document.getElementById('f-dari').value   = firstDay;
+  document.getElementById('f-sampai').value = lastDay;
+  document.getElementById('f-nama').value   = '';
+  const fs = document.getElementById('f-sessions'); if(fs) fs.value='';
+  const fst = document.getElementById('f-status'); if(fst) fst.value='';
+  renderPayment();
+}
+
 function clearPaymentFilter(){
-  ['f-nama','f-dari','f-sampai','f-periode'].forEach(i=>document.getElementById(i).value='');
+  ['f-nama','f-dari','f-sampai'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  const fs=document.getElementById('f-sessions'); if(fs) fs.value='';
+  const fst=document.getElementById('f-status'); if(fst) fst.value='';
   renderPayment();
 }
 function renderPayment(){
@@ -2316,16 +2352,19 @@ function renderPayment(){
   const empty=document.getElementById('empty-payment');
   const totalBar=document.getElementById('payment-total-bar');
   tbody.innerHTML='';
-  const fNama=(document.getElementById('f-nama')?.value||'').trim().toLowerCase();
-  const fDari=document.getElementById('f-dari')?.value||'';
-  const fSampai=document.getElementById('f-sampai')?.value||'';
-  const fPer=(document.getElementById('f-periode')?.value||'').trim().toLowerCase();
+  const fNama    = (document.getElementById('f-nama')?.value||'').trim().toLowerCase();
+  const fDari    = document.getElementById('f-dari')?.value||'';
+  const fSampai  = document.getElementById('f-sampai')?.value||'';
+  const fSessions= document.getElementById('f-sessions')?.value||'';
+  const fStatus  = document.getElementById('f-status')?.value||'';
   let list=[...bayarList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-  if(fNama)   list=list.filter(b=>b.namaSiswa.toLowerCase().includes(fNama));
-  if(fDari)   list=list.filter(b=>b.tanggal>=fDari);
-  if(fSampai) list=list.filter(b=>b.tanggal<=fSampai);
-  if(fPer)    list=list.filter(b=>(b.periode||'').toLowerCase().includes(fPer));
-  const isF=fNama||fDari||fSampai||fPer;
+  if(fNama)    list=list.filter(b=>b.namaSiswa.toLowerCase().includes(fNama));
+  if(fDari)    list=list.filter(b=>b.tanggal>=fDari);
+  if(fSampai)  list=list.filter(b=>b.tanggal<=fSampai);
+  if(fSessions==='has')  list=list.filter(b=>b.sesiIds && b.sesiIds.length>0);
+  if(fSessions==='none') list=list.filter(b=>!b.sesiIds || b.sesiIds.length===0);
+  if(fStatus)  list=list.filter(b=>b.status===fStatus);
+  const isF=fNama||fDari||fSampai||fSessions||fStatus;
   if(!bayarList.length){ empty.style.display='block'; if(totalBar) totalBar.style.display='none'; return; }
   empty.style.display=list.length?'none':'block';
   if(totalBar) totalBar.style.display='flex';
@@ -2754,7 +2793,11 @@ function updateSelects(){
 // ════════════════════════════════════════════════
 function renderAll(){
   renderStudents(); renderAttendance(); renderLessons();
-  renderEval(); renderPayment(); updateSelects(); updateUnpaidBadge();
+  renderEval(); updateSelects(); updateUnpaidBadge();
+  // Auto-set current month filter on first load, then render payment
+  const fDari = document.getElementById('f-dari');
+  if(fDari && !fDari.value) setCurrentMonthFilter();
+  else renderPayment();
 }
 
 // ════════════════════════════════════════════════
