@@ -649,6 +649,7 @@ td.nowrap { white-space:nowrap }
                 <option value="Alpha">❌ Absent</option>
               </select>
             </div>
+            <button class="btn sm" onclick="setCurrentMonthAttFilter()" title="Show current month only" style="white-space:nowrap">📅 This Month</button>
             <button class="btn sm" onclick="clearAttFilter()" style="margin-bottom:0">✕ Clear</button>
           </div>
         </div>
@@ -1651,6 +1652,7 @@ function navigate(page){
   if(page==='reports')   renderReports();
   if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
   if(page==='payment') { setCurrentMonthFilter(); }
+  if(page==='attendance') { setCurrentMonthAttFilter(); }
   if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
 }
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.page)));
@@ -1911,6 +1913,18 @@ function saveAbsensi(){
   });
   DB.set('absensi',absensiList); renderAttendance(); alert('✅ Attendance saved!');
 }
+function setCurrentMonthAttFilter(){
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const lastDay = new Date(y, now.getMonth()+1, 0).getDate().toString().padStart(2,'0');
+  document.getElementById('att-f-dari').value   = `${y}-${m}-01`;
+  document.getElementById('att-f-sampai').value = `${y}-${m}-${lastDay}`;
+  document.getElementById('att-f-nama').value   = '';
+  const st = document.getElementById('att-f-status'); if(st) st.value='';
+  renderAttendance();
+}
+
 function clearAttFilter(){
   ['att-f-dari','att-f-sampai','att-f-nama'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
@@ -2809,9 +2823,12 @@ function updateSelects(){
 //  RENDER ALL
 // ════════════════════════════════════════════════
 function renderAll(){
-  renderStudents(); renderAttendance(); renderLessons();
+  renderStudents(); renderLessons();
   renderEval(); updateSelects(); updateUnpaidBadge();
-  // Auto-set current month filter on first load, then render payment
+  // Auto-set current month filters on first load
+  const attDari = document.getElementById('att-f-dari');
+  if(attDari && !attDari.value) setCurrentMonthAttFilter();
+  else renderAttendance();
   const fDari = document.getElementById('f-dari');
   if(fDari && !fDari.value) setCurrentMonthFilter();
   else renderPayment();
