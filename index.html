@@ -2374,14 +2374,31 @@ function renderPayment(){
   list.forEach(b=>{
     const sc=b.status==='Lunas'?'chip-green':b.status==='Cicil'?'chip-yellow':'chip-red';
     const sl=b.status==='Lunas'?'Paid':b.status==='Cicil'?'Partial':'Unpaid';
-    // Build session chips
+    // Build session chips — filtered by selected date range
     let sesiHtml = '-';
     if(b.sesiIds && b.sesiIds.length){
-      const chips = b.sesiIds.map(sid=>{
+      const filteredSids = b.sesiIds.filter(sid=>{
+        const a = absensiList.find(x=>x.id===sid);
+        if(!a) return false;
+        if(fDari   && a.tanggal < fDari)   return false;
+        if(fSampai && a.tanggal > fSampai) return false;
+        return true;
+      });
+      const allCount = b.sesiIds.length;
+      const chips = filteredSids.map(sid=>{
         const a = absensiList.find(x=>x.id===sid);
         return a ? `<span class="session-chip paid" title="${tglFmt(a.tanggal)}">${tglFmt(a.tanggal)}</span>` : '';
       }).filter(Boolean).join('');
-      sesiHtml = chips || `<span style="color:var(--muted);font-size:0.78rem">${b.sesiIds.length} session(s)</span>`;
+      if(filteredSids.length > 0){
+        sesiHtml = chips;
+        // Show note if some sessions are outside filter range
+        if(filteredSids.length < allCount){
+          sesiHtml += `<span style="color:var(--muted);font-size:0.72rem;display:block;margin-top:3px">+${allCount-filteredSids.length} more outside range</span>`;
+        }
+      } else {
+        // All sessions are outside filter range — still show count dimmed
+        sesiHtml = `<span style="color:var(--muted);font-size:0.78rem">${allCount} session(s) — outside filter range</span>`;
+      }
     }
     tbody.innerHTML+=`<tr>
       <td style="color:var(--muted);font-size:0.83rem">${tglFmt(b.tanggal)}</td>
