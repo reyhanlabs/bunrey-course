@@ -2774,15 +2774,6 @@ function _buildReceiptBodyHTML(b,siswa){
 
   if(isMonthly){
     if(siswa?.hari) rows.push(['Class Schedule', siswa.hari]);
-    // Estimate sessions from Class Days frequency + billing period
-    const freq = _estimateWeeklyFreq(siswa?.hari||'');
-    const estSessions = _estimateMonthSessions(b.periode, freq);
-    if(freq > 0){
-      rows.push([
-        'Est. Sessions',
-        `~${estSessions}x  (${freq}x/week · ${b.periode||'this month'})`
-      ]);
-    }
     rows.push(['Coverage', 'All sessions in period covered']);
   } else {
     // Per Session: show each session date that was paid
