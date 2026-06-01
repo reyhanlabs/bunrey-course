@@ -599,7 +599,24 @@ td.nowrap { white-space:nowrap }
           </div>
           <div class="form-row">
             <div class="form-group"><label>Class Days</label><input type="text" id="s-hari" placeholder="e.g. Mon & Wed, 4–5PM"></div>
-            <div class="form-group"><label>Fee / Session (Rp)</label><input type="number" id="s-fee" placeholder="e.g. 75000" min="0" style="width:100%"></div>
+            <div class="form-group">
+              <label>Billing Mode</label>
+              <select id="s-billingtype" onchange="onBillingTypeChange()" style="width:100%">
+                <option value="per_session">💳 Per Session</option>
+                <option value="monthly">📅 Monthly (flat)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label id="lbl-s-fee">Fee / Session (Rp)</label>
+              <input type="number" id="s-fee" placeholder="e.g. 75000" min="0" style="width:100%">
+            </div>
+            <div class="form-group" id="grp-monthly-fee" style="display:none">
+              <label>Monthly Fee (Rp) <span style="font-weight:400;color:var(--muted);font-size:0.75rem">— flat per bulan</span></label>
+              <input type="number" id="s-feemonthly" placeholder="e.g. 300000" min="0" style="width:100%">
+              <div style="font-size:0.73rem;color:var(--muted);margin-top:3px">Dibayar 1× per bulan, cover semua sesi bulan itu.</div>
+            </div>
           </div>
           <div class="form-group"><label>Notes</label><textarea id="s-catatan" placeholder="Special needs, allergies, etc."></textarea></div>
           <div class="btn-row">
@@ -612,7 +629,7 @@ td.nowrap { white-space:nowrap }
           <table>
             <thead><tr>
               <th>#</th><th>Name</th><th>Nickname</th><th>School / Class</th>
-              <th>Level</th><th>Class Days</th><th>Parent</th><th>Phone</th><th>Actions</th>
+              <th>Level</th><th>Class Days</th><th>Billing</th><th>Fee</th><th>Parent</th><th>Phone</th><th>Actions</th>
             </tr></thead>
             <tbody id="tbody-students"></tbody>
           </table>
@@ -826,8 +843,20 @@ td.nowrap { white-space:nowrap }
           <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-payment-title">Record Payment</div>
           <input type="hidden" id="b-id">
           <div class="form-row">
-            <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="loadSesiForPayment()"><option value="">-- Select --</option></select></div>
-            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2025"></div>
+            <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select --</option></select></div>
+            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2025" oninput="refreshMonthlyPanel()"></div>
+          </div>
+
+          <!-- ── MONTHLY BILLING PANEL ── -->
+          <div id="monthly-pay-panel" style="display:none;background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1.5px solid var(--accent);border-radius:14px;padding:16px 18px;margin-bottom:14px">
+            <div style="font-family:'Fredoka One',sans-serif;font-weight:800;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+              📅 Monthly Billing
+              <span id="mpp-badge" style="font-size:0.72rem;font-weight:700;background:var(--accent);color:#fff;border-radius:20px;padding:2px 10px">Monthly</span>
+            </div>
+            <div id="monthly-pay-body" style="font-size:0.87rem;color:var(--text);line-height:2"></div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn sm primary" onclick="applyMonthlyBilling()">⚡ Auto-fill Invoice & Link Sessions</button>
+            </div>
           </div>
 
           <!-- SESSION PICKER -->
@@ -1797,8 +1826,10 @@ function renderRevenueChart(canvasId, fDari='', fSampai='', fPeriode=''){
 function openStudentForm(){
   document.getElementById('form-student-title').textContent='Add New Student';
   document.getElementById('s-id').value='';
-  ['s-nama','s-nick','s-kelas','s-hp','s-hari','s-catatan','s-namaOrtu','s-fee'].forEach(i=>document.getElementById(i).value='');
+  ['s-nama','s-nick','s-kelas','s-hp','s-hari','s-catatan','s-namaOrtu','s-fee','s-feemonthly'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   document.getElementById('s-level').value='Beginner';
+  document.getElementById('s-billingtype').value='per_session';
+  onBillingTypeChange();
   openPanel('form-student','900px');
 }
 function closeStudentForm(){ closePanel('form-student') }
@@ -1815,6 +1846,9 @@ function openEditStudent(id){
   document.getElementById('s-namaOrtu').value=s.namaOrtu||'';
   document.getElementById('s-catatan').value=s.catatan||'';
   document.getElementById('s-fee').value=s.feePerSesi||'';
+  document.getElementById('s-feemonthly').value=s.feeMonthly||'';
+  document.getElementById('s-billingtype').value=s.billingType||'per_session';
+  onBillingTypeChange();
   openPanel('form-student','900px');
   document.getElementById('form-student').scrollIntoView({behavior:'smooth'});
 }
@@ -1822,6 +1856,7 @@ function saveStudent(){
   const nama=document.getElementById('s-nama').value.trim();
   if(!nama){ alert('Full name is required!'); return; }
   const id=document.getElementById('s-id').value;
+  const billingType=document.getElementById('s-billingtype').value||'per_session';
   const data={
     nama, nick:document.getElementById('s-nick').value.trim(),
     kelas:document.getElementById('s-kelas').value.trim(),
@@ -1831,6 +1866,8 @@ function saveStudent(){
     namaOrtu:document.getElementById('s-namaOrtu').value.trim(),
     catatan:document.getElementById('s-catatan').value.trim(),
     feePerSesi:Number(document.getElementById('s-fee').value)||0,
+    billingType,
+    feeMonthly:billingType==='monthly'?Number(document.getElementById('s-feemonthly').value)||0:0,
   };
   if(id){ const i=siswaList.findIndex(s=>s.id===id); if(i>-1) siswaList[i]={...siswaList[i],...data}; }
   else siswaList.push({id:uid(),...data});
@@ -1841,6 +1878,20 @@ function deleteStudent(id){
   if(!confirm('Delete this student?')) return;
   siswaList=siswaList.filter(s=>s.id!==id);
   DB.set('siswa',siswaList); renderStudents(); updateSelects();
+}
+
+// ── Billing type UI toggle ──
+function onBillingTypeChange(){
+  const bt=document.getElementById('s-billingtype')?.value||'per_session';
+  const grpM=document.getElementById('grp-monthly-fee');
+  const lbl=document.getElementById('lbl-s-fee');
+  if(bt==='monthly'){
+    if(grpM) grpM.style.display='block';
+    if(lbl) lbl.textContent='Fee / Session (Rp) — opsional';
+  } else {
+    if(grpM) grpM.style.display='none';
+    if(lbl) lbl.textContent='Fee / Session (Rp)';
+  }
 }
 function renderStudents(){
   const tbody=document.getElementById('tbody-students');
@@ -1856,6 +1907,13 @@ function renderStudents(){
     ${Object.entries(levels).map(([l,n])=>`<div class="stat-card s-blue"><div class="val">${n}</div><div class="lbl">${l}</div></div>`).join('')}
   `;
   siswaList.forEach((s,i)=>{
+    const isMonthly = s.billingType==='monthly';
+    const feeDisplay = isMonthly
+      ? `<span class="chip chip-purple" style="font-size:0.75rem">📅 ${fmt(s.feeMonthly||0)}<span style="font-weight:400">/bln</span></span>`
+      : (s.feePerSesi ? `<span style="font-size:0.83rem">${fmt(s.feePerSesi)}<span style="color:var(--muted)">/sesi</span></span>` : '<span style="color:var(--muted);font-size:0.8rem">-</span>');
+    const billingChip = isMonthly
+      ? `<span class="chip chip-purple" style="font-size:0.72rem">📅 Monthly</span>`
+      : `<span class="chip chip-muted" style="font-size:0.72rem">💳 Per Sesi</span>`;
     tbody.innerHTML+=`<tr>
       <td style="color:var(--muted)">${i+1}</td>
       <td><strong>${s.nama}</strong></td>
@@ -1863,6 +1921,8 @@ function renderStudents(){
       <td style="color:var(--muted);font-size:0.83rem">${s.kelas||'-'}</td>
       <td>${levelChip(s.level)}</td>
       <td style="font-size:0.83rem;color:var(--muted)">${s.hari||'-'}</td>
+      <td>${billingChip}</td>
+      <td>${feeDisplay}</td>
       <td style="font-size:0.83rem">${s.namaOrtu||'-'}</td>
       <td style="font-size:0.83rem;color:var(--muted)">${s.hp||'-'}</td>
       <td class="nowrap">
@@ -2273,12 +2333,11 @@ function openPaymentForm(id){
   if(b){
     const opts=siswaList.map(s=>`<option value="${s.id}"${s.id===b.siswaId?' selected':''}>${s.nama}</option>`).join('');
     document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
-    // Load sessions then re-check
-    loadSesiForPayment();
+    onPaymentStudentChange();
     setTimeout(()=>renderSesiChecksForEdit(b.sesiIds||[]),50);
   } else {
     document.getElementById('b-siswa').value='';
-    loadSesiForPayment();
+    onPaymentStudentChange();
   }
   openPanel('form-payment','900px');
 }
@@ -2289,7 +2348,15 @@ function savePayment(){
   if(!siswaId){ alert('Select a student!'); return; }
   const s=siswaList.find(x=>x.id===siswaId);
   const id=document.getElementById('b-id').value;
-  const sesiIds = getSelectedSesiIds();
+  const isMonthly = (s?.billingType||'per_session')==='monthly';
+  let sesiIds;
+  if(isMonthly){
+    // auto-link ALL sessions for this student in the selected month
+    const periode=document.getElementById('b-periode').value.trim();
+    sesiIds = getMonthlySessionIds(siswaId, periode);
+  } else {
+    sesiIds = getSelectedSesiIds();
+  }
   const data={
     siswaId, namaSiswa:s?.nama||'-',
     periode:document.getElementById('b-periode').value.trim(),
@@ -2298,12 +2365,103 @@ function savePayment(){
     tagihan:Number(document.getElementById('b-tagihan').value)||0,
     status:document.getElementById('b-status').value,
     catatan:document.getElementById('b-catatan').value.trim(),
-    sesiIds,  // NEW: linked session IDs
+    sesiIds,
+    billingType: isMonthly ? 'monthly' : 'per_session',
   };
   if(id){ const i=bayarList.findIndex(b=>b.id===id); if(i>-1) bayarList[i]={...bayarList[i],...data}; }
   else bayarList.push({id:uid(),...data});
   DB.set('bayar',bayarList);
   closePaymentForm(); renderPayment(); updateUnpaidBadge();
+}
+
+// ── Monthly billing helpers ──
+function getMonthlySessionIds(siswaId, periodeText){
+  // Parse "June 2025" or "Juni 2025" → year+month range
+  // Fall back to ALL unpaid if we can't parse
+  const parsed = parsePeriodeToYearMonth(periodeText);
+  if(!parsed) return absensiList.filter(a=>a.siswaId===siswaId&&a.status==='Hadir').map(a=>a.id);
+  const {y,m}=parsed;
+  return absensiList.filter(a=>{
+    if(a.siswaId!==siswaId || a.status!=='Hadir') return false;
+    const d=new Date(a.tanggal);
+    return d.getFullYear()===y && (d.getMonth()+1)===m;
+  }).map(a=>a.id);
+}
+
+function parsePeriodeToYearMonth(text){
+  if(!text) return null;
+  // try "YYYY-MM" format
+  const m1=text.match(/(\d{4})[.\-\/](\d{1,2})/);
+  if(m1) return {y:+m1[1],m:+m1[2]};
+  // try "June 2025" or "Juni 2025"
+  const months={jan:1,feb:2,mar:3,apr:4,may:5,mei:5,jun:6,jul:7,aug:8,agu:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
+  const m2=text.toLowerCase().match(/([a-z]+)[.\s\-\/]+(\d{4})/);
+  if(m2){const key=m2[1].slice(0,3); const mo=months[key]; if(mo) return {y:+m2[2],m:mo};}
+  const m3=text.toLowerCase().match(/(\d{4})[.\s\-\/]+([a-z]+)/);
+  if(m3){const key=m3[2].slice(0,3); const mo=months[key]; if(mo) return {y:+m3[1],m:mo};}
+  return null;
+}
+
+function onPaymentStudentChange(){
+  const siswaId=document.getElementById('b-siswa').value;
+  const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
+  const isMonthly=(s?.billingType||'per_session')==='monthly';
+  // show/hide panels
+  document.getElementById('monthly-pay-panel').style.display=isMonthly?'block':'none';
+  document.getElementById('sesi-picker-group').style.display=isMonthly?'none':'block';
+  if(isMonthly){
+    refreshMonthlyPanel();
+  } else {
+    loadSesiForPayment();
+  }
+}
+
+function refreshMonthlyPanel(){
+  const siswaId=document.getElementById('b-siswa').value;
+  const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
+  if(!s || s.billingType!=='monthly') return;
+  const periodeText=document.getElementById('b-periode').value.trim();
+  const feeMonthly=s.feeMonthly||0;
+  const body=document.getElementById('monthly-pay-body');
+  // Count sessions in that month
+  const parsed=parsePeriodeToYearMonth(periodeText);
+  let sesiCount=0, sesiInfo='';
+  if(parsed){
+    const {y,m}=parsed;
+    const sesiInMonth=absensiList.filter(a=>{
+      if(a.siswaId!==siswaId||a.status!=='Hadir') return false;
+      const d=new Date(a.tanggal); return d.getFullYear()===y&&(d.getMonth()+1)===m;
+    });
+    sesiCount=sesiInMonth.length;
+    sesiInfo=sesiCount>0
+      ? `<span style="color:var(--green)">✅ ${sesiCount} sesi hadir bulan ini</span>`
+      : `<span style="color:var(--muted)">⚠️ Belum ada absensi bulan ini</span>`;
+  } else {
+    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Format periode tidak dikenali (coba: "June 2025")</span>`:`<span style="color:var(--muted)">— Isi periode dulu (e.g. June 2025)</span>`;
+  }
+  body.innerHTML=`
+    <div>👤 <strong>${s.nama}</strong></div>
+    <div>💰 Monthly Fee: <strong style="color:var(--green)">${fmt(feeMonthly)}</strong></div>
+    <div>📅 Periode: <strong>${periodeText||'-'}</strong></div>
+    <div>${sesiInfo}</div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:4px">Semua sesi bulan ini akan otomatis terhubung saat save.</div>
+  `;
+}
+
+function applyMonthlyBilling(){
+  const siswaId=document.getElementById('b-siswa').value;
+  const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
+  if(!s||!s.feeMonthly){ alert('Set Monthly Fee di profil siswa terlebih dahulu.'); return; }
+  document.getElementById('b-tagihan').value=s.feeMonthly;
+  document.getElementById('b-jumlah').value=s.feeMonthly;
+  document.getElementById('b-status').value='Lunas';
+  // Auto-fill periode with current month if empty
+  if(!document.getElementById('b-periode').value.trim()){
+    const now=new Date();
+    document.getElementById('b-periode').value=now.toLocaleString('en',{month:'long'})+' '+now.getFullYear();
+    refreshMonthlyPanel();
+  }
+  alert('✅ Invoice & Amount terisi otomatis! Periksa lalu klik Save.');
 }
 function deletePayment(id){
   if(!confirm('Delete this payment?')) return;
@@ -2343,15 +2501,31 @@ function renderPayment(){
     const sesiHutang         = totalSesiHadir - totalSesiTerbayar;
     const totalRevenue       = bayarList.reduce((s,b)=>s+b.jumlah, 0);
 
-    // Outstanding = unpaid sessions × fee per student (accurate, session-based)
+    // Outstanding = unpaid amount per student, aware of billing type
     let outstanding = 0;
     siswaList.forEach(s => {
-      const fee = s.feePerSesi || 0;
-      if(!fee) return; // skip students with no fee set
-      const unpaidCount = absensiList.filter(a =>
-        a.siswaId === s.id && a.status === 'Hadir' && !paidSesiIds.has(a.id)
-      ).length;
-      outstanding += unpaidCount * fee;
+      if(s.billingType==='monthly'){
+        // Monthly: outstanding = months with sessions but no paid record
+        // Find distinct year-months that have sessions but no bayar record linked
+        const sessionMonths = new Set();
+        absensiList.filter(a=>a.siswaId===s.id&&a.status==='Hadir').forEach(a=>{
+          const d=new Date(a.tanggal);
+          sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0'));
+        });
+        const paidMonths = new Set();
+        bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{
+          const parsed=parsePeriodeToYearMonth(b.periode||'');
+          if(parsed) paidMonths.add(parsed.y+'-'+parsed.m.toString().padStart(2,'0'));
+        });
+        sessionMonths.forEach(ym=>{ if(!paidMonths.has(ym)) outstanding+=(s.feeMonthly||0); });
+      } else {
+        const fee = s.feePerSesi || 0;
+        if(!fee) return;
+        const unpaidCount = absensiList.filter(a =>
+          a.siswaId === s.id && a.status === 'Hadir' && !paidSesiIds.has(a.id)
+        ).length;
+        outstanding += unpaidCount * fee;
+      }
     });
 
     statsEl.innerHTML = `
@@ -2458,41 +2632,83 @@ function renderHutangSesi(){
   siswaList
     .filter(s => !fNama || s.nama.toLowerCase().includes(fNama) || (s.nick||'').toLowerCase().includes(fNama))
     .forEach(siswa => {
-      const sesiHadir = absensiList
-        .filter(a => a.siswaId === siswa.id && a.status === 'Hadir')
-        .sort((a,b) => a.tanggal.localeCompare(b.tanggal));
-      const unpaidSesi = sesiHadir.filter(a => !paidSesiIds.has(a.id));
-      if(!unpaidSesi.length) return;
-      anyUnpaid = true;
-      const pctPaid = sesiHadir.length ? Math.round(((sesiHadir.length - unpaidSesi.length)/sesiHadir.length)*100) : 0;
-      const fee = siswa.feePerSesi || 0;
-      const totalHutang = fee ? unpaidSesi.length * fee : null;
-      const feeInfo = fee
-        ? `<span style="color:var(--red);font-weight:700">Total: Rp ${totalHutang.toLocaleString('id-ID')}</span>`
-        : `<span style="color:var(--muted);font-size:0.75rem">⚠️ Set fee/session in student profile</span>`;
-      listEl.innerHTML += `
-        <div class="sesi-tracker-card">
-          <div class="st-header">
-            <div>
-              <div class="st-name">👤 ${siswa.nama}${siswa.nick ? ` <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>` : ''}</div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidSesi.length} unpaid session(s) · ${sesiHadir.length} total present · ${pctPaid}% paid</div>
-              <div style="margin-top:4px;font-size:0.8rem">${feeInfo}</div>
+      const isMonthly = siswa.billingType==='monthly';
+
+      if(isMonthly){
+        // ── Monthly mode: show unpaid months ──
+        const sessionMonths = {};
+        absensiList.filter(a=>a.siswaId===siswa.id&&a.status==='Hadir').forEach(a=>{
+          const d=new Date(a.tanggal);
+          const ym=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+          if(!sessionMonths[ym]) sessionMonths[ym]=[];
+          sessionMonths[ym].push(a);
+        });
+        const paidMonths = new Set();
+        bayarList.filter(b=>b.siswaId===siswa.id&&b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{
+          const parsed=parsePeriodeToYearMonth(b.periode||'');
+          if(parsed) paidMonths.add(parsed.y+'-'+parsed.m.toString().padStart(2,'0'));
+        });
+        const unpaidMonths = Object.keys(sessionMonths).filter(ym=>!paidMonths.has(ym)).sort();
+        if(!unpaidMonths.length) return;
+        anyUnpaid=true;
+        const feeMonthly=siswa.feeMonthly||0;
+        const totalHutang=unpaidMonths.length*feeMonthly;
+        const pctPaid=Object.keys(sessionMonths).length ? Math.round((paidMonths.size/Object.keys(sessionMonths).length)*100) : 0;
+        const monthChips=unpaidMonths.map(ym=>{
+          const [y,m]=ym.split('-');
+          const label=new Date(+y,+m-1).toLocaleString('en',{month:'short',year:'numeric'});
+          const sesiCount=sessionMonths[ym].length;
+          return `<span class="session-chip unpaid" title="${sesiCount} sesi">📅 ${label} (${sesiCount}x)</span>`;
+        }).join('');
+        listEl.innerHTML += `
+          <div class="sesi-tracker-card">
+            <div class="st-header">
+              <div>
+                <div class="st-name">👤 ${siswa.nama}${siswa.nick?` <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>`:''} <span class="chip chip-purple" style="font-size:0.7rem;vertical-align:middle">📅 Monthly</span></div>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidMonths.length} bulan belum bayar · ${pctPaid}% bulan terbayar</div>
+                <div style="margin-top:4px;font-size:0.8rem">${feeMonthly?`<span style="color:var(--red);font-weight:700">Total: ${fmt(totalHutang)}</span>`:`<span style="color:var(--muted);font-size:0.75rem">⚠️ Set Monthly Fee di profil siswa</span>`}</div>
+              </div>
+              <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Bayar Bulanan</button>
             </div>
-            <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Record Payment</button>
-          </div>
-          <div class="pbar-wrap" style="margin-bottom:10px"><div class="pbar-fill" style="width:${pctPaid}%"></div></div>
-          <div class="st-sessions">
-            ${unpaidSesi.map(a=>`<span class="session-chip unpaid" title="${a.tanggal}">📅 ${tglFmt(a.tanggal)}</span>`).join('')}
-          </div>
-        </div>`;
+            <div class="pbar-wrap" style="margin-bottom:10px"><div class="pbar-fill" style="width:${pctPaid}%"></div></div>
+            <div class="st-sessions">${monthChips}</div>
+          </div>`;
+      } else {
+        // ── Per-session mode: existing logic ──
+        const sesiHadir = absensiList
+          .filter(a => a.siswaId === siswa.id && a.status === 'Hadir')
+          .sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+        const unpaidSesi = sesiHadir.filter(a => !paidSesiIds.has(a.id));
+        if(!unpaidSesi.length) return;
+        anyUnpaid = true;
+        const pctPaid = sesiHadir.length ? Math.round(((sesiHadir.length - unpaidSesi.length)/sesiHadir.length)*100) : 0;
+        const fee = siswa.feePerSesi || 0;
+        const totalHutang = fee ? unpaidSesi.length * fee : null;
+        const feeInfo = fee
+          ? `<span style="color:var(--red);font-weight:700">Total: ${fmt(totalHutang)}</span>`
+          : `<span style="color:var(--muted);font-size:0.75rem">⚠️ Set fee/session in student profile</span>`;
+        listEl.innerHTML += `
+          <div class="sesi-tracker-card">
+            <div class="st-header">
+              <div>
+                <div class="st-name">👤 ${siswa.nama}${siswa.nick ? ` <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>` : ''}</div>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidSesi.length} unpaid session(s) · ${sesiHadir.length} total present · ${pctPaid}% paid</div>
+                <div style="margin-top:4px;font-size:0.8rem">${feeInfo}</div>
+              </div>
+              <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Record Payment</button>
+            </div>
+            <div class="pbar-wrap" style="margin-bottom:10px"><div class="pbar-fill" style="width:${pctPaid}%"></div></div>
+            <div class="st-sessions">
+              ${unpaidSesi.map(a=>`<span class="session-chip unpaid" title="${a.tanggal}">📅 ${tglFmt(a.tanggal)}</span>`).join('')}
+            </div>
+          </div>`;
+      }
     });
   emptyEl.style.display = anyUnpaid ? 'none' : 'block';
 }
 
 function openPaymentFormForStudent(siswaId){
-  // Switch to rekap tab, open form, pre-select student
   switchPayTab('rekap');
-  // Reset form
   document.getElementById('b-id').value='';
   document.getElementById('b-periode').value='';
   document.getElementById('b-tanggal').value=new Date().toISOString().slice(0,10);
@@ -2500,12 +2716,10 @@ function openPaymentFormForStudent(siswaId){
   document.getElementById('b-tagihan').value='';
   document.getElementById('b-status').value='Lunas';
   document.getElementById('b-catatan').value='';
-  // Set student
   const opts = siswaList.map(s=>`<option value="${s.id}"${s.id===siswaId?' selected':''}>${s.nama}</option>`).join('');
   document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
   openPanel('form-payment','900px');
-  loadSesiForPayment();
-  // Scroll to form
+  onPaymentStudentChange();
   setTimeout(()=>document.getElementById('form-payment').scrollIntoView({behavior:'smooth'}),200);
 }
 
@@ -2520,6 +2734,7 @@ function _buildReceiptBodyHTML(b,siswa){
     ['Student',b.namaSiswa],
     siswa?.nick?['Nickname',siswa.nick]:null,
     siswa?.namaOrtu?['Parent',siswa.namaOrtu]:null,
+    ['Billing',b.billingType==='monthly'?'📅 Monthly (Flat)':'💳 Per Session'],
     ['Period',b.periode||'-'],['Payment Date',tglFmt(b.tanggal)],
     ['Total Invoice',fmt(b.tagihan)],
   ].filter(Boolean);
@@ -2529,7 +2744,10 @@ function _buildReceiptBodyHTML(b,siswa){
       const a = absensiList.find(x=>x.id===id);
       return a ? tglFmt(a.tanggal) : id;
     }).join(', ');
-    rows.push(['Sessions Paid ('+b.sesiIds.length+'x)', sesiLabels]);
+    const label = b.billingType==='monthly'
+      ? 'Sesi Tercakup ('+b.sesiIds.length+'x)'
+      : 'Sessions Paid ('+b.sesiIds.length+'x)';
+    rows.push([label, sesiLabels]);
   }
   return {rno,stc,stl,rows};
 }
