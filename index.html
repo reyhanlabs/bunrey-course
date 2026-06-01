@@ -2726,6 +2726,37 @@ function openPaymentFormForStudent(siswaId){
 // ════════════════════════════════════════════════
 //  RECEIPT
 // ════════════════════════════════════════════════
+// ── Estimate how many times/week from Class Days text ──
+function _estimateWeeklyFreq(hariText){
+  if(!hariText) return 0;
+  const t = hariText.toLowerCase();
+  // Count keyword matches for day names (en + id)
+  const dayWords = ['mon','tue','wed','thu','fri','sat','sun',
+                    'sen','sel','rab','kam','jum','sab','ming'];
+  let count = 0;
+  dayWords.forEach(d=>{ if(t.includes(d)) count++; });
+  // If no day names found, try counting separators (&, ,, +, dan, and)
+  if(count === 0){
+    const seps = (t.match(/[&,+]|\bdan\b|\band\b/g)||[]).length;
+    count = seps + (seps > 0 ? 1 : 0);
+  }
+  return Math.max(count, 1);
+}
+
+// ── Estimate sessions in a month from period string + weekly freq ──
+function _estimateMonthSessions(periodeStr, freq){
+  if(!periodeStr || freq <= 0) return freq * 4;
+  // Parse "June 2026", "Juni 2026", "2026-06" etc
+  const d = new Date(periodeStr);
+  let weeks = 4.33; // default average
+  if(!isNaN(d)){
+    const y = d.getFullYear(), m = d.getMonth();
+    const daysInMonth = new Date(y, m+1, 0).getDate();
+    weeks = daysInMonth / 7;
+  }
+  return Math.round(freq * weeks);
+}
+
 function _buildReceiptBodyHTML(b,siswa){
   const rno='BREC-'+b.id.slice(-6).toUpperCase();
   const stc=b.status==='Lunas'?'#00d68f':b.status==='Cicil'?'#ffb347':'#ff4f6d';
@@ -2742,12 +2773,17 @@ function _buildReceiptBodyHTML(b,siswa){
   ].filter(Boolean);
 
   if(isMonthly){
-    // Monthly: show class schedule instead of session list
-    if(siswa?.hari)  rows.push(['Class Schedule', siswa.hari]);
-    // Count how many sessions actually happened this month (informational)
-    if(b.sesiIds && b.sesiIds.length){
-      rows.push(['Sessions This Month', b.sesiIds.length + 'x (all covered by flat fee)']);
+    if(siswa?.hari) rows.push(['Class Schedule', siswa.hari]);
+    // Estimate sessions from Class Days frequency + billing period
+    const freq = _estimateWeeklyFreq(siswa?.hari||'');
+    const estSessions = _estimateMonthSessions(b.periode, freq);
+    if(freq > 0){
+      rows.push([
+        'Est. Sessions',
+        `~${estSessions}x  (${freq}x/week · ${b.periode||'this month'})`
+      ]);
     }
+    rows.push(['Coverage', 'All sessions in period covered']);
   } else {
     // Per Session: show each session date that was paid
     if(b.sesiIds && b.sesiIds.length){
