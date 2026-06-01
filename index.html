@@ -2730,24 +2730,33 @@ function _buildReceiptBodyHTML(b,siswa){
   const rno='BREC-'+b.id.slice(-6).toUpperCase();
   const stc=b.status==='Lunas'?'#00d68f':b.status==='Cicil'?'#ffb347':'#ff4f6d';
   const stl=b.status==='Lunas'?'✅ PAID IN FULL':b.status==='Cicil'?'⚠️ PARTIAL':'❌ UNPAID';
+  const isMonthly = b.billingType==='monthly';
   const rows=[
-    ['Student',b.namaSiswa],
-    siswa?.nick?['Nickname',siswa.nick]:null,
-    siswa?.namaOrtu?['Parent',siswa.namaOrtu]:null,
-    ['Billing',b.billingType==='monthly'?'📅 Monthly (Flat)':'💳 Per Session'],
-    ['Period',b.periode||'-'],['Payment Date',tglFmt(b.tanggal)],
-    ['Total Invoice',fmt(b.tagihan)],
+    ['Student',   b.namaSiswa],
+    siswa?.nick      ? ['Nickname', siswa.nick]     : null,
+    siswa?.namaOrtu  ? ['Parent',   siswa.namaOrtu] : null,
+    ['Billing',   isMonthly ? '📆 Monthly (Flat)' : '📅 Per Session'],
+    ['Period',    b.periode||'-'],
+    ['Payment Date', tglFmt(b.tanggal)],
+    ['Total Invoice', fmt(b.tagihan)],
   ].filter(Boolean);
-  // Add session info to rows
-  if(b.sesiIds && b.sesiIds.length){
-    const sesiLabels = b.sesiIds.map(id=>{
-      const a = absensiList.find(x=>x.id===id);
-      return a ? tglFmt(a.tanggal) : id;
-    }).join(', ');
-    const label = b.billingType==='monthly'
-      ? 'Sesi Tercakup ('+b.sesiIds.length+'x)'
-      : 'Sessions Paid ('+b.sesiIds.length+'x)';
-    rows.push([label, sesiLabels]);
+
+  if(isMonthly){
+    // Monthly: show class schedule instead of session list
+    if(siswa?.hari)  rows.push(['Class Schedule', siswa.hari]);
+    // Count how many sessions actually happened this month (informational)
+    if(b.sesiIds && b.sesiIds.length){
+      rows.push(['Sessions This Month', b.sesiIds.length + 'x (all covered by flat fee)']);
+    }
+  } else {
+    // Per Session: show each session date that was paid
+    if(b.sesiIds && b.sesiIds.length){
+      const sesiLabels = b.sesiIds.map(id=>{
+        const a = absensiList.find(x=>x.id===id);
+        return a ? tglFmt(a.tanggal) : id;
+      }).join(', ');
+      rows.push(['Sessions Paid ('+b.sesiIds.length+'x)', sesiLabels]);
+    }
   }
   return {rno,stc,stl,rows};
 }
