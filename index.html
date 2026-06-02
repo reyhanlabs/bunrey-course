@@ -1743,6 +1743,12 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
+// ── Firestore settings: longer timeout, explicit network ──
+db.settings({ merge: true });
+
+// ── Force Firestore to go online (fixes offline-on-load issue) ──
+db.enableNetwork().catch(e => console.warn('enableNetwork:', e));
+
 // ── Persist login across refresh & browser close ──
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .catch(e => console.error('Persistence error:', e));
@@ -1782,7 +1788,7 @@ function setSynced() {
   document.getElementById('sync-dot').className='sync-dot';         
   document.getElementById('sync-label').textContent='Synced'; 
 }
-function setSyncErr(){
+function setSyncErr(errMsg){
   // Only show Offline if user is actually logged in
   if(!currentUser){ 
     document.getElementById('sync-dot').className='sync-dot'; 
@@ -1790,15 +1796,18 @@ function setSyncErr(){
     return; 
   }
   document.getElementById('sync-dot').className='sync-dot offline'; 
-  document.getElementById('sync-label').innerHTML='Offline <span onclick="retrySync()" style="cursor:pointer;text-decoration:underline;color:var(--yellow)">Retry</span>';
+  const detail = errMsg ? ` (${errMsg})` : '';
+  document.getElementById('sync-label').innerHTML=`Offline${detail} <span onclick="retrySync()" style="cursor:pointer;text-decoration:underline;color:var(--yellow)">Retry</span>`;
+  console.error('🔴 Sync error:', errMsg);
 }
 async function retrySync(){
   if(!currentUser) return;
   document.getElementById('sync-label').textContent='Retrying…';
   try {
+    await db.enableNetwork();
     await loadClasses();
   } catch(e) {
-    setSyncErr();
+    setSyncErr(e.code || e.message);
   }
 }
 
@@ -1909,7 +1918,7 @@ async function loadClasses(retryCount=0){
       setTimeout(()=> loadClasses(retryCount+1), 1500 * (retryCount+1));
       document.getElementById('sync-label').textContent = 'Reconnecting…';
     } else {
-      setSyncErr();
+      setSyncErr(e.code || e.message);
     }
   }
 }
@@ -2109,7 +2118,7 @@ async function loadFromFirestore(){
     setSynced();
     renderAll(); renderDashboard(); loadAbsensi();
   } catch(e){
-    setSyncErr();
+    setSyncErr(e.code || e.message);
     console.error('Load error', e);
     siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
     renderAll(); renderDashboard(); loadAbsensi();
@@ -2118,7 +2127,7 @@ async function loadFromFirestore(){
 
 let _saveTimer = null;
 function saveToFirestore(){
-  if(!userDocRef){ return; }  // not logged in yet — silent
+  if(!userDocRef){ return; }
   clearTimeout(_saveTimer);
   setSyncing();
   _saveTimer = setTimeout(()=>{ _flushToFirestore(); }, 400);
@@ -2136,7 +2145,7 @@ async function _flushToFirestore(){
     setSynced();
     console.log('✅ Saved → '+currentClassName+' | students:'+siswaList.length);
   } catch(e){
-    setSyncErr();
+    setSyncErr(e.code || e.message);
     console.error('❌ Save failed:', e.code, e.message);
     throw e;
   }
@@ -4817,50 +4826,51 @@ function sendWaTemplate(){
 }
 
 // ════════════════════════════════════════════════
-//  PATCH renderDashboard to include new widgets
+//  PATCH renderDashboard & renderAll (safe - no hoisting issue)
 // ════════════════════════════════════════════════
-const __origRenderDashboard = renderDashboard;
-function renderDashboard(){
-  __origRenderDashboard();
-  // Only render calendar & reminders if DOM elements exist (post-login)
-  if(document.getElementById('cal-grid')) renderCalendar();
-  if(document.getElementById('dash-reminders')) renderPaymentReminders();
-}
+(function(){
+  const _origDash = renderDashboard;
+  renderDashboard = function(){
+    _origDash();
+    if(document.getElementById('cal-grid')) renderCalendar();
+    if(document.getElementById('dash-reminders')) renderPaymentReminders();
+  };
 
-// ════════════════════════════════════════════════
-//  PATCH renderAll to update new UI elements
-// ════════════════════════════════════════════════
-const __origRenderAll = renderAll;
-function renderAll(){
-  __origRenderAll();
-  updateAISelect();
-}
+  const _origAll = renderAll;
+  renderAll = function(){
+    _origAll();
+    updateAISelect();
+  };
+})();
 
 // ════════════════════════════════════════════════
 //  PATCH saveStudent to trigger notification
 // ════════════════════════════════════════════════
-const __origSaveStudent = saveStudent;
-function saveStudent(){
-  const isNew = !document.getElementById('s-id').value;
-  __origSaveStudent();
-  if(isNew && siswaList.length > 0){
-    const last = siswaList[siswaList.length-1];
-    addNotif('New student added', last.nama+' added to '+currentClassName, '👤');
-  }
-}
+(function(){
+  const _orig = saveStudent;
+  saveStudent = function(){
+    const isNew = !document.getElementById('s-id').value;
+    _orig();
+    if(isNew && siswaList.length > 0){
+      const last = siswaList[siswaList.length-1];
+      addNotif('New student added', last.nama+' added to '+currentClassName, '👤');
+    }
+  };
+})();
 
 // ════════════════════════════════════════════════
-//  PATCH saveBulkEval to trigger notification + confetti
+//  PATCH saveBulkEval to trigger confetti
 // ════════════════════════════════════════════════
-const __origSaveBulkEval = saveBulkEval;
-async function saveBulkEval(){
-  await __origSaveBulkEval();
-  renderCalendar();
-  // Check for perfect scores → confetti
-  const today = new Date().toISOString().slice(0,10);
-  const perfect = evaluasiList.filter(e=>e.tanggal===today && Number(e.nilai)===100);
-  if(perfect.length > 0) triggerConfetti();
-}
+(function(){
+  const _orig = saveBulkEval;
+  saveBulkEval = async function(){
+    await _orig();
+    if(document.getElementById('cal-grid')) renderCalendar();
+    const today = new Date().toISOString().slice(0,10);
+    const perfect = evaluasiList.filter(e=>e.tanggal===today && Number(e.nilai)===100);
+    if(perfect.length > 0) triggerConfetti();
+  };
+})();
 
 function triggerConfetti(){
   const colors = ['#6c63ff','#ff6584','#00d68f','#ffb347','#38bdf8','#a78bfa'];
