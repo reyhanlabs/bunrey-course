@@ -1774,12 +1774,32 @@ function isEmailAllowed(email){
 // ════════════════════════════════════════════════
 //  SYNC INDICATOR
 // ════════════════════════════════════════════════
-function setSyncing(){ document.getElementById('sync-dot').className='sync-dot syncing'; document.getElementById('sync-label').textContent='Saving…' }
-function setSynced() { document.getElementById('sync-dot').className='sync-dot';         document.getElementById('sync-label').textContent='Synced' }
+function setSyncing(){ 
+  document.getElementById('sync-dot').className='sync-dot syncing'; 
+  document.getElementById('sync-label').textContent='Saving…'; 
+}
+function setSynced() { 
+  document.getElementById('sync-dot').className='sync-dot';         
+  document.getElementById('sync-label').textContent='Synced'; 
+}
 function setSyncErr(){
-  // Only show Offline if user is actually logged in — not during initial load
-  if(!currentUser){ document.getElementById('sync-dot').className='sync-dot'; document.getElementById('sync-label').textContent=''; return; }
-  document.getElementById('sync-dot').className='sync-dot offline'; document.getElementById('sync-label').textContent='Offline';
+  // Only show Offline if user is actually logged in
+  if(!currentUser){ 
+    document.getElementById('sync-dot').className='sync-dot'; 
+    document.getElementById('sync-label').textContent=''; 
+    return; 
+  }
+  document.getElementById('sync-dot').className='sync-dot offline'; 
+  document.getElementById('sync-label').innerHTML='Offline <span onclick="retrySync()" style="cursor:pointer;text-decoration:underline;color:var(--yellow)">Retry</span>';
+}
+async function retrySync(){
+  if(!currentUser) return;
+  document.getElementById('sync-label').textContent='Retrying…';
+  try {
+    await loadClasses();
+  } catch(e) {
+    setSyncErr();
+  }
 }
 
 // ════════════════════════════════════════════════
@@ -1810,12 +1830,17 @@ auth.onAuthStateChanged(async user => {
     currentUser = user;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('sync-status').style.display = 'flex';
+    document.getElementById('sync-label').textContent = 'Connecting…';
     const chip = document.getElementById('user-chip');
     chip.style.display = 'flex';
     document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || 'Me';
     const av = document.getElementById('user-avatar');
     if(user.photoURL){ av.src=user.photoURL; av.style.background='none'; }
     else { av.src=''; av.textContent=user.displayName?.[0]||'U'; }
+    // Init calendar with correct current date immediately
+    _calYear = new Date().getFullYear();
+    _calMonth = new Date().getMonth();
+    if(document.getElementById('cal-grid')) renderCalendar();
     // Load classes, then load first/last used class
     await loadClasses();
     console.log('✅ Logged in:', user.email);
@@ -1851,7 +1876,7 @@ async function checkAccess(user){
 // ════════════════════════════════════════════════
 //  CLASSES MANAGEMENT
 // ════════════════════════════════════════════════
-async function loadClasses(){
+async function loadClasses(retryCount=0){
   try{
     const snap = await db.collection('workspace').doc('classes').get();
     classesList = snap.exists ? (snap.data().list || []) : [];
@@ -1867,6 +1892,7 @@ async function loadClasses(){
       updateClassSwitcherUI();
       openModal('modal-classes');
       renderClassListUI();
+      setSynced();
       return;
     }
 
@@ -1878,7 +1904,13 @@ async function loadClasses(){
     renderClassListUI();
   } catch(e){
     console.error('Load classes error:', e);
-    setSyncErr();
+    if(retryCount < 2){
+      // Auto-retry up to 2 times with delay
+      setTimeout(()=> loadClasses(retryCount+1), 1500 * (retryCount+1));
+      document.getElementById('sync-label').textContent = 'Reconnecting…';
+    } else {
+      setSyncErr();
+    }
   }
 }
 
@@ -4177,8 +4209,8 @@ updateNotifBadge();
 // ════════════════════════════════════════════════
 //  CALENDAR WIDGET
 // ════════════════════════════════════════════════
-let _calYear = new Date().getFullYear();
-let _calMonth = new Date().getMonth();
+let _calYear = new Date().getFullYear();  // always current year on init
+let _calMonth = new Date().getMonth();    // always current month on init
 
 function renderCalendar(){
   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
