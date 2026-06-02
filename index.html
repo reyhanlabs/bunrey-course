@@ -1069,9 +1069,9 @@ td.nowrap { white-space:nowrap }
               <input type="number" id="s-fee" placeholder="e.g. 75000" min="0" style="width:100%">
             </div>
             <div class="form-group" id="grp-monthly-fee" style="display:none">
-              <label>Monthly Fee (Rp) <span style="font-weight:400;color:var(--muted);font-size:0.75rem">— flat per bulan</span></label>
+              <label>Monthly Fee (Rp) <span style="font-weight:400;color:var(--muted);font-size:0.75rem">— flat monthly rate</span></label>
               <input type="number" id="s-feemonthly" placeholder="e.g. 300000" min="0" style="width:100%">
-              <div style="font-size:0.73rem;color:var(--muted);margin-top:3px">Dibayar 1× per bulan, cover semua sesi bulan itu.</div>
+              <div style="font-size:0.73rem;color:var(--muted);margin-top:3px">Charged once per month, covering all sessions in that month.</div>
             </div>
           </div>
           <div class="form-group"><label>Notes</label><textarea id="s-catatan" placeholder="Special needs, allergies, etc."></textarea></div>
@@ -1317,7 +1317,7 @@ td.nowrap { white-space:nowrap }
 
           <!-- SESSION PICKER -->
           <div class="form-group" id="sesi-picker-group">
-            <label>📅 Sesi yang Dibayar <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(pilih sesi dari absensi)</span></label>
+            <label>📅 Sessions to Pay <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(select from attendance records)</span></label>
             <div id="sesi-picker-wrap" style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg3);max-height:220px;overflow-y:auto">
               <div style="color:var(--muted);font-size:0.83rem">Select a student to see their available sessions.</div>
             </div>
@@ -2417,7 +2417,7 @@ function onBillingTypeChange(){
   const lbl=document.getElementById('lbl-s-fee');
   if(bt==='monthly'){
     if(grpM) grpM.style.display='block';
-    if(lbl) lbl.textContent='Fee / Session (Rp) — opsional';
+    if(lbl) lbl.textContent='Fee / Session (Rp) — optional';
   } else {
     if(grpM) grpM.style.display='none';
     if(lbl) lbl.textContent='Fee / Session (Rp)';
@@ -2440,10 +2440,10 @@ function renderStudents(){
     const isMonthly = s.billingType==='monthly';
     const feeDisplay = isMonthly
       ? `<span class="chip chip-purple" style="font-size:0.75rem">📅 ${fmt(s.feeMonthly||0)}<span style="font-weight:400">/bln</span></span>`
-      : (s.feePerSesi ? `<span style="font-size:0.83rem">${fmt(s.feePerSesi)}<span style="color:var(--muted)">/sesi</span></span>` : '<span style="color:var(--muted);font-size:0.8rem">-</span>');
+      : (s.feePerSesi ? `<span style="font-size:0.83rem">${fmt(s.feePerSesi)}<span style="color:var(--muted)">/session</span></span>` : '<span style="color:var(--muted);font-size:0.8rem">-</span>');
     const billingChip = isMonthly
       ? `<span class="chip chip-purple" style="font-size:0.72rem">📅 Monthly</span>`
-      : `<span class="chip chip-muted" style="font-size:0.72rem">💳 Per Sesi</span>`;
+      : `<span class="chip chip-muted" style="font-size:0.72rem">💳 Per Session</span>`;
     tbody.innerHTML+=`<tr>
       <td style="color:var(--muted)">${i+1}</td>
       <td><strong>${s.nama}</strong></td>
@@ -2964,17 +2964,17 @@ function refreshMonthlyPanel(){
     });
     sesiCount=sesiInMonth.length;
     sesiInfo=sesiCount>0
-      ? `<span style="color:var(--green)">✅ ${sesiCount} sesi hadir bulan ini</span>`
-      : `<span style="color:var(--muted)">⚠️ Belum ada absensi bulan ini</span>`;
+      ? `<span style="color:var(--green)">✅ ${sesiCount} sessions present this month</span>`
+      : `<span style="color:var(--muted)">⚠️ No attendance records this month</span>`;
   } else {
-    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Format periode tidak dikenali (coba: "June 2025")</span>`:`<span style="color:var(--muted)">— Isi periode dulu (e.g. June 2025)</span>`;
+    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2025")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2025)</span>`;
   }
   body.innerHTML=`
     <div>👤 <strong>${s.nama}</strong></div>
     <div>💰 Monthly Fee: <strong style="color:var(--green)">${fmt(feeMonthly)}</strong></div>
     <div>📅 Periode: <strong>${periodeText||'-'}</strong></div>
     <div>${sesiInfo}</div>
-    <div style="font-size:0.78rem;color:var(--muted);margin-top:4px">Semua sesi bulan ini akan otomatis terhubung saat save.</div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:4px">All sessions this month will be automatically linked when saved.</div>
   `;
 }
 
@@ -3195,10 +3195,10 @@ function renderHutangSesi(){
             <div class="st-header">
               <div>
                 <div class="st-name">👤 ${siswa.nama}${siswa.nick?` <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>`:''} <span class="chip chip-purple" style="font-size:0.7rem;vertical-align:middle">📅 Monthly</span></div>
-                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidMonths.length} bulan belum bayar · ${pctPaid}% bulan terbayar</div>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidMonths.length} unpaid month(s) · ${pctPaid}% months paid</div>
                 <div style="margin-top:4px;font-size:0.8rem">${feeMonthly?`<span style="color:var(--red);font-weight:700">Total: ${fmt(totalHutang)}</span>`:`<span style="color:var(--muted);font-size:0.75rem">⚠️ Set Monthly Fee di profil siswa</span>`}</div>
               </div>
-              <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Bayar Bulanan</button>
+              <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Pay Monthly</button>
             </div>
             <div class="pbar-wrap" style="margin-bottom:10px"><div class="pbar-fill" style="width:${pctPaid}%"></div></div>
             <div class="st-sessions">${monthChips}</div>
@@ -4314,9 +4314,9 @@ function buildPaymentReminderWA(siswa){
   const fee = siswa.feePerSesi||0;
   const total = fee * unpaid.length;
   const now = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-  return `Assalamu'alaikum, Bapak/Ibu ${siswa.namaOrtu||'Orang Tua'}.\n\nSaya ingin mengingatkan bahwa pembayaran les Bahasa Inggris untuk *${siswa.nama}* sebanyak *${unpaid.length} sesi* belum dibayarkan${total?` (total: *${fmt(total)})`:''}.
+  return `Hello, ${siswa.namaOrtu||'Parent'}.\n\nWe would like to remind you that the English tutoring payment for *${siswa.nama}* has not been settled yet — *${unpaid.length} session(s)* are outstanding${total?` (total: *${fmt(total)}*)`:''}.
 
-Mohon segera dikonfirmasi ya, terima kasih 🙏
+Please confirm at your earliest convenience. Thank you 🙏
 
 — BunRey English Course`;
 }
@@ -4637,8 +4637,8 @@ Attendance: ${ctx.attRate||'N/A'}%
 Latest note: ${ctx.latEval?.progress||ctx.latEval?.catatan||'Good progress'}
 ${ctx.unpaidSessions>0?`Unpaid sessions: ${ctx.unpaidSessions}`:''}
 
-Write a friendly, SHORT (max 80 words) WhatsApp message in Indonesian language to the parent.
-Start with "Assalamu'alaikum" and use *bold* formatting for important parts.
+Write a friendly, SHORT (max 80 words) WhatsApp message in English to the parent.
+Start with "Hello" and use *bold* formatting for important parts.
 Be warm and encouraging. Sign off as "BunRey English Course".`;
 
   try{
@@ -4728,14 +4728,14 @@ function buildWaTemplate(){
   if(!siswa){ return; }
   const ctx = getStudentContext(sid);
   const now = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-  const ortu = siswa.namaOrtu || 'Bapak/Ibu';
+  const ortu = siswa.namaOrtu || 'Parent';
 
   const templates = {
-    progress: `Assalamu'alaikum, ${ortu} 🙏\n\nBerikut update perkembangan belajar *${siswa.nama}* di BunRey English Course:\n\n📚 Level: *${siswa.level}*\n✏️ Rata-rata nilai: *${ctx.avgScore||'—'}/100*\n📋 Kehadiran: *${ctx.attRate||'—'}% (${ctx.present}/${ctx.att.length} sesi)*\n${ctx.latEval?.progress?`\n📈 Progress: ${ctx.latEval.progress}\n`:''}\n${ctx.latEval?.catatan?`📝 Catatan: ${ctx.latEval.catatan}\n`:''}\nAlhamdulillah perkembangannya bagus! 🌟\n\n— BunRey English Course`,
-    payment: `Assalamu'alaikum, ${ortu} 🙏\n\nKami ingin mengingatkan bahwa *${siswa.nama}* memiliki *${ctx.unpaidSessions} sesi* yang belum dibayarkan.\n\nMohon segera dilakukan pembayaran ya. Terima kasih banyak 🙏\n\nJika ada pertanyaan, silakan balas pesan ini.\n\n— BunRey English Course`,
-    absent: `Assalamu'alaikum, ${ortu} 🙏\n\nKami ingin mengkonfirmasi bahwa *${siswa.nama}* tidak hadir pada sesi les hari ini.\n\nApakah ada keterangan ketidakhadiran? Mohon informasinya agar kami dapat mencatat dengan baik.\n\nTerima kasih 🙏\n\n— BunRey English Course`,
-    schedule: `Assalamu'alaikum, ${ortu} 🙏\n\nKami ingin menginformasikan bahwa jadwal les *${siswa.nama}* adalah:\n\n📅 *${siswa.hari||'Sesuai kesepakatan'}*\n\nMohon untuk selalu hadir tepat waktu ya. Jika ada perubahan, silakan konfirmasi lebih awal.\n\nTerima kasih 🙏\n\n— BunRey English Course`,
-    congrats: `Assalamu'alaikum, ${ortu} 🌟\n\nSelamat! *${siswa.nama}* menunjukkan perkembangan yang luar biasa! 🎉\n\n✨ Nilai terbaru: *${ctx.latEval?.nilai||'—'}/100*\n📋 Kehadiran: *${ctx.attRate||'—'}%*\n\nTerus semangat belajar ya! Kami bangga dengan pencapaiannya 💪\n\n— BunRey English Course`
+    progress: `Hello, ${ortu} 🙏\n\nHere is an update on *${siswa.nama}*'s learning progress at BunRey English Course:\n\n📚 Level: *${siswa.level}*\n✏️ Average Score: *${ctx.avgScore||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}% (${ctx.present}/${ctx.att.length} sessions)*\n${ctx.latEval?.progress?`\n📈 Progress: ${ctx.latEval.progress}\n`:''}\n${ctx.latEval?.catatan?`📝 Notes: ${ctx.latEval.catatan}\n`:''}\nOverall progress is going well! 🌟\n\n— BunRey English Course`,
+    payment: `Hello, ${ortu} 🙏\n\nWe would like to remind you that *${siswa.nama}* has *${ctx.unpaidSessions} session(s)* that have not been paid yet.\n\nPlease make the payment at your earliest convenience. Thank you! 🙏\n\nFeel free to reply to this message if you have any questions.\n\n— BunRey English Course`,
+    absent: `Hello, ${ortu} 🙏\n\nWe would like to confirm that *${siswa.nama}* was absent from today's lesson session.\n\nCould you let us know the reason for the absence so we can record it properly? Thank you 🙏\n\n— BunRey English Course`,
+    schedule: `Hello, ${ortu} 🙏\n\nA reminder that *${siswa.nama}*'s class schedule is:\n\n📅 *${siswa.hari||'As agreed'}*\n\nPlease ensure your child arrives on time. If there are any changes, please inform us in advance.\n\nThank you 🙏\n\n— BunRey English Course`,
+    congrats: `Hello, ${ortu} 🌟\n\nCongratulations! *${siswa.nama}* has shown outstanding progress! 🎉\n\n✨ Latest Score: *${ctx.latEval?.nilai||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}%*\n\nKeep up the great work! We are very proud of the achievement 💪\n\n— BunRey English Course`
   };
 
   preview.textContent = templates[_currentWaTemplate] || '';
