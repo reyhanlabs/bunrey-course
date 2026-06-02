@@ -930,7 +930,7 @@ td.nowrap { white-space:nowrap }
         🔔
         <div class="notif-dot" id="notif-dot"></div>
       </div>
-      <div id="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Synced</span></div>
+      <div id="sync-status" style="display:none"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Synced</span></div>
       <div class="user-chip" id="user-chip" onclick="signOutUser()" title="Sign out" style="display:none">
         <img class="user-avatar" id="user-avatar" src="" alt="U">
         <span id="user-name">Me</span>
@@ -1776,7 +1776,11 @@ function isEmailAllowed(email){
 // ════════════════════════════════════════════════
 function setSyncing(){ document.getElementById('sync-dot').className='sync-dot syncing'; document.getElementById('sync-label').textContent='Saving…' }
 function setSynced() { document.getElementById('sync-dot').className='sync-dot';         document.getElementById('sync-label').textContent='Synced' }
-function setSyncErr(){ document.getElementById('sync-dot').className='sync-dot offline'; document.getElementById('sync-label').textContent='Offline' }
+function setSyncErr(){
+  // Only show Offline if user is actually logged in — not during initial load
+  if(!currentUser){ document.getElementById('sync-dot').className='sync-dot'; document.getElementById('sync-label').textContent=''; return; }
+  document.getElementById('sync-dot').className='sync-dot offline'; document.getElementById('sync-label').textContent='Offline';
+}
 
 // ════════════════════════════════════════════════
 //  AUTH
@@ -1805,6 +1809,7 @@ auth.onAuthStateChanged(async user => {
     }
     currentUser = user;
     document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('sync-status').style.display = 'flex';
     const chip = document.getElementById('user-chip');
     chip.style.display = 'flex';
     document.getElementById('user-name').textContent = user.displayName?.split(' ')[0] || 'Me';
@@ -1818,6 +1823,7 @@ auth.onAuthStateChanged(async user => {
     currentUser = null; userDocRef = null; currentClassId = null;
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('user-chip').style.display = 'none';
+    document.getElementById('sync-status').style.display = 'none';
     document.getElementById('class-switcher').style.display = 'none';
   }
 });
@@ -4080,9 +4086,9 @@ function showToast(msg, type='info', duration=3500){
   }, duration);
 }
 
-// Patch saveAbsensi to use toast instead of alert
-const _origSaveAbsensi = saveAbsensi;
-function saveAbsensi(){
+// Patch saveAbsensi to use toast instead of alert + refresh calendar
+const _origSaveAbsensi = window.saveAbsensi;
+window.saveAbsensi = function(){
   const d=document.getElementById('absen-date').value;
   if(!d){ showToast('Select a date first!','warn'); return; }
   if(!siswaList.length){ showToast('No students found!','warn'); return; }
@@ -4096,8 +4102,9 @@ function saveAbsensi(){
   });
   DB.set('absensi',absensiList); renderAttendance();
   showToast('✅ Attendance saved!','success');
-  renderCalendar(); renderDashboard();
-}
+};
+// Override original (defined earlier in page)
+saveAbsensi = window.saveAbsensi;
 
 // ════════════════════════════════════════════════
 //  NOTIFICATION SYSTEM
@@ -4367,20 +4374,46 @@ function goToStudent(id){
 //  MOBILE BOTTOM NAV
 // ════════════════════════════════════════════════
 function mbnNav(page){
-  navigate(page);
+  // Call the original navigate directly (avoid our patched version)
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    n.classList.toggle('active', n.dataset.page===page);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('page-'+page);
+  if(pg) pg.classList.add('active');
+  document.getElementById('topbar-title').textContent = pageNames[page]||'';
+  const actEl = document.getElementById('topbar-actions');
+  const existing = document.getElementById('page-action-btn');
+  if(existing) existing.remove();
+  if(pageActions[page]){
+    const tmp=document.createElement('div');
+    tmp.id='page-action-btn'; tmp.style.display='contents';
+    tmp.innerHTML=pageActions[page];
+    actEl.insertBefore(tmp, actEl.firstChild);
+  }
+  if(page==='dashboard') renderDashboard();
+  if(page==='analytics') renderAnalytics();
+  if(page==='reports')   renderReports();
+  if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
+  if(page==='payment') { setCurrentMonthFilter(); }
+  if(page==='attendance') { setCurrentMonthAttFilter(); }
+  if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
+
+  // Sync mobile bottom nav active state
   document.querySelectorAll('.mbn-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.page===page);
   });
 }
 
-// Sync mbn active on regular navigate
-const _origNavigate = navigate;
-function navigate(page){
-  _origNavigate(page);
-  document.querySelectorAll('.mbn-item').forEach(el=>{
-    el.classList.toggle('active', el.dataset.page===page);
+// Patch navigate to also sync mobile bottom nav (safe - no recursion)
+const _navItemClickHandlers = document.querySelectorAll('.nav-item');
+_navItemClickHandlers.forEach(n => {
+  n.addEventListener('click', () => {
+    document.querySelectorAll('.mbn-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.page === n.dataset.page);
+    });
   });
-}
+});
 
 // ════════════════════════════════════════════════
 //  ANALYTICS — KPIs & PROGRESS TRACKER
@@ -4757,8 +4790,9 @@ function sendWaTemplate(){
 const __origRenderDashboard = renderDashboard;
 function renderDashboard(){
   __origRenderDashboard();
-  renderCalendar();
-  renderPaymentReminders();
+  // Only render calendar & reminders if DOM elements exist (post-login)
+  if(document.getElementById('cal-grid')) renderCalendar();
+  if(document.getElementById('dash-reminders')) renderPaymentReminders();
 }
 
 // ════════════════════════════════════════════════
@@ -4814,11 +4848,19 @@ document.addEventListener('click', e=>{
   if(sw && !sw.contains(e.target)) closeSearch();
 });
 
-// Re-render calendar on data changes
+// Safe DB.set post-hook — updates UI elements after any data change
+// Does NOT touch sync state — Firestore handles that separately
 const __origDB_set = DB.set.bind(DB);
 DB.set = function(k,v){
   __origDB_set(k,v);
-  setTimeout(()=>{ renderCalendar(); renderPaymentReminders(); updateMbnBadge(); }, 200);
+  // Defer UI refresh to avoid interfering with ongoing save
+  setTimeout(()=>{
+    try {
+      if(document.getElementById('cal-grid')) renderCalendar();
+      if(document.getElementById('dash-reminders')) renderPaymentReminders();
+      updateMbnBadge();
+    } catch(e) { /* non-critical */ }
+  }, 300);
 };
 
 function updateMbnBadge(){
