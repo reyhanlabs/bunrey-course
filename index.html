@@ -636,7 +636,6 @@ td.nowrap { white-space:nowrap }
 }
 .cal-day.today::after{display:none}
 .cal-day.selected{background:rgba(108,99,255,0.2);color:var(--accent);font-weight:800}
-.cal-day.empty{opacity:0;pointer-events:none}
 .cal-day.other-month{opacity:0.25;cursor:default}
 .cal-day .cal-dots{display:flex;gap:2px;position:absolute;bottom:2px;left:50%;transform:translateX(-50%)}
 .cal-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
@@ -4323,13 +4322,15 @@ function renderCalendar(){
   // DOW headers
   let html = DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
 
-  // getDay() returns 0=Sun,1=Mon...6=Sat
-  // We want Mon=0 offset, so: (getDay()+6)%7
+  // Mon-based offset: (getDay()+6)%7
   const firstDay = new Date(y, m, 1).getDay();
-  const startOffset = (firstDay + 6) % 7;  // Mon-based offset
+  const startOffset = (firstDay + 6) % 7;
   const daysInMonth = new Date(y, m+1, 0).getDate();
 
-  for(let i=0;i<startOffset;i++) html += `<div class="cal-day empty"></div>`;
+  // Leading empty cells
+  for(let i=0;i<startOffset;i++){
+    html += `<div class="cal-day" style="visibility:hidden;pointer-events:none"></div>`;
+  }
 
   for(let d=1;d<=daysInMonth;d++){
     const dateStr = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -4343,6 +4344,17 @@ function renderCalendar(){
     if(hasPay) dots += `<div class="cal-dot" style="background:var(--yellow)"></div>`;
     html += `<div class="${cls}" onclick="calSelectDate('${dateStr}')" title="${dateStr}">${d}${dots?`<div class="cal-dots">${dots}</div>`:''}</div>`;
   }
+
+  // Trailing cells — only fill to complete current row, NOT a full extra row
+  const totalCells = startOffset + daysInMonth;
+  const remainder = totalCells % 7;
+  if(remainder !== 0){
+    const trailing = 7 - remainder;
+    for(let i=0;i<trailing;i++){
+      html += `<div class="cal-day" style="visibility:hidden;pointer-events:none"></div>`;
+    }
+  }
+
   grid.innerHTML = html;
 }
 
