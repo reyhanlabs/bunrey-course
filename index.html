@@ -982,7 +982,7 @@ td.nowrap { white-space:nowrap }
           <!-- Calendar -->
           <div class="cal-wrap">
             <div class="cal-header">
-              <h3 id="cal-month-label">June 2025</h3>
+              <h3 id="cal-month-label"></h3>
               <div class="cal-nav">
                 <button onclick="calNav(-1)">‹</button>
                 <button onclick="calToday()">Today</button>
@@ -2060,7 +2060,7 @@ async function renderAccessPanel(){
 const COLS = ['siswa','absensi','materi','evaluasi','bayar'];
 
 async function loadFromFirestore(){
-  if(!userDocRef){ setSyncErr(); return; }
+  if(!userDocRef){ return; }  // not logged in yet — silent
   try{
     setSyncing();
     const snap = await userDocRef.get();
@@ -2086,7 +2086,7 @@ async function loadFromFirestore(){
 
 let _saveTimer = null;
 function saveToFirestore(){
-  if(!userDocRef){ setSyncErr(); return; }
+  if(!userDocRef){ return; }  // not logged in yet — silent
   clearTimeout(_saveTimer);
   setSyncing();
   _saveTimer = setTimeout(()=>{ _flushToFirestore(); }, 400);
