@@ -932,6 +932,46 @@ td.nowrap { white-space:nowrap }
   position:fixed;width:8px;height:8px;border-radius:2px;
   animation:confettiDrop 1.2s ease forwards;pointer-events:none;z-index:9999;
 }
+
+/* ── STUDENT PROFILE MODAL ── */
+.sp-header{
+  background:linear-gradient(135deg,#6c63ff,#a78bfa);
+  border-radius:14px;padding:20px;margin-bottom:20px;
+  display:flex;align-items:center;gap:16px;
+}
+.sp-avatar{
+  width:52px;height:52px;border-radius:14px;flex-shrink:0;
+  background:rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;font-weight:800;color:#fff;
+  border:2px solid rgba(255,255,255,0.35);
+}
+.sp-name{font-family:'Fredoka One',sans-serif;font-size:1.15rem;font-weight:800;color:#fff;line-height:1.2}
+.sp-meta{font-size:0.75rem;color:rgba(255,255,255,0.78);margin-top:3px}
+.sp-section{margin-bottom:18px}
+.sp-section-title{
+  font-size:0.68rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:10px;padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.sp-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.04)}
+.sp-row:last-child{border-bottom:none}
+.sp-row .sp-key{color:var(--muted);font-weight:600}
+.sp-row .sp-val{font-weight:700;text-align:right}
+.sp-att-bar{display:flex;gap:4px;margin-top:8px}
+.sp-att-dot{flex:1;height:6px;border-radius:3px}
+.sp-pay-item{
+  background:var(--bg3);border-radius:8px;padding:9px 12px;
+  margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;
+  font-size:0.82rem;
+}
+.sp-eval-item{
+  background:var(--bg3);border-radius:8px;padding:9px 12px;
+  margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;
+  font-size:0.82rem;
+}
+.sp-score{font-family:'Fredoka One',sans-serif;font-size:1.1rem;font-weight:800}
 </style>
 </head>
 <body data-theme="dark">
@@ -996,7 +1036,7 @@ td.nowrap { white-space:nowrap }
       <!-- Global Search -->
       <div class="global-search" id="global-search-wrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="global-search" placeholder="Search students…" oninput="globalSearch(this.value)" onblur="setTimeout(()=>closeSearch(),200)">
+        <input type="text" id="global-search" placeholder="Search student profile…" oninput="globalSearch(this.value)" onblur="setTimeout(()=>closeSearch(),200)">
         <div class="search-results" id="search-results"></div>
       </div>
       <!-- Class Switcher -->
@@ -1025,7 +1065,7 @@ td.nowrap { white-space:nowrap }
       <div class="filter-bar" style="margin-bottom:20px">
         <div class="form-group"><label>📅 From</label><input type="date" id="dash-dari" onchange="renderDashboard()"></div>
         <div class="form-group"><label>📅 To</label><input type="date" id="dash-sampai" onchange="renderDashboard()"></div>
-        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2026'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2026" oninput="renderDashboard()"></div>
+        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2025'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2025" oninput="renderDashboard()"></div>
         <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
           <div style="display:flex;gap:6px">
             <button class="btn sm" onclick="setCurrentMonthDashFilter()" title="Set filter to current month" style="white-space:nowrap">📅 This Month</button>
@@ -1101,16 +1141,16 @@ td.nowrap { white-space:nowrap }
             <div id="dash-reminders"><div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:16px">No payment reminders.</div></div>
           </div>
           <!-- Recent Payments -->
-          <div class="card" style="margin-bottom:20px;border-top:3px solid var(--green)">
+          <div class="card" style="border-top:3px solid var(--green)">
             <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px">💰 Recent Payments</div>
             <div id="dash-payments"></div>
           </div>
-          <!-- Monthly Revenue Chart -->
-          <div class="card" style="margin-bottom:0;padding:14px 18px">
-            <div style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px">📊 Monthly Revenue</div>
-            <div style="position:relative;height:130px"><canvas id="chart-revenue"></canvas></div>
-          </div>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:0">
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px">📊 Monthly Revenue</div>
+        <div class="chart-box"><canvas id="chart-revenue"></canvas></div>
       </div>
     </div>
 
@@ -1389,7 +1429,7 @@ td.nowrap { white-space:nowrap }
           <input type="hidden" id="b-id">
           <div class="form-row">
             <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select --</option></select></div>
-            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2026" oninput="refreshMonthlyPanel()"></div>
+            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2025" oninput="refreshMonthlyPanel()"></div>
           </div>
 
           <!-- ── MONTHLY BILLING PANEL ── -->
@@ -1563,7 +1603,7 @@ td.nowrap { white-space:nowrap }
 
       <div class="filter-bar">
         <div class="form-group"><label>Student</label><select id="r-siswa" onchange="renderReports()"><option value="">-- All Students --</option></select></div>
-        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2026" oninput="renderReports()"></div>
+        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2025" oninput="renderReports()"></div>
       </div>
       <div id="report-list"></div>
       <div class="empty" id="empty-reports"><div class="ei">📤</div><p>Add evaluations to generate reports.</p></div>
@@ -2524,15 +2564,11 @@ function renderRevenueChart(canvasId, fDari='', fSampai='', fPeriode=''){
   if(window['_chart_'+canvasId]) window['_chart_'+canvasId].destroy();
   window['_chart_'+canvasId]=new Chart(ctx,{
     type:'bar',
-    data:{ labels, datasets:[{label:'Revenue',data,backgroundColor:'rgba(108,99,255,0.65)',borderColor:'rgba(108,99,255,1)',borderWidth:1,borderRadius:4,barPercentage:0.6}]},
+    data:{ labels, datasets:[{label:'Revenue (Rp)',data,backgroundColor:'rgba(108,99,255,0.7)',borderColor:'rgba(108,99,255,1)',borderWidth:2,borderRadius:6}]},
     options:{
       responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:4,bottom:0}},
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
-      scales:{
-        y:{display:false},
-        x:{ticks:{color:'#7c87a0',font:{size:10}},grid:{display:false},border:{display:false}}
-      }
+      scales:{y:{ticks:{color:'#7c87a0',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},x:{ticks:{color:'#7c87a0'},grid:{display:false}}}
     }
   });
 }
@@ -3093,7 +3129,7 @@ function savePayment(){
 
 // ── Monthly billing helpers ──
 function getMonthlySessionIds(siswaId, periodeText){
-  // Parse "June 2026" or "Juni 2025" → year+month range
+  // Parse "June 2025" or "Juni 2025" → year+month range
   // Fall back to ALL unpaid if we can't parse
   const parsed = parsePeriodeToYearMonth(periodeText);
   if(!parsed) return absensiList.filter(a=>a.siswaId===siswaId&&a.status==='Hadir').map(a=>a.id);
@@ -3110,7 +3146,7 @@ function parsePeriodeToYearMonth(text){
   // try "YYYY-MM" format
   const m1=text.match(/(\d{4})[.\-\/](\d{1,2})/);
   if(m1) return {y:+m1[1],m:+m1[2]};
-  // try "June 2026" or "Juni 2025"
+  // try "June 2025" or "Juni 2025"
   const months={jan:1,feb:2,mar:3,apr:4,may:5,mei:5,jun:6,jul:7,aug:8,agu:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
   const m2=text.toLowerCase().match(/([a-z]+)[.\s\-\/]+(\d{4})/);
   if(m2){const key=m2[1].slice(0,3); const mo=months[key]; if(mo) return {y:+m2[2],m:mo};}
@@ -3154,7 +3190,7 @@ function refreshMonthlyPanel(){
       ? `<span style="color:var(--green)">✅ ${sesiCount} sessions present this month</span>`
       : `<span style="color:var(--muted)">⚠️ No attendance records this month</span>`;
   } else {
-    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2026")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2026)</span>`;
+    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2025")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2025)</span>`;
   }
   body.innerHTML=`
     <div>👤 <strong>${s.nama}</strong></div>
@@ -4552,17 +4588,160 @@ function closeSearch(){
 
 function goToStudent(id){
   closeSearch();
-  navigate('students');
-  // Scroll to student row
-  setTimeout(()=>{
-    const rows = document.querySelectorAll('#tbody-students tr');
-    const idx = siswaList.findIndex(s=>s.id===id);
-    if(rows[idx]){
-      rows[idx].style.background='rgba(108,99,255,0.12)';
-      rows[idx].scrollIntoView({behavior:'smooth',block:'center'});
-      setTimeout(()=>rows[idx].style.background='',2000);
-    }
-  }, 200);
+  openStudentProfile(id);
+}
+
+function openStudentProfile(id){
+  const s = siswaList.find(x=>x.id===id);
+  if(!s) return;
+
+  // ── Attendance stats ──
+  const attAll   = absensiList.filter(a=>a.siswaId===id);
+  const attHadir = attAll.filter(a=>a.status==='Hadir');
+  const attIzin  = attAll.filter(a=>a.status==='Izin');
+  const attAlpha = attAll.filter(a=>a.status==='Alpha');
+  const attRate  = attAll.length ? Math.round(attHadir.length/attAll.length*100) : 0;
+  const attColor = attRate>=80?'var(--green)':attRate>=60?'var(--yellow)':'var(--red)';
+
+  // ── Payment stats ──
+  const paidSesiIds = new Set();
+  bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
+  const payStudent = [...bayarList].filter(b=>b.siswaId===id).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  let outstanding = 0;
+  if(s.billingType==='monthly'){
+    const sessionMonths=new Set();
+    attHadir.forEach(a=>{ const d=new Date(a.tanggal); sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')); });
+    const paidMonths=new Set();
+    payStudent.filter(b=>b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{ const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0')); });
+    sessionMonths.forEach(ym=>{ if(!paidMonths.has(ym)) outstanding+=(s.feeMonthly||0); });
+  } else {
+    const unpaidCount=attHadir.filter(a=>!paidSesiIds.has(a.id)).length;
+    outstanding=unpaidCount*(s.feePerSesi||0);
+  }
+  const totalPaid=payStudent.reduce((sum,b)=>sum+b.jumlah,0);
+
+  // ── Evaluation stats ──
+  const evalStudent=[...evaluasiList].filter(e=>e.siswaId===id).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  const avgScore=evalStudent.length?Math.round(evalStudent.reduce((s,e)=>s+Number(e.nilai||0),0)/evalStudent.length):null;
+  const scoreColor=avgScore===null?'var(--muted)':avgScore>=80?'var(--green)':avgScore>=60?'var(--yellow)':'var(--red)';
+  const lastEval=evalStudent[0];
+
+  // ── Lessons ──
+  const lessonStudent=materiList.filter(m=>m.targetSiswa===id||m.targetSiswa==='Semua'||!m.targetSiswa).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)).slice(0,4);
+
+  // ── Attendance bar (last 20 sessions) ──
+  const recentAtt=[...attAll].sort((a,b)=>b.tanggal.localeCompare(a.tanggal)).slice(0,20).reverse();
+  const attBar=recentAtt.map(a=>{
+    const c=a.status==='Hadir'?'var(--green)':a.status==='Izin'?'var(--yellow)':'var(--red)';
+    return `<div class="sp-att-dot" style="background:${c}" title="${tglFmt(a.tanggal)} · ${a.status}"></div>`;
+  }).join('');
+
+  document.getElementById('sp-content').innerHTML = `
+    <!-- Header -->
+    <div class="sp-header">
+      <div class="sp-avatar">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
+      <div>
+        <div class="sp-name">${s.nama}${s.nick?` <span style="font-size:0.8rem;opacity:0.8">(${s.nick})</span>`:''}</div>
+        <div class="sp-meta">${s.kelas||'—'} · ${s.level||'—'}${s.hari?' · '+s.hari:''}</div>
+        <div class="sp-meta" style="margin-top:4px">${s.namaOrtu?'👨‍👩‍👦 '+s.namaOrtu:''} ${s.hp?'· 📱 '+s.hp:''}</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div style="font-family:'Fredoka One',sans-serif;font-size:1.8rem;font-weight:800;color:#fff;line-height:1">${attRate}%</div>
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.7)">Attendance</div>
+      </div>
+    </div>
+
+    <!-- Attendance -->
+    <div class="sp-section">
+      <div class="sp-section-title">📋 Attendance</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+        <div style="background:rgba(0,214,143,0.1);border:1px solid rgba(0,214,143,0.25);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:'Fredoka One',sans-serif;font-size:1.4rem;font-weight:800;color:var(--green)">${attHadir.length}</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700">Present</div>
+        </div>
+        <div style="background:rgba(255,179,71,0.1);border:1px solid rgba(255,179,71,0.25);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:'Fredoka One',sans-serif;font-size:1.4rem;font-weight:800;color:var(--yellow)">${attIzin.length}</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700">Excused</div>
+        </div>
+        <div style="background:rgba(255,79,109,0.1);border:1px solid rgba(255,79,109,0.25);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-family:'Fredoka One',sans-serif;font-size:1.4rem;font-weight:800;color:var(--red)">${attAlpha.length}</div>
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700">Absent</div>
+        </div>
+      </div>
+      ${recentAtt.length?`<div style="font-size:0.7rem;color:var(--muted);margin-bottom:4px;font-weight:600">Last ${recentAtt.length} sessions</div><div class="sp-att-bar">${attBar}</div>`:''}
+    </div>
+
+    <!-- Payment -->
+    <div class="sp-section">
+      <div class="sp-section-title">💰 Payment</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:rgba(0,214,143,0.08);border:1px solid rgba(0,214,143,0.2);border-radius:10px;padding:10px">
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700;margin-bottom:3px">TOTAL PAID</div>
+          <div style="font-family:'Fredoka One',sans-serif;font-size:1rem;font-weight:800;color:var(--green)">${fmt(totalPaid)}</div>
+        </div>
+        <div style="background:${outstanding>0?'rgba(255,79,109,0.08)':'rgba(0,214,143,0.08)'};border:1px solid ${outstanding>0?'rgba(255,79,109,0.2)':'rgba(0,214,143,0.2)'};border-radius:10px;padding:10px">
+          <div style="font-size:0.7rem;color:var(--muted);font-weight:700;margin-bottom:3px">OUTSTANDING</div>
+          <div style="font-family:'Fredoka One',sans-serif;font-size:1rem;font-weight:800;color:${outstanding>0?'var(--red)':'var(--green)'}">${outstanding>0?fmt(outstanding):'✅ Clear'}</div>
+        </div>
+      </div>
+      ${payStudent.slice(0,3).map(b=>`
+        <div class="sp-pay-item">
+          <div>
+            <div style="font-weight:700">${b.periode||tglFmt(b.tanggal)}</div>
+            <div style="font-size:0.72rem;color:var(--muted)">${tglFmt(b.tanggal)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800;color:var(--green)">${fmt(b.jumlah)}</div>
+            ${b.status==='Lunas'?chip('Paid','chip-green'):b.status==='Cicil'?chip('Partial','chip-yellow'):chip('Unpaid','chip-red')}
+          </div>
+        </div>`).join('')}
+      ${payStudent.length===0?`<div style="color:var(--muted);font-size:0.83rem;padding:8px 0">No payment records.</div>`:''}
+    </div>
+
+    <!-- Evaluation -->
+    <div class="sp-section">
+      <div class="sp-section-title">⭐ Evaluation</div>
+      ${avgScore!==null?`
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px">
+        <div style="text-align:center">
+          <div style="font-family:'Fredoka One',sans-serif;font-size:2rem;font-weight:800;color:${scoreColor};line-height:1">${avgScore}</div>
+          <div style="font-size:0.68rem;color:var(--muted);font-weight:700">AVG SCORE</div>
+        </div>
+        <div style="flex:1">
+          <div class="pbar-wrap"><div class="pbar-fill" style="width:${avgScore}%;background:${scoreColor}"></div></div>
+          <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">${evalStudent.length} evaluation(s) · Latest: ${lastEval?tglFmt(lastEval.tanggal):'-'}</div>
+        </div>
+      </div>`:''}
+      ${evalStudent.slice(0,3).map(e=>`
+        <div class="sp-eval-item">
+          <div>
+            <div style="font-weight:700;font-size:0.82rem">${tglFmt(e.tanggal)}</div>
+            <div style="font-size:0.72rem;color:var(--muted)">${e.progress||e.catatan||'—'}</div>
+          </div>
+          <div style="text-align:right;display:flex;align-items:center;gap:8px">
+            <span>${stars(e.rating)}</span>
+            <span class="sp-score" style="color:${Number(e.nilai)>=80?'var(--green)':Number(e.nilai)>=60?'var(--yellow)':'var(--red)'}">${e.nilai||'-'}</span>
+          </div>
+        </div>`).join('')}
+      ${evalStudent.length===0?`<div style="color:var(--muted);font-size:0.83rem;padding:8px 0">No evaluations yet.</div>`:''}
+    </div>
+
+    <!-- Lessons -->
+    <div class="sp-section" style="margin-bottom:4px">
+      <div class="sp-section-title">📚 Recent Lessons</div>
+      ${lessonStudent.length?lessonStudent.map(m=>`
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--border)">
+          <div class="lesson-dot ${m.status==='Selesai'?'done':'planned'}" style="margin-top:6px;flex-shrink:0"></div>
+          <div>
+            <div style="font-weight:700;font-size:0.85rem">${m.topik}</div>
+            <div style="font-size:0.72rem;color:var(--muted)">${tglFmt(m.tanggal)} · ${m.status==='Selesai'?'Completed':'Planned'}</div>
+          </div>
+        </div>`).join('')
+      :`<div style="color:var(--muted);font-size:0.83rem;padding:8px 0">No lessons recorded.</div>`}
+    </div>
+  `;
+
+  openModal('modal-student-profile');
 }
 
 // ════════════════════════════════════════════════
@@ -5126,6 +5305,17 @@ function updateMbnBadge(){
   </div>
   <div class="mbn-item" data-page="reports" onclick="mbnNav('reports')">
     <div class="mbn-icon">📤</div>Reports
+  </div>
+</div>
+
+<!-- ══ MODAL: STUDENT PROFILE ══ -->
+<div class="overlay" id="modal-student-profile">
+  <div class="modal modal-lg" style="max-width:600px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="modal-title" style="margin-bottom:0">👤 Student Profile</div>
+      <button class="btn sm icon-only" onclick="closeModal('modal-student-profile')" style="font-size:1rem">✕</button>
+    </div>
+    <div id="sp-content"></div>
   </div>
 </div>
 
