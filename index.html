@@ -1025,8 +1025,13 @@ td.nowrap { white-space:nowrap }
       <div class="filter-bar" style="margin-bottom:20px">
         <div class="form-group"><label>📅 From</label><input type="date" id="dash-dari" onchange="renderDashboard()"></div>
         <div class="form-group"><label>📅 To</label><input type="date" id="dash-sampai" onchange="renderDashboard()"></div>
-        <div class="form-group"><label>📂 Period</label><input type="text" id="dash-periode" placeholder="e.g. June 2025" oninput="renderDashboard()"></div>
-        <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label><button class="btn sm" onclick="clearDashFilter()">✕ Clear</button></div>
+        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2025'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2025" oninput="renderDashboard()"></div>
+        <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
+          <div style="display:flex;gap:6px">
+            <button class="btn sm" onclick="setCurrentMonthDashFilter()" title="Set filter to current month" style="white-space:nowrap">📅 This Month</button>
+            <button class="btn sm" onclick="clearDashFilter()">✕ Clear</button>
+          </div>
+        </div>
       </div>
 
       <!-- Quick Actions -->
@@ -2037,7 +2042,7 @@ async function switchClass(classId){
   updateClassSwitcherUI(cls);
   // Clear data before loading new class
   siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
-  renderAll(); renderDashboard();
+  renderAll(); setCurrentMonthDashFilter();
   await loadFromFirestore();
   closeModal('modal-classes');
 }
@@ -2200,12 +2205,12 @@ async function loadFromFirestore(){
       siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
     }
     setSynced();
-    renderAll(); renderDashboard(); loadAbsensi();
+    renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
   } catch(e){
     setSyncErr(e.code || e.message);
     console.error('Load error', e);
     siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
-    renderAll(); renderDashboard(); loadAbsensi();
+    renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
   }
 }
 
@@ -2249,7 +2254,7 @@ async function migrateLocalStorage(){
   evaluasiList=lsGet('evaluasi'); bayarList=lsGet('bayar');
   await _flushToFirestore();
   COLS.forEach(k => localStorage.removeItem(k));
-  renderAll(); renderDashboard();
+  renderAll(); setCurrentMonthDashFilter();
   console.log('✅ Migrated localStorage → Firestore class');
 }
 
@@ -2337,7 +2342,7 @@ function navigate(page){
     tmp.innerHTML=pageActions[page];
     actEl.insertBefore(tmp, actEl.firstChild);
   }
-  if(page==='dashboard') renderDashboard();
+  if(page==='dashboard') setCurrentMonthDashFilter();
   if(page==='analytics') renderAnalytics();
   if(page==='reports')   renderReports();
   if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
@@ -2365,6 +2370,20 @@ applyTheme();
 //  DASHBOARD
 // ════════════════════════════════════════════════
 let chartRevInst;
+function setCurrentMonthDashFilter(){
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth()+1).padStart(2,'0');
+  const lastDay = new Date(y, now.getMonth()+1, 0).getDate().toString().padStart(2,'0');
+  const dari = document.getElementById('dash-dari');
+  const sampai = document.getElementById('dash-sampai');
+  const periode = document.getElementById('dash-periode');
+  if(dari)   dari.value   = `${y}-${m}-01`;
+  if(sampai) sampai.value = `${y}-${m}-${lastDay}`;
+  if(periode) periode.value = '';
+  renderDashboard();
+}
+
 function clearDashFilter(){
   ['dash-dari','dash-sampai','dash-periode'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   renderDashboard();
@@ -2388,7 +2407,40 @@ function renderDashboard(){
 
   const totalStudents = siswaList.length;
   const totalRevenue  = filteredPay.reduce((s,b)=>s+b.jumlah,0);
-  const unpaid        = filteredPay.filter(b=>b.status==='Belum Bayar').length;
+
+  // FIX: Unpaid Bills = accurate outstanding count per student (same logic as Payment page)
+  const paidSesiIds = new Set();
+  bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
+
+  // Count students with unpaid sessions (per_session) or unpaid months (monthly)
+  let unpaid = 0;
+  siswaList.forEach(s => {
+    if(s.billingType==='monthly'){
+      const sessionMonths = new Set();
+      absensiList.filter(a=>a.siswaId===s.id&&a.status==='Hadir').forEach(a=>{
+        const d=new Date(a.tanggal);
+        const ym=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+        // If filtered by date range, only count months within range
+        if(fDari && a.tanggal<fDari) return;
+        if(fSampai && a.tanggal>fSampai) return;
+        sessionMonths.add(ym);
+      });
+      const paidMonths = new Set();
+      bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{
+        const parsed=parsePeriodeToYearMonth(b.periode||'');
+        if(parsed) paidMonths.add(parsed.y+'-'+parsed.m.toString().padStart(2,'0'));
+      });
+      sessionMonths.forEach(ym=>{ if(!paidMonths.has(ym)) unpaid++; });
+    } else {
+      const unpaidSessions = absensiList.filter(a => {
+        if(a.siswaId!==s.id || a.status!=='Hadir') return false;
+        if(fDari && a.tanggal<fDari) return false;
+        if(fSampai && a.tanggal>fSampai) return false;
+        return !paidSesiIds.has(a.id);
+      }).length;
+      if(unpaidSessions>0) unpaid++;
+    }
+  });
 
   // Attendance filtered
   let filteredAtt = [...absensiList];
@@ -4530,7 +4582,7 @@ function mbnNav(page){
     tmp.innerHTML=pageActions[page];
     actEl.insertBefore(tmp, actEl.firstChild);
   }
-  if(page==='dashboard') renderDashboard();
+  if(page==='dashboard') setCurrentMonthDashFilter();
   if(page==='analytics') renderAnalytics();
   if(page==='reports')   renderReports();
   if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
