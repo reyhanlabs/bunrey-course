@@ -650,6 +650,33 @@ td.nowrap { white-space:nowrap }
 }
 .cal-legend-item{display:flex;align-items:center;gap:5px;font-size:0.7rem;color:var(--muted);font-weight:600}
 .cal-legend-dot{width:7px;height:7px;border-radius:50%}
+.cal-day.holiday{color:var(--red);font-weight:800}
+.cal-day.holiday:hover{background:rgba(255,79,109,0.15)}
+.cal-day.cuti{color:var(--orange);font-weight:700}
+.cal-day.cuti:hover{background:rgba(255,140,66,0.15)}
+.cal-holiday-info{
+  padding:8px 12px;border-top:1px solid var(--border);
+  max-height:120px;overflow-y:auto;
+}
+.cal-holiday-item{
+  display:flex;align-items:center;gap:8px;padding:5px 0;
+  font-size:0.72rem;color:var(--text);border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.cal-holiday-item:last-child{border-bottom:none}
+.cal-holiday-item .chi-date{
+  min-width:24px;height:24px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:0.7rem;flex-shrink:0;
+}
+.cal-holiday-item .chi-date.libur{background:rgba(255,79,109,0.15);color:var(--red)}
+.cal-holiday-item .chi-date.cuti{background:rgba(255,140,66,0.15);color:var(--orange)}
+.cal-holiday-item .chi-label{font-weight:600;line-height:1.3}
+.cal-holiday-item .chi-type{
+  font-size:0.58rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;
+  padding:1px 5px;border-radius:4px;margin-left:auto;flex-shrink:0;white-space:nowrap;
+}
+.chi-type.libur{background:rgba(255,79,109,0.12);color:var(--red)}
+.chi-type.cuti{background:rgba(255,140,66,0.12);color:var(--orange)}
 
 /* ── AI ASSISTANT PANEL ── */
 .ai-panel{
@@ -1070,7 +1097,7 @@ td.nowrap { white-space:nowrap }
       <div class="filter-bar" style="margin-bottom:20px">
         <div class="form-group"><label>📅 From</label><input type="date" id="dash-dari" onchange="renderDashboard()"></div>
         <div class="form-group"><label>📅 To</label><input type="date" id="dash-sampai" onchange="renderDashboard()"></div>
-        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2025'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2025" oninput="renderDashboard()"></div>
+        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2026'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2026" oninput="renderDashboard()"></div>
         <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
           <div style="display:flex;gap:6px">
             <button class="btn sm" onclick="setCurrentMonthDashFilter()" title="Set filter to current month" style="white-space:nowrap">📅 This Month</button>
@@ -1125,8 +1152,11 @@ td.nowrap { white-space:nowrap }
             <div class="cal-legend">
               <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--green)"></div>Attendance</div>
               <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--yellow)"></div>Payment</div>
+              <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>Holiday</div>
+              <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--orange)"></div>Cuti Bersama</div>
               <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#fff;border:2px solid #6c63ff"></div>Today</div>
             </div>
+            <div class="cal-holiday-info" id="cal-holiday-info"></div>
           </div>
           <!-- Today's Schedule -->
           <div class="card" style="margin-bottom:0;border-top:3px solid var(--accent)">
@@ -1154,8 +1184,8 @@ td.nowrap { white-space:nowrap }
       </div>
 
       <div class="card" style="margin-top:0">
-        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px">📊 Monthly Revenue</div>
-        <div class="chart-box"><canvas id="chart-revenue"></canvas></div>
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:12px">📊 Monthly Revenue</div>
+        <div class="chart-box" style="height:120px"><canvas id="chart-revenue"></canvas></div>
       </div>
     </div>
 
@@ -1434,7 +1464,7 @@ td.nowrap { white-space:nowrap }
           <input type="hidden" id="b-id">
           <div class="form-row">
             <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select --</option></select></div>
-            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2025" oninput="refreshMonthlyPanel()"></div>
+            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2026" oninput="refreshMonthlyPanel()"></div>
           </div>
 
           <!-- ── MONTHLY BILLING PANEL ── -->
@@ -1608,7 +1638,7 @@ td.nowrap { white-space:nowrap }
 
       <div class="filter-bar">
         <div class="form-group"><label>Student</label><select id="r-siswa" onchange="renderReports()"><option value="">-- All Students --</option></select></div>
-        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2025" oninput="renderReports()"></div>
+        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2026" oninput="renderReports()"></div>
       </div>
       <div id="report-list"></div>
       <div class="empty" id="empty-reports"><div class="ei">📤</div><p>Add evaluations to generate reports.</p></div>
@@ -3136,7 +3166,7 @@ function savePayment(){
 
 // ── Monthly billing helpers ──
 function getMonthlySessionIds(siswaId, periodeText){
-  // Parse "June 2025" or "Juni 2025" → year+month range
+  // Parse "June 2026" or "Juni 2025" → year+month range
   // Fall back to ALL unpaid if we can't parse
   const parsed = parsePeriodeToYearMonth(periodeText);
   if(!parsed) return absensiList.filter(a=>a.siswaId===siswaId&&a.status==='Hadir').map(a=>a.id);
@@ -3153,7 +3183,7 @@ function parsePeriodeToYearMonth(text){
   // try "YYYY-MM" format
   const m1=text.match(/(\d{4})[.\-\/](\d{1,2})/);
   if(m1) return {y:+m1[1],m:+m1[2]};
-  // try "June 2025" or "Juni 2025"
+  // try "June 2026" or "Juni 2025"
   const months={jan:1,feb:2,mar:3,apr:4,may:5,mei:5,jun:6,jul:7,aug:8,agu:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
   const m2=text.toLowerCase().match(/([a-z]+)[.\s\-\/]+(\d{4})/);
   if(m2){const key=m2[1].slice(0,3); const mo=months[key]; if(mo) return {y:+m2[2],m:mo};}
@@ -3197,7 +3227,7 @@ function refreshMonthlyPanel(){
       ? `<span style="color:var(--green)">✅ ${sesiCount} sessions present this month</span>`
       : `<span style="color:var(--muted)">⚠️ No attendance records this month</span>`;
   } else {
-    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2025")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2025)</span>`;
+    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2026")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2026)</span>`;
   }
   body.innerHTML=`
     <div>👤 <strong>${s.nama}</strong></div>
@@ -4404,6 +4434,37 @@ updateNotifBadge();
 let _calYear = new Date().getFullYear();  // always current year on init
 let _calMonth = new Date().getMonth();    // always current month on init
 
+// ── Indonesian National Holidays & Cuti Bersama 2026 (SKB 3 Menteri) ──
+const HOLIDAYS_ID = {
+  // === 2026 - Libur Nasional ===
+  '2026-01-01': {name:'Tahun Baru Masehi', type:'libur'},
+  '2026-01-16': {name:'Isra Mi\'raj Nabi Muhammad SAW', type:'libur'},
+  '2026-02-17': {name:'Tahun Baru Imlek 2577 Kongzili', type:'libur'},
+  '2026-03-19': {name:'Hari Suci Nyepi (Tahun Baru Saka 1948)', type:'libur'},
+  '2026-03-21': {name:'Hari Raya Idul Fitri 1447 H', type:'libur'},
+  '2026-03-22': {name:'Hari Raya Idul Fitri 1447 H', type:'libur'},
+  '2026-04-03': {name:'Wafat Yesus Kristus (Jumat Agung)', type:'libur'},
+  '2026-04-05': {name:'Kebangkitan Yesus Kristus (Paskah)', type:'libur'},
+  '2026-05-01': {name:'Hari Buruh Internasional', type:'libur'},
+  '2026-05-14': {name:'Kenaikan Yesus Kristus', type:'libur'},
+  '2026-05-27': {name:'Hari Raya Idul Adha 1447 H', type:'libur'},
+  '2026-05-31': {name:'Hari Raya Waisak 2570 BE', type:'libur'},
+  '2026-06-01': {name:'Hari Lahir Pancasila', type:'libur'},
+  '2026-06-16': {name:'Tahun Baru Islam 1448 H', type:'libur'},
+  '2026-08-17': {name:'Hari Kemerdekaan RI ke-81', type:'libur'},
+  '2026-08-25': {name:'Maulid Nabi Muhammad SAW', type:'libur'},
+  '2026-12-25': {name:'Hari Natal', type:'libur'},
+  // === 2026 - Cuti Bersama ===
+  '2026-02-16': {name:'Cuti Bersama Imlek', type:'cuti'},
+  '2026-03-18': {name:'Cuti Bersama Nyepi', type:'cuti'},
+  '2026-03-20': {name:'Cuti Bersama Idul Fitri', type:'cuti'},
+  '2026-03-23': {name:'Cuti Bersama Idul Fitri', type:'cuti'},
+  '2026-03-24': {name:'Cuti Bersama Idul Fitri', type:'cuti'},
+  '2026-05-15': {name:'Cuti Bersama Kenaikan Yesus Kristus', type:'cuti'},
+  '2026-05-28': {name:'Cuti Bersama Idul Adha', type:'cuti'},
+  '2026-12-24': {name:'Cuti Bersama Natal', type:'cuti'},
+};
+
 function renderCalendar(){
   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const today = new Date();
@@ -4426,6 +4487,9 @@ function renderCalendar(){
   const startOffset = (firstDay + 6) % 7;
   const daysInMonth = new Date(y, m+1, 0).getDate();
 
+  // Collect holidays for this month
+  const monthHolidays = [];
+
   // Leading empty cells
   for(let i=0;i<startOffset;i++){
     html += `<div class="cal-day" style="visibility:hidden;pointer-events:none"></div>`;
@@ -4436,15 +4500,23 @@ function renderCalendar(){
     const isToday = today.getFullYear()===y && today.getMonth()===m && today.getDate()===d;
     const hasAtt = attDates.has(dateStr);
     const hasPay = payDates.has(dateStr);
+    const holiday = HOLIDAYS_ID[dateStr];
     let cls = 'cal-day';
     if(isToday) cls+=' today';
+    else if(holiday && holiday.type==='libur') cls+=' holiday';
+    else if(holiday && holiday.type==='cuti') cls+=' cuti';
     let dots = '';
     if(hasAtt) dots += `<div class="cal-dot" style="background:var(--green)"></div>`;
     if(hasPay) dots += `<div class="cal-dot" style="background:var(--yellow)"></div>`;
-    html += `<div class="${cls}" onclick="calSelectDate('${dateStr}')" title="${dateStr}">${d}${dots?`<div class="cal-dots">${dots}</div>`:''}</div>`;
+    if(holiday && holiday.type==='libur') dots += `<div class="cal-dot" style="background:var(--red)"></div>`;
+    if(holiday && holiday.type==='cuti') dots += `<div class="cal-dot" style="background:var(--orange)"></div>`;
+    const titleAttr = holiday ? dateStr+' · '+holiday.name : dateStr;
+    html += `<div class="${cls}" onclick="calSelectDate('${dateStr}')" title="${titleAttr}">${d}${dots?`<div class="cal-dots">${dots}</div>`:''}</div>`;
+
+    if(holiday) monthHolidays.push({date:d, ...holiday});
   }
 
-  // Trailing cells — only fill to complete current row, NOT a full extra row
+  // Trailing cells
   const totalCells = startOffset + daysInMonth;
   const remainder = totalCells % 7;
   if(remainder !== 0){
@@ -4455,6 +4527,21 @@ function renderCalendar(){
   }
 
   grid.innerHTML = html;
+
+  // Render holiday info panel
+  const infoEl = document.getElementById('cal-holiday-info');
+  if(infoEl){
+    if(monthHolidays.length){
+      infoEl.innerHTML = monthHolidays.map(h=>`
+        <div class="cal-holiday-item">
+          <div class="chi-date ${h.type}">${h.date}</div>
+          <div class="chi-label">${h.name}</div>
+          <div class="chi-type ${h.type}">${h.type==='libur'?'Libur':'Cuti'}</div>
+        </div>`).join('');
+    } else {
+      infoEl.innerHTML = `<div style="text-align:center;padding:8px;font-size:0.72rem;color:var(--muted)">Tidak ada hari libur bulan ini</div>`;
+    }
+  }
 }
 
 function calNav(dir){
@@ -4810,7 +4897,7 @@ function buildSPRenderHTML(id){
     </div>`;
 
   const sectionTitle=(icon,label)=>
-    `<div style="font-size:11px;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e8e8e8;padding-bottom:7px;margin-bottom:12px">${icon} ${label}</div>`;
+    `<div style="font-size:11px;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #e0e0e0;padding-bottom:8px;margin-bottom:14px;margin-top:6px">${icon} ${label}</div>`;
 
   const payRow=(b)=>
     `<div style="margin-bottom:6px;padding:8px 10px;background:#f7f8ff;border-radius:8px;overflow:hidden">
@@ -4855,7 +4942,7 @@ function buildSPRenderHTML(id){
           <div style="width:54px;height:54px;border-radius:12px;background:rgba(255,255,255,0.22);border:2px solid rgba(255,255,255,0.4);text-align:center;line-height:54px;font-size:24px;font-weight:800;color:#fff">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
         </td>
         <td style="vertical-align:middle;padding:0">
-          <div style="font-size:17px;font-weight:800;color:#fff;white-space:normal;word-break:normal;word-spacing:normal">${s.nama}${s.nick?' <span style="font-size:13px;opacity:0.85">('+s.nick+')</span>':''}</div>
+          <div style="font-size:17px;font-weight:800;color:#fff;white-space:normal;word-break:normal;word-spacing:normal">${s.nama.replace(/ /g,'\u00a0')}${s.nick?' <span style="font-size:13px;opacity:0.85">('+s.nick+')</span>':''}</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.82);margin-top:3px">${s.kelas||'—'} &nbsp;&middot;&nbsp; ${s.level||'—'}${s.hari?' &nbsp;&middot;&nbsp; '+s.hari:''}</div>
           ${s.namaOrtu?`<div style="font-size:11px;color:rgba(255,255,255,0.72);margin-top:3px">${s.namaOrtu}${s.hp?' &nbsp;&middot;&nbsp; '+s.hp:''}</div>`:''}
         </td>
@@ -4867,7 +4954,7 @@ function buildSPRenderHTML(id){
     </div>
 
     <!-- ATTENDANCE -->
-    <div style="margin-bottom:18px">
+    <div style="margin-bottom:24px">
       ${sectionTitle('[ A ]','Attendance')}
       <table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr>
         <td style="width:33%;padding:0 4px 0 0">${statBox('#f0fdf4','#bbf7d0','#00b371',attHadir.length,'Present')}</td>
@@ -4880,7 +4967,7 @@ function buildSPRenderHTML(id){
     </div>
 
     <!-- PAYMENT -->
-    <div style="margin-bottom:18px">
+    <div style="margin-bottom:24px">
       ${sectionTitle('[ $ ]','Payment')}
       <table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr>
         <td style="width:50%;padding:0 4px 0 0">
@@ -4901,7 +4988,7 @@ function buildSPRenderHTML(id){
     </div>
 
     <!-- EVALUATION -->
-    <div style="margin-bottom:18px">
+    <div style="margin-bottom:24px">
       ${sectionTitle('[ * ]','Evaluation')}
       ${avgScore!==null?`
       <table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr>
@@ -4921,7 +5008,7 @@ function buildSPRenderHTML(id){
     </div>
 
     <!-- LESSONS -->
-    <div style="margin-bottom:18px">
+    <div style="margin-bottom:24px">
       ${sectionTitle('[ L ]','Recent Lessons')}
       ${lessonStudent.length ? lessonStudent.map(m=>`
         <table style="width:100%;border-collapse:collapse;margin-bottom:0"><tr>
@@ -4937,7 +5024,7 @@ function buildSPRenderHTML(id){
     </div>
 
     <!-- FOOTER -->
-    <div style="text-align:center;padding-top:12px;border-top:2px dashed #e8e8e8;font-size:11px;color:#bbb;line-height:1.8">
+    <div style="text-align:center;padding-top:16px;border-top:2px dashed #d8d8d8;margin-top:8px;font-size:11px;color:#bbb;line-height:1.8">
       Generated on ${now} &nbsp;&middot;&nbsp; <span style="color:#6c63ff;font-weight:700">BunRey English Course</span>
     </div>
 
