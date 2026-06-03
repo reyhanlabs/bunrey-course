@@ -332,8 +332,8 @@ td.nowrap { white-space:nowrap }
   padding:28px;font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;z-index:-1;
 }
 #sp-render-panel {
-  position:fixed;left:-9999px;top:0;width:480px;background:#fff;
-  padding:32px;font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;z-index:-1;
+  position:fixed;left:-9999px;top:0;width:560px;background:#fff;
+  padding:0;font-family:Arial,Helvetica,sans-serif;color:#1a1f36;z-index:-1;
 }
 
 /* ── FILTER BAR ── */
@@ -4757,14 +4757,14 @@ function buildSPRenderHTML(id){
   const s = siswaList.find(x=>x.id===id);
   if(!s) return '';
 
-  const attAll    = absensiList.filter(a=>a.siswaId===id);
-  const attHadir  = attAll.filter(a=>a.status==='Hadir');
-  const attIzin   = attAll.filter(a=>a.status==='Izin');
-  const attAlpha  = attAll.filter(a=>a.status==='Alpha');
-  const attRate   = attAll.length ? Math.round(attHadir.length/attAll.length*100) : 0;
+  const attAll   = absensiList.filter(a=>a.siswaId===id);
+  const attHadir = attAll.filter(a=>a.status==='Hadir');
+  const attIzin  = attAll.filter(a=>a.status==='Izin');
+  const attAlpha = attAll.filter(a=>a.status==='Alpha');
+  const attRate  = attAll.length ? Math.round(attHadir.length/attAll.length*100) : 0;
 
   const paidSesiIds = new Set();
-  bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
+  bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(sid=>paidSesiIds.add(sid)); });
   const payStudent = [...bayarList].filter(b=>b.siswaId===id).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
   let outstanding = 0;
   if(s.billingType==='monthly'){
@@ -4779,140 +4779,184 @@ function buildSPRenderHTML(id){
   const totalPaid = payStudent.reduce((sum,b)=>sum+b.jumlah,0);
 
   const evalStudent = [...evaluasiList].filter(e=>e.siswaId===id).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-  const avgScore = evalStudent.length ? Math.round(evalStudent.reduce((s,e)=>s+Number(e.nilai||0),0)/evalStudent.length) : null;
-  const scoreColor = avgScore===null?'#888':avgScore>=80?'#00b371':avgScore>=60?'#f59e0b':'#e11d48';
-  const attColor = attRate>=80?'#00b371':attRate>=60?'#f59e0b':'#e11d48';
+  const avgScore = evalStudent.length ? Math.round(evalStudent.reduce((acc,e)=>acc+Number(e.nilai||0),0)/evalStudent.length) : null;
+  const scoreColor = avgScore===null?'#999':avgScore>=80?'#00b371':avgScore>=60?'#f59e0b':'#e11d48';
 
   const lessonStudent = materiList.filter(m=>m.targetSiswa===id||m.targetSiswa==='Semua'||!m.targetSiswa).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)).slice(0,5);
   const recentAtt = [...attAll].sort((a,b)=>b.tanggal.localeCompare(a.tanggal)).slice(0,20).reverse();
+
+  // Attendance bar — use table cells for reliable html2canvas rendering
+  const barCellW = Math.floor(460/Math.max(recentAtt.length,1));
   const attBarHtml = recentAtt.map(a=>{
     const c=a.status==='Hadir'?'#00b371':a.status==='Izin'?'#f59e0b':'#e11d48';
-    return `<div style="flex:1;height:8px;border-radius:3px;background:${c};min-width:6px" title="${a.tanggal} · ${a.status}"></div>`;
+    return `<td style="padding:0 1px"><div style="width:${barCellW-2}px;height:8px;border-radius:3px;background:${c}"></div></td>`;
   }).join('');
 
   const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const W = 560; // panel width
+  const P = 28;  // padding
+  const IW = W - P*2; // inner width
 
-  return `
-    <div style="font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;background:#fff;width:480px;padding:32px">
-      <!-- Header -->
-      <div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);border-radius:14px;padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
-        <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;border:2px solid rgba(255,255,255,0.35);flex-shrink:0">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
-        <div style="flex:1">
-          <div style="font-size:1.1rem;font-weight:800;color:#fff">${s.nama}${s.nick?' ('+s.nick+')':''}</div>
-          <div style="font-size:0.75rem;color:rgba(255,255,255,0.8);margin-top:3px">${s.kelas||'—'} · ${s.level||'—'}${s.hari?' · '+s.hari:''}</div>
-          ${s.namaOrtu?`<div style="font-size:0.72rem;color:rgba(255,255,255,0.75);margin-top:2px">👨‍👩‍👦 ${s.namaOrtu}${s.hp?' · 📱 '+s.hp:''}</div>`:''}
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:1.8rem;font-weight:800;color:#fff;line-height:1">${attRate}%</div>
-          <div style="font-size:0.68rem;color:rgba(255,255,255,0.75)">Attendance</div>
-        </div>
-      </div>
+  // Helper: two-col table row
+  const row2=(left,right)=>`<tr>
+    <td style="width:50%;padding:0 4px 8px 0;vertical-align:top">${left}</td>
+    <td style="width:50%;padding:0 0 8px 4px;vertical-align:top">${right}</td>
+  </tr>`;
 
-      <!-- Attendance -->
-      <div style="margin-bottom:18px">
-        <div style="font-size:0.68rem;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px">📋 Attendance</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;text-align:center">
-            <div style="font-size:1.4rem;font-weight:800;color:#00b371">${attHadir.length}</div>
-            <div style="font-size:0.7rem;color:#888;font-weight:700">Present</div>
-          </div>
-          <div style="flex:1;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px;text-align:center">
-            <div style="font-size:1.4rem;font-weight:800;color:#f59e0b">${attIzin.length}</div>
-            <div style="font-size:0.7rem;color:#888;font-weight:700">Excused</div>
-          </div>
-          <div style="flex:1;background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;padding:10px;text-align:center">
-            <div style="font-size:1.4rem;font-weight:800;color:#e11d48">${attAlpha.length}</div>
-            <div style="font-size:0.7rem;color:#888;font-weight:700">Absent</div>
-          </div>
-        </div>
-        ${recentAtt.length?`<div style="font-size:0.68rem;color:#888;margin-bottom:4px;font-weight:600">Last ${recentAtt.length} sessions</div><div style="display:flex;gap:3px">${attBarHtml}</div>`:''}
-      </div>
+  const statBox=(bg,border,numColor,num,label)=>
+    `<div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:12px;text-align:center">
+      <div style="font-size:26px;font-weight:800;color:${numColor};line-height:1.1">${num}</div>
+      <div style="font-size:11px;color:#888;font-weight:700;margin-top:2px">${label}</div>
+    </div>`;
 
-      <!-- Payment -->
-      <div style="margin-bottom:18px">
-        <div style="font-size:0.68rem;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px">💰 Payment</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px">
-            <div style="font-size:0.68rem;color:#888;font-weight:700;margin-bottom:3px">TOTAL PAID</div>
-            <div style="font-size:1rem;font-weight:800;color:#00b371">${fmt(totalPaid)}</div>
-          </div>
-          <div style="flex:1;background:${outstanding>0?'#fff1f2':'#f0fdf4'};border:1px solid ${outstanding>0?'#fecdd3':'#bbf7d0'};border-radius:10px;padding:10px">
-            <div style="font-size:0.68rem;color:#888;font-weight:700;margin-bottom:3px">OUTSTANDING</div>
-            <div style="font-size:1rem;font-weight:800;color:${outstanding>0?'#e11d48':'#00b371'}">${outstanding>0?fmt(outstanding):'✅ Clear'}</div>
-          </div>
-        </div>
-        ${payStudent.slice(0,3).map(b=>`
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#f8f9ff;border-radius:8px;margin-bottom:5px;font-size:0.82rem">
-            <div>
-              <div style="font-weight:700">${b.periode||tglFmt(b.tanggal)}</div>
-              <div style="font-size:0.7rem;color:#888">${tglFmt(b.tanggal)}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-weight:800;color:#00b371">${fmt(b.jumlah)}</div>
-              <div style="font-size:0.7rem;font-weight:700;color:${b.status==='Lunas'?'#00b371':b.status==='Cicil'?'#f59e0b':'#e11d48'}">${b.status==='Lunas'?'Paid':b.status==='Cicil'?'Partial':'Unpaid'}</div>
-            </div>
-          </div>`).join('')}
-        ${payStudent.length===0?`<div style="color:#888;font-size:0.82rem;padding:6px 0">No payment records.</div>`:''}
-      </div>
+  const sectionTitle=(icon,label)=>
+    `<div style="font-size:11px;font-weight:800;color:#666;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #e8e8e8;padding-bottom:7px;margin-bottom:12px">${icon} ${label}</div>`;
 
-      <!-- Evaluation -->
-      <div style="margin-bottom:18px">
-        <div style="font-size:0.68rem;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px">⭐ Evaluation</div>
-        ${avgScore!==null?`
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
-          <div style="text-align:center;flex-shrink:0">
-            <div style="font-size:2rem;font-weight:800;color:${scoreColor};line-height:1">${avgScore}</div>
-            <div style="font-size:0.65rem;color:#888;font-weight:700">AVG SCORE</div>
-          </div>
-          <div style="flex:1">
-            <div style="background:#eee;border-radius:20px;height:8px;overflow:hidden">
-              <div style="width:${avgScore}%;height:100%;background:${scoreColor};border-radius:20px"></div>
-            </div>
-            <div style="font-size:0.7rem;color:#888;margin-top:4px">${evalStudent.length} evaluation(s)</div>
-          </div>
-        </div>`:''}
-        ${evalStudent.slice(0,3).map(e=>`
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#f8f9ff;border-radius:8px;margin-bottom:5px;font-size:0.82rem">
-            <div>
-              <div style="font-weight:700">${tglFmt(e.tanggal)}</div>
-              <div style="font-size:0.7rem;color:#888">${e.progress||e.catatan||'—'}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:0.85rem">${'⭐'.repeat(Number(e.rating)||0)}</span>
-              <span style="font-size:1.1rem;font-weight:800;color:${Number(e.nilai)>=80?'#00b371':Number(e.nilai)>=60?'#f59e0b':'#e11d48'}">${e.nilai||'-'}</span>
-            </div>
-          </div>`).join('')}
-        ${evalStudent.length===0?`<div style="color:#888;font-size:0.82rem;padding:6px 0">No evaluations yet.</div>`:''}
-      </div>
+  const payRow=(b)=>
+    `<div style="margin-bottom:6px;padding:8px 10px;background:#f7f8ff;border-radius:8px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse"><tr>
+        <td style="vertical-align:top;padding:0">
+          <div style="font-size:13px;font-weight:700;color:#1a1f36">${b.periode||tglFmt(b.tanggal)}</div>
+          <div style="font-size:11px;color:#999;margin-top:1px">${tglFmt(b.tanggal)}</div>
+        </td>
+        <td style="text-align:right;vertical-align:top;padding:0;white-space:nowrap">
+          <div style="font-size:13px;font-weight:800;color:#00b371">${fmt(b.jumlah)}</div>
+          <div style="font-size:11px;font-weight:700;color:${b.status==='Lunas'?'#00b371':b.status==='Cicil'?'#f59e0b':'#e11d48'}">${b.status==='Lunas'?'Paid':b.status==='Cicil'?'Partial':'Unpaid'}</div>
+        </td>
+      </tr></table>
+    </div>`;
 
-      <!-- Lessons -->
-      <div style="margin-bottom:18px">
-        <div style="font-size:0.68rem;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:10px">📚 Recent Lessons</div>
-        ${lessonStudent.length?lessonStudent.map(m=>`
-          <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid #f0f0f0">
-            <div style="width:9px;height:9px;border-radius:50%;background:${m.status==='Selesai'?'#00b371':'#a78bfa'};flex-shrink:0;margin-top:5px"></div>
-            <div>
-              <div style="font-weight:700;font-size:0.85rem">${m.topik}</div>
-              <div style="font-size:0.7rem;color:#888">${tglFmt(m.tanggal)} · ${m.status==='Selesai'?'Completed':'Planned'}</div>
-            </div>
-          </div>`).join('')
-        :`<div style="color:#888;font-size:0.82rem;padding:6px 0">No lessons recorded.</div>`}
-      </div>
+  const evalRow=(e)=>{
+    const nVal=Number(e.nilai)||0;
+    const nColor=nVal>=80?'#00b371':nVal>=60?'#f59e0b':'#e11d48';
+    const ratingBar=Array.from({length:5},(_,i)=>
+      `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:2px;background:${i<(Number(e.rating)||0)?'#f59e0b':'#e0e0e0'}"></span>`
+    ).join('');
+    return `<div style="margin-bottom:6px;padding:8px 10px;background:#f7f8ff;border-radius:8px">
+      <table style="width:100%;border-collapse:collapse"><tr>
+        <td style="vertical-align:top;padding:0">
+          <div style="font-size:13px;font-weight:700;color:#1a1f36">${tglFmt(e.tanggal)}</div>
+          <div style="font-size:11px;color:#999;margin-top:1px;max-width:280px">${(e.progress||e.catatan||'—').slice(0,80)}</div>
+        </td>
+        <td style="text-align:right;vertical-align:middle;padding:0;white-space:nowrap;padding-left:8px">
+          <div>${ratingBar}</div>
+          <div style="font-size:20px;font-weight:800;color:${nColor};margin-top:2px">${e.nilai||'-'}</div>
+        </td>
+      </tr></table>
+    </div>`;
+  };
 
-      <!-- Footer -->
-      <div style="text-align:center;padding-top:12px;border-top:2px dashed #eee;font-size:0.7rem;color:#aaa;line-height:1.8">
-        Generated on ${now} · <strong style="color:#6c63ff">BunRey English Course</strong>
-      </div>
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1f36;background:#fff;width:${W}px;padding:${P}px;box-sizing:border-box">
+
+    <!-- HEADER -->
+    <div style="background:linear-gradient(135deg,#6c63ff 0%,#a78bfa 100%);border-radius:14px;padding:20px;margin-bottom:20px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse"><tr>
+        <td style="width:60px;vertical-align:middle;padding:0 14px 0 0">
+          <div style="width:54px;height:54px;border-radius:12px;background:rgba(255,255,255,0.22);border:2px solid rgba(255,255,255,0.4);text-align:center;line-height:54px;font-size:24px;font-weight:800;color:#fff">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
+        </td>
+        <td style="vertical-align:middle;padding:0">
+          <div style="font-size:17px;font-weight:800;color:#fff;white-space:normal;word-break:normal;word-spacing:normal">${s.nama}${s.nick?' <span style="font-size:13px;opacity:0.85">('+s.nick+')</span>':''}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.82);margin-top:3px">${s.kelas||'—'} &nbsp;&middot;&nbsp; ${s.level||'—'}${s.hari?' &nbsp;&middot;&nbsp; '+s.hari:''}</div>
+          ${s.namaOrtu?`<div style="font-size:11px;color:rgba(255,255,255,0.72);margin-top:3px">${s.namaOrtu}${s.hp?' &nbsp;&middot;&nbsp; '+s.hp:''}</div>`:''}
+        </td>
+        <td style="text-align:right;vertical-align:middle;padding:0;white-space:nowrap;padding-left:12px">
+          <div style="font-size:36px;font-weight:800;color:#fff;line-height:1">${attRate}%</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:2px">Attendance</div>
+        </td>
+      </tr></table>
     </div>
-  `;
+
+    <!-- ATTENDANCE -->
+    <div style="margin-bottom:18px">
+      ${sectionTitle('[ A ]','Attendance')}
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr>
+        <td style="width:33%;padding:0 4px 0 0">${statBox('#f0fdf4','#bbf7d0','#00b371',attHadir.length,'Present')}</td>
+        <td style="width:33%;padding:0 2px">${statBox('#fffbeb','#fde68a','#f59e0b',attIzin.length,'Excused')}</td>
+        <td style="width:33%;padding:0 0 0 4px">${statBox('#fff1f2','#fecdd3','#e11d48',attAlpha.length,'Absent')}</td>
+      </tr></table>
+      ${recentAtt.length?`
+        <div style="font-size:11px;color:#999;font-weight:600;margin-bottom:4px">Last ${recentAtt.length} sessions</div>
+        <table style="width:100%;border-collapse:collapse"><tr>${attBarHtml}</tr></table>`:''}
+    </div>
+
+    <!-- PAYMENT -->
+    <div style="margin-bottom:18px">
+      ${sectionTitle('[ $ ]','Payment')}
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr>
+        <td style="width:50%;padding:0 4px 0 0">
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:#888;font-weight:700;margin-bottom:3px">TOTAL PAID</div>
+            <div style="font-size:15px;font-weight:800;color:#00b371">${fmt(totalPaid)}</div>
+          </div>
+        </td>
+        <td style="width:50%;padding:0 0 0 4px">
+          <div style="background:${outstanding>0?'#fff1f2':'#f0fdf4'};border:1px solid ${outstanding>0?'#fecdd3':'#bbf7d0'};border-radius:10px;padding:10px">
+            <div style="font-size:10px;color:#888;font-weight:700;margin-bottom:3px">OUTSTANDING</div>
+            <div style="font-size:15px;font-weight:800;color:${outstanding>0?'#e11d48':'#00b371'}">${outstanding>0?fmt(outstanding):'Clear'}</div>
+          </div>
+        </td>
+      </tr></table>
+      ${payStudent.slice(0,3).map(b=>payRow(b)).join('')}
+      ${payStudent.length===0?`<div style="color:#999;font-size:12px;padding:4px 0">No payment records.</div>`:''}
+    </div>
+
+    <!-- EVALUATION -->
+    <div style="margin-bottom:18px">
+      ${sectionTitle('[ * ]','Evaluation')}
+      ${avgScore!==null?`
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px"><tr>
+        <td style="width:64px;text-align:center;padding:0 12px 0 0;vertical-align:middle">
+          <div style="font-size:36px;font-weight:800;color:${scoreColor};line-height:1">${avgScore}</div>
+          <div style="font-size:10px;color:#888;font-weight:700;margin-top:2px">AVG SCORE</div>
+        </td>
+        <td style="vertical-align:middle;padding:0">
+          <div style="background:#ebebeb;border-radius:20px;height:10px;overflow:hidden;width:100%">
+            <div style="width:${avgScore}%;height:10px;background:${scoreColor};border-radius:20px"></div>
+          </div>
+          <div style="font-size:11px;color:#999;margin-top:5px">${evalStudent.length} evaluation(s)</div>
+        </td>
+      </tr></table>`:''}
+      ${evalStudent.slice(0,3).map(e=>evalRow(e)).join('')}
+      ${evalStudent.length===0?`<div style="color:#999;font-size:12px;padding:4px 0">No evaluations yet.</div>`:''}
+    </div>
+
+    <!-- LESSONS -->
+    <div style="margin-bottom:18px">
+      ${sectionTitle('[ L ]','Recent Lessons')}
+      ${lessonStudent.length ? lessonStudent.map(m=>`
+        <table style="width:100%;border-collapse:collapse;margin-bottom:0"><tr>
+          <td style="width:14px;vertical-align:top;padding:8px 10px 8px 0;border-bottom:1px solid #f0f0f0">
+            <div style="width:10px;height:10px;border-radius:50%;background:${m.status==='Selesai'?'#00b371':'#a78bfa'};margin-top:3px"></div>
+          </td>
+          <td style="vertical-align:top;padding:8px 0;border-bottom:1px solid #f0f0f0">
+            <div style="font-size:13px;font-weight:700;color:#1a1f36">${m.topik}</div>
+            <div style="font-size:11px;color:#999;margin-top:2px">${tglFmt(m.tanggal)} &nbsp;&middot;&nbsp; ${m.status==='Selesai'?'Completed':'Planned'}</div>
+          </td>
+        </tr></table>`).join('')
+      : `<div style="color:#999;font-size:12px;padding:4px 0">No lessons recorded.</div>`}
+    </div>
+
+    <!-- FOOTER -->
+    <div style="text-align:center;padding-top:12px;border-top:2px dashed #e8e8e8;font-size:11px;color:#bbb;line-height:1.8">
+      Generated on ${now} &nbsp;&middot;&nbsp; <span style="color:#6c63ff;font-weight:700">BunRey English Course</span>
+    </div>
+
+  </div>`;
 }
 
 // ── Render profile to canvas ──
 async function _renderSPCanvas(id){
   const panel = document.getElementById('sp-render-panel');
   panel.innerHTML = buildSPRenderHTML(id);
-  await new Promise(r=>setTimeout(r,200));
-  const canvas = await html2canvas(panel, {scale:2.5,useCORS:true,backgroundColor:'#ffffff',width:480,windowWidth:480});
+  await new Promise(r=>setTimeout(r,300));
+  const canvas = await html2canvas(panel, {
+    scale:2,
+    useCORS:true,
+    backgroundColor:'#ffffff',
+    width:560,
+    windowWidth:560,
+    logging:false
+  });
   panel.innerHTML='';
   return canvas;
 }
@@ -4938,8 +4982,10 @@ async function exportSP(type){
     const canvas = await _renderSPCanvas(id);
     const imgData = canvas.toDataURL('image/png');
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[canvas.width/2.5, canvas.height/2.5] });
-    pdf.addImage(imgData,'PNG',0,0,canvas.width/2.5,canvas.height/2.5);
+    const pxW = canvas.width / 2;   // scale:2 → divide by 2 to get CSS px
+    const pxH = canvas.height / 2;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'px', format:[pxW, pxH], hotfixes:['px_scaling'] });
+    pdf.addImage(imgData,'PNG',0,0,pxW,pxH);
     pdf.save(`profile-${safeName}.pdf`);
     showToast('PDF downloaded!','success');
 
