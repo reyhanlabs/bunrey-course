@@ -200,7 +200,7 @@ body{font-family:'Fredoka One',sans-serif;background:var(--bg);color:var(--text)
 @media(max-width:640px){ .form-row{grid-template-columns:1fr} }
 .form-group { display:flex;flex-direction:column;gap:5px;margin-top:12px }
 .form-group label { font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px }
-input[type=text],input[type=date],input[type=number],textarea,select {
+input[type=text],input[type=date],input[type=number],input[type=time],textarea,select {
   width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--border);
   border-radius:9px;color:var(--text);font-family:'Fredoka One',sans-serif;font-size:0.9rem;
   outline:none;transition:border .18s,box-shadow .18s;
@@ -209,6 +209,25 @@ input:focus,textarea:focus,select:focus { border-color:var(--accent);box-shadow:
 textarea { resize:vertical;min-height:76px }
 input[type=number].rp { text-align:right;font-weight:700 }
 select option { background:var(--bg2) }
+
+/* ── TIME INPUT ── */
+input[type=time] {
+  font-size:1rem;font-weight:700;letter-spacing:0.5px;
+  padding:9px 12px 9px 38px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c63ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:11px center;
+  background-size:16px;
+  cursor:pointer;
+}
+input[type=time]::-webkit-calendar-picker-indicator {
+  opacity:0;width:20px;cursor:pointer;
+}
+input[type=time]:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(108,99,255,0.15);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c63ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E");
+}
 
 /* ── BUTTONS ── */
 .btn {
@@ -2674,7 +2693,7 @@ function openStudentForm(){
   document.getElementById('s-level').value='Beginner';
   document.getElementById('s-billingtype').value='per_session';
   onBillingTypeChange();
-  renderSchedEntries([]);
+  renderSchedEntries([], '__new__');  // clean state, new student
   openPanel('form-student','900px');
 }
 function closeStudentForm(){ closePanel('form-student') }
@@ -2693,9 +2712,9 @@ function openEditStudent(id){
   document.getElementById('s-feemonthly').value=s.feeMonthly||'';
   document.getElementById('s-billingtype').value=s.billingType||'per_session';
   onBillingTypeChange();
-  // Load existing schedules for this student
+  // Load existing schedules for this student, keyed to their actual id
   const existing = scheduleList.filter(sc=>sc.siswaId===id);
-  renderSchedEntries(existing);
+  renderSchedEntries(existing, id);  // pass id so _pendingSchedSiswaId is set correctly
   openPanel('form-student','900px');
   document.getElementById('form-student').scrollIntoView({behavior:'smooth'});
 }
@@ -2704,10 +2723,11 @@ function saveStudent(){
   if(!nama){ alert('Full name is required!'); return; }
   const id=document.getElementById('s-id').value;
   const billingType=document.getElementById('s-billingtype').value||'per_session';
-  // Derive hari string from scheduleList for backward compat display
-  const studentId = id || uid();
-  const hariArr = scheduleList.filter(sc=>sc.siswaId===(id||'__new__')).flatMap(sc=>sc.days);
-  const hariUniq = [...new Set(hariArr)].map(d=>d.slice(0,3)).join(' & ');
+
+  // Derive hari string from pending entries for backward compat
+  const dayAbbr={Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
+  const hariUniq=[...new Set(_pendingSchedEntries.flatMap(sc=>sc.days))].map(d=>dayAbbr[d]||d).join(' & ');
+
   const data={
     nama, nick:document.getElementById('s-nick').value.trim(),
     kelas:document.getElementById('s-kelas').value.trim(),
@@ -2720,17 +2740,20 @@ function saveStudent(){
     billingType,
     feeMonthly:billingType==='monthly'?Number(document.getElementById('s-feemonthly').value)||0:0,
   };
+
+  let finalId;
   if(id){
+    finalId = id;
     const i=siswaList.findIndex(s=>s.id===id);
     if(i>-1) siswaList[i]={...siswaList[i],...data};
-    // Re-stamp siswaId on pending schedules
-    scheduleList.forEach(sc=>{ if(sc.siswaId==='__new__') sc.siswaId=id; });
   } else {
-    const newId=uid();
-    siswaList.push({id:newId,...data});
-    // Assign new id to pending schedules
-    scheduleList.forEach(sc=>{ if(sc.siswaId==='__new__') sc.siswaId=newId; });
+    finalId = uid();
+    siswaList.push({id:finalId,...data});
   }
+
+  // Commit pending schedules to the correct student id — this is the single source of truth
+  _commitSchedules(finalId);
+
   DB.set('siswa',siswaList);
   DB.set('schedules',scheduleList);
   closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge();
@@ -2743,9 +2766,12 @@ function deleteStudent(id){
 
 // ── Schedule slot management ──
 let _pendingSchedEntries = [];
+let _pendingSchedSiswaId = null;  // tracks which student the form is for
 
-function renderSchedEntries(entries){
-  _pendingSchedEntries = entries.map(e=>({...e}));
+function renderSchedEntries(entries, siswaId){
+  _pendingSchedSiswaId = siswaId || '__new__';
+  // Deep-clone and normalize all entries to current siswaId
+  _pendingSchedEntries = entries.map(e=>({...e, siswaId: _pendingSchedSiswaId}));
   const el = document.getElementById('sched-entries');
   if(!el) return;
   if(!_pendingSchedEntries.length){
@@ -2772,9 +2798,8 @@ function addScheduleSlot(){
   if(!selectedDays.length){ showToast('Select at least one day','warning'); return; }
   const jam = document.getElementById('sched-jam').value;
   const durasi = parseInt(document.getElementById('sched-durasi').value)||60;
-  const siswaId = document.getElementById('s-id').value || '__new__';
 
-  // Check for duplicate day conflict
+  // Check for duplicate day conflict within pending entries
   const existingDays = _pendingSchedEntries.flatMap(e=>e.days);
   const conflicts = selectedDays.filter(d=>existingDays.includes(d));
   if(conflicts.length){
@@ -2782,24 +2807,29 @@ function addScheduleSlot(){
     return;
   }
 
-  const newSlot = { id:uid(), siswaId, days:selectedDays, jam, durasi };
+  // Always use _pendingSchedSiswaId — never read from DOM here
+  const newSlot = { id:uid(), siswaId: _pendingSchedSiswaId, days:selectedDays, jam, durasi };
   _pendingSchedEntries.push(newSlot);
-  scheduleList = scheduleList.filter(sc=>sc.siswaId!==siswaId);
-  scheduleList.push(..._pendingSchedEntries.filter(sc=>sc.siswaId===siswaId));
 
   // Reset day picker
   document.querySelectorAll('#sched-day-picker .day-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('sched-jam').value='';
-  renderSchedEntries(_pendingSchedEntries);
+  renderSchedEntries(_pendingSchedEntries, _pendingSchedSiswaId);
   showToast('Schedule slot added','success');
 }
 
 function removeSchedEntry(idx){
-  const siswaId = document.getElementById('s-id').value || '__new__';
   _pendingSchedEntries.splice(idx,1);
-  scheduleList = scheduleList.filter(sc=>sc.siswaId!==siswaId);
-  scheduleList.push(..._pendingSchedEntries);
-  renderSchedEntries(_pendingSchedEntries);
+  renderSchedEntries(_pendingSchedEntries, _pendingSchedSiswaId);
+}
+
+function _commitSchedules(finalSiswaId){
+  // Remove all existing schedules for this student, replace with pending entries
+  scheduleList = scheduleList.filter(sc=>sc.siswaId !== finalSiswaId && sc.siswaId !== '__new__');
+  const committed = _pendingSchedEntries.map(sc=>({...sc, siswaId: finalSiswaId}));
+  scheduleList.push(...committed);
+  _pendingSchedEntries = [];
+  _pendingSchedSiswaId = null;
 }
 
 // ── Get students scheduled for a given day name ──
