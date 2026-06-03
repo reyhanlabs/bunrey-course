@@ -242,13 +242,6 @@ tr:hover td { background:rgba(108,99,255,0.04) }
 th.r, td.r { text-align:right }
 td.nowrap { white-space:nowrap }
 
-/* ── EVALUATION TABLE TIDY ── */
-#tbody-eval td { vertical-align:top }
-.eval-clip {
-  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
-  overflow:hidden;line-height:1.45;max-width:220px;
-}
-
 /* ── BADGES ── */
 .chip {
   display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;
@@ -340,7 +333,7 @@ td.nowrap { white-space:nowrap }
 }
 #sp-render-panel {
   position:fixed;left:-9999px;top:0;width:480px;background:#fff;
-  padding:0;font-family:'Plus Jakarta Sans',Arial,sans-serif;color:#1a1f36;z-index:-1;
+  padding:32px;font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;z-index:-1;
 }
 
 /* ── FILTER BAR ── */
@@ -1077,7 +1070,7 @@ td.nowrap { white-space:nowrap }
       <div class="filter-bar" style="margin-bottom:20px">
         <div class="form-group"><label>📅 From</label><input type="date" id="dash-dari" onchange="renderDashboard()"></div>
         <div class="form-group"><label>📅 To</label><input type="date" id="dash-sampai" onchange="renderDashboard()"></div>
-        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2026'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2026" oninput="renderDashboard()"></div>
+        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2025'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2025" oninput="renderDashboard()"></div>
         <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
           <div style="display:flex;gap:6px">
             <button class="btn sm" onclick="setCurrentMonthDashFilter()" title="Set filter to current month" style="white-space:nowrap">📅 This Month</button>
@@ -1160,12 +1153,9 @@ td.nowrap { white-space:nowrap }
         </div>
       </div>
 
-      <div class="card" style="margin-top:0;max-width:540px;border-top:3px solid var(--accent)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-family:'Fredoka One',sans-serif;font-weight:800">📊 Monthly Revenue</div>
-          <span style="font-size:0.7rem;color:var(--muted);font-weight:600">Recent months</span>
-        </div>
-        <div class="chart-box" style="height:130px"><canvas id="chart-revenue"></canvas></div>
+      <div class="card" style="margin-top:0">
+        <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px">📊 Monthly Revenue</div>
+        <div class="chart-box"><canvas id="chart-revenue"></canvas></div>
       </div>
     </div>
 
@@ -1444,7 +1434,7 @@ td.nowrap { white-space:nowrap }
           <input type="hidden" id="b-id">
           <div class="form-row">
             <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select --</option></select></div>
-            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2026" oninput="refreshMonthlyPanel()"></div>
+            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2025" oninput="refreshMonthlyPanel()"></div>
           </div>
 
           <!-- ── MONTHLY BILLING PANEL ── -->
@@ -1618,7 +1608,7 @@ td.nowrap { white-space:nowrap }
 
       <div class="filter-bar">
         <div class="form-group"><label>Student</label><select id="r-siswa" onchange="renderReports()"><option value="">-- All Students --</option></select></div>
-        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2026" oninput="renderReports()"></div>
+        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2025" oninput="renderReports()"></div>
       </div>
       <div id="report-list"></div>
       <div class="empty" id="empty-reports"><div class="ei">📤</div><p>Add evaluations to generate reports.</p></div>
@@ -2581,24 +2571,11 @@ function renderRevenueChart(canvasId, fDari='', fSampai='', fPeriode=''){
   if(window['_chart_'+canvasId]) window['_chart_'+canvasId].destroy();
   window['_chart_'+canvasId]=new Chart(ctx,{
     type:'bar',
-    data:{ labels, datasets:[{
-      label:'Revenue (Rp)',data,
-      backgroundColor:(c)=>{
-        const {ctx,chartArea}=c.chart;
-        if(!chartArea) return 'rgba(108,99,255,0.7)';
-        const g=ctx.createLinearGradient(0,chartArea.bottom,0,chartArea.top);
-        g.addColorStop(0,'rgba(108,99,255,0.30)');
-        g.addColorStop(1,'rgba(167,139,250,0.95)');
-        return g;
-      },
-      borderWidth:0,borderRadius:8,
-      maxBarThickness:34,categoryPercentage:0.7,barPercentage:0.82,
-      hoverBackgroundColor:'rgba(167,139,250,1)'
-    }]},
+    data:{ labels, datasets:[{label:'Revenue (Rp)',data,backgroundColor:'rgba(108,99,255,0.7)',borderColor:'rgba(108,99,255,1)',borderWidth:2,borderRadius:6}]},
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},
-      scales:{y:{ticks:{color:'#7c87a0',maxTicksLimit:4,callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},x:{ticks:{color:'#7c87a0',font:{size:11}},grid:{display:false}}}
+      scales:{y:{ticks:{color:'#7c87a0',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.05)'}},x:{ticks:{color:'#7c87a0'},grid:{display:false}}}
     }
   });
 }
@@ -2987,13 +2964,13 @@ function renderEval(){
     const n=Number(e.nilai||0);
     const nc=n>=80?'var(--green)':n>=60?'var(--yellow)':'var(--red)';
     tbody.innerHTML+=`<tr>
-      <td style="color:var(--muted);font-size:0.83rem;white-space:nowrap;padding-top:14px">${tglFmt(e.tanggal)}</td>
-      <td style="padding-top:14px"><strong>${e.namaSiswa}</strong></td>
-      <td style="padding-top:14px"><span style="font-family:'Fredoka One',sans-serif;font-size:1.1rem;font-weight:800;color:${nc}">${e.nilai||'-'}</span></td>
-      <td style="font-size:1rem;white-space:nowrap;padding-top:14px">${stars(e.rating)}</td>
-      <td style="font-size:0.82rem;color:var(--muted)"><div class="eval-clip" title="${(e.progress||'').replace(/"/g,'&quot;')}">${e.progress||'-'}</div></td>
-      <td style="font-size:0.82rem;color:var(--muted)"><div class="eval-clip" title="${(e.catatan||'').replace(/"/g,'&quot;')}">${e.catatan||'-'}</div></td>
-      <td class="nowrap" style="padding-top:12px">
+      <td style="color:var(--muted);font-size:0.83rem">${tglFmt(e.tanggal)}</td>
+      <td><strong>${e.namaSiswa}</strong></td>
+      <td><span style="font-family:'Fredoka One',sans-serif;font-size:1.1rem;font-weight:800;color:${nc}">${e.nilai||'-'}</span></td>
+      <td style="font-size:1rem">${stars(e.rating)}</td>
+      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.progress||'-'}</td>
+      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.catatan||'-'}</td>
+      <td class="nowrap">
         <button class="btn sm" style="margin-right:4px" onclick="showEvalPrint('${e.id}')">🖨️</button>
         <button class="btn sm icon-only" title="Edit" onclick="openEditEval('${e.id}')" style="margin-right:4px">✏️</button>
         <button class="btn danger sm icon-only" onclick="deleteEval('${e.id}')">🗑️</button>
@@ -3159,7 +3136,7 @@ function savePayment(){
 
 // ── Monthly billing helpers ──
 function getMonthlySessionIds(siswaId, periodeText){
-  // Parse "June 2026" or "Juni 2025" → year+month range
+  // Parse "June 2025" or "Juni 2025" → year+month range
   // Fall back to ALL unpaid if we can't parse
   const parsed = parsePeriodeToYearMonth(periodeText);
   if(!parsed) return absensiList.filter(a=>a.siswaId===siswaId&&a.status==='Hadir').map(a=>a.id);
@@ -3176,7 +3153,7 @@ function parsePeriodeToYearMonth(text){
   // try "YYYY-MM" format
   const m1=text.match(/(\d{4})[.\-\/](\d{1,2})/);
   if(m1) return {y:+m1[1],m:+m1[2]};
-  // try "June 2026" or "Juni 2025"
+  // try "June 2025" or "Juni 2025"
   const months={jan:1,feb:2,mar:3,apr:4,may:5,mei:5,jun:6,jul:7,aug:8,agu:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
   const m2=text.toLowerCase().match(/([a-z]+)[.\s\-\/]+(\d{4})/);
   if(m2){const key=m2[1].slice(0,3); const mo=months[key]; if(mo) return {y:+m2[2],m:mo};}
@@ -3220,7 +3197,7 @@ function refreshMonthlyPanel(){
       ? `<span style="color:var(--green)">✅ ${sesiCount} sessions present this month</span>`
       : `<span style="color:var(--muted)">⚠️ No attendance records this month</span>`;
   } else {
-    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2026")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2026)</span>`;
+    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2025")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2025)</span>`;
   }
   body.innerHTML=`
     <div>👤 <strong>${s.nama}</strong></div>
@@ -4597,7 +4574,7 @@ function globalSearch(q){
   if(!q || q.length < 2){ res.classList.remove('open'); return; }
   const ql = q.toLowerCase();
   const matches = siswaList
-    .filter(s=>(s.nama||'').toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
+    .filter(s=>s.nama.toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
     .slice(0,6);
   if(!matches.length){ res.classList.remove('open'); return; }
   res.innerHTML = matches.map(s=>`
@@ -4816,7 +4793,7 @@ function buildSPRenderHTML(id){
   const now = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
 
   return `
-    <div style="box-sizing:border-box;font-family:'Plus Jakarta Sans',Arial,sans-serif;color:#1a1f36;background:#fff;width:480px;padding:32px">
+    <div style="font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;background:#fff;width:480px;padding:32px">
       <!-- Header -->
       <div style="background:linear-gradient(135deg,#6c63ff,#a78bfa);border-radius:14px;padding:20px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
         <div style="width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#fff;border:2px solid rgba(255,255,255,0.35);flex-shrink:0">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
