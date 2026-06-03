@@ -4597,7 +4597,7 @@ function globalSearch(q){
   if(!q || q.length < 2){ res.classList.remove('open'); return; }
   const ql = q.toLowerCase();
   const matches = siswaList
-    .filter(s=>s.nama.toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
+    .filter(s=>(s.nama||'').toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
     .slice(0,6);
   if(!matches.length){ res.classList.remove('open'); return; }
   res.innerHTML = matches.map(s=>`
