@@ -345,6 +345,43 @@ td.nowrap { white-space:nowrap }
 .filter-bar .form-group label { font-size:0.7rem }
 
 /* ── DASHBOARD SCHEDULE ── */
+/* ── WEEKLY SCHEDULE VIEW ── */
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:4px}
+.week-col{min-width:0}
+.week-col-hd{
+  text-align:center;font-size:0.65rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:0.6px;
+  padding:5px 2px;border-radius:7px;margin-bottom:5px;
+  color:var(--muted);background:var(--bg3);
+}
+.week-col-hd.today-col{background:var(--accent);color:#fff}
+.week-slot{
+  background:var(--bg3);border-radius:8px;padding:6px 7px;
+  margin-bottom:4px;cursor:pointer;transition:all .15s;
+  border-left:3px solid var(--accent);
+}
+.week-slot:hover{background:rgba(108,99,255,0.12);transform:translateY(-1px)}
+.week-slot-name{font-size:0.75rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week-slot-time{font-size:0.65rem;color:var(--muted);margin-top:1px}
+.week-empty{color:var(--muted);font-size:0.72rem;text-align:center;padding:10px 0}
+
+/* ── SCHEDULE FORM ── */
+.day-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.day-btn{
+  padding:5px 10px;border-radius:8px;border:2px solid var(--border);
+  background:var(--bg3);color:var(--muted);font-weight:700;font-size:0.78rem;
+  cursor:pointer;transition:all .15s;user-select:none;
+}
+.day-btn.selected{border-color:var(--accent);background:rgba(108,99,255,0.15);color:var(--accent)}
+.sched-entry{
+  background:var(--bg3);border-radius:10px;padding:10px 12px;
+  margin-bottom:8px;display:flex;align-items:center;gap:10px;
+  border-left:3px solid var(--accent);
+}
+.sched-entry-info{flex:1;min-width:0}
+.sched-entry-days{font-size:0.8rem;font-weight:700;color:var(--text)}
+.sched-entry-time{font-size:0.72rem;color:var(--muted);margin-top:2px}
+
 .schedule-row {
   display:flex;align-items:center;gap:12px;padding:10px 0;
   border-bottom:1px solid var(--border);font-size:0.87rem;
@@ -1004,62 +1041,6 @@ td.nowrap { white-space:nowrap }
   font-size:0.82rem;
 }
 .sp-score{font-family:'Fredoka One',sans-serif;font-size:1.1rem;font-weight:800}
-
-/* ── SCHEDULE PICKER ── */
-.sched-picker { margin-top:4px }
-.sched-slots { display:flex;flex-direction:column;gap:8px }
-.sched-slot {
-  display:flex;align-items:center;gap:8px;padding:10px 12px;
-  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
-  flex-wrap:wrap;
-}
-.sched-slot select, .sched-slot input[type="time"] {
-  padding:7px 10px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);
-  color:var(--text);font-family:'Fredoka One',sans-serif;font-size:0.82rem;
-}
-.sched-slot select { min-width:90px }
-.sched-slot input[type="time"] { min-width:100px }
-.sched-slot .sched-remove {
-  width:28px;height:28px;border-radius:7px;border:1px solid rgba(255,79,109,0.3);
-  background:rgba(255,79,109,0.1);color:var(--red);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:0.85rem;
-  margin-left:auto;flex-shrink:0;transition:all .15s;
-}
-.sched-slot .sched-remove:hover { background:var(--red);color:#fff;border-color:var(--red) }
-.sched-add-btn {
-  margin-top:8px;padding:7px 14px;border-radius:8px;border:1px dashed var(--border);
-  background:transparent;color:var(--muted);font-family:'Fredoka One',sans-serif;
-  font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .15s;width:100%;
-}
-.sched-add-btn:hover { border-color:var(--accent);color:var(--accent);background:rgba(108,99,255,0.06) }
-.sched-preview {
-  margin-top:6px;font-size:0.75rem;color:var(--muted);font-weight:600;
-  padding:4px 8px;background:var(--bg3);border-radius:6px;display:inline-block;
-}
-
-/* ── WEEKLY VIEW ── */
-.weekly-view { margin-top:16px }
-.wv-grid {
-  display:grid;grid-template-columns:repeat(6,1fr);gap:6px;
-}
-@media(max-width:768px){ .wv-grid { grid-template-columns:repeat(3,1fr) } }
-.wv-col { min-width:0 }
-.wv-day-hdr {
-  text-align:center;font-size:0.72rem;font-weight:800;color:var(--muted);
-  text-transform:uppercase;letter-spacing:1px;padding:8px 4px;
-  border-bottom:2px solid var(--border);margin-bottom:6px;
-}
-.wv-day-hdr.wv-today { color:var(--accent);border-color:var(--accent) }
-.wv-slot {
-  padding:7px 8px;margin-bottom:5px;border-radius:8px;
-  background:var(--bg3);border:1px solid var(--border);
-  font-size:0.78rem;cursor:pointer;transition:all .15s;
-}
-.wv-slot:hover { border-color:var(--accent);transform:translateY(-1px) }
-.wv-slot .wv-name { font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
-.wv-slot .wv-time { font-size:0.7rem;color:var(--muted);margin-top:2px }
-.wv-slot .wv-nick { font-size:0.68rem;color:var(--accent);font-weight:600 }
-.wv-empty { text-align:center;padding:12px 4px;font-size:0.75rem;color:var(--muted);opacity:0.5 }
 </style>
 </head>
 <body data-theme="dark">
@@ -1216,15 +1197,12 @@ td.nowrap { white-space:nowrap }
           </div>
           <!-- Weekly Schedule -->
           <div class="card" style="margin-bottom:0;border-top:3px solid var(--accent)">
-            <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px;justify-content:space-between">
-              <span style="background:linear-gradient(135deg,#6c63ff,#9c8fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">📅 Weekly Schedule</span>
-              <span id="wv-today-label" style="font-size:0.72rem;font-weight:600;color:var(--muted)"></span>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-family:'Fredoka One',sans-serif;font-weight:800;background:linear-gradient(135deg,#6c63ff,#9c8fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">📅 This Week's Schedule</div>
+              <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="week-range-label"></div>
             </div>
-            <div id="weekly-view"></div>
-            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
-              <div style="font-weight:700;font-size:0.82rem;margin-bottom:8px;color:var(--muted)">📌 Today's Classes</div>
-              <div id="dash-schedule"></div>
-            </div>
+            <div class="week-grid" id="dash-week-grid"></div>
+            <div id="dash-schedule" style="display:none"></div>
           </div>
         </div>
         <div>
@@ -1279,13 +1257,29 @@ td.nowrap { white-space:nowrap }
             <div class="form-group"><label>Parent's Phone (WA)</label><input type="text" id="s-hp" placeholder="08xx-xxxx-xxxx"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Class Schedule</label>
-              <div class="sched-picker" id="sched-picker">
-                <div class="sched-slots" id="sched-slots"></div>
-                <button type="button" class="sched-add-btn" onclick="addSchedSlot()">＋ Add Schedule Slot</button>
-                <div class="sched-preview" id="sched-preview" style="display:none"></div>
+            <div class="form-group" style="flex:2">
+              <label>Class Schedule</label>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:4px">
+                <!-- Existing schedule entries -->
+                <div id="sched-entries"></div>
+                <!-- Add new slot -->
+                <div style="margin-bottom:8px">
+                  <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Add Schedule Slot</div>
+                  <div class="day-picker" id="sched-day-picker">
+                    <div class="day-btn" data-day="Monday"    onclick="toggleDay(this)">Mon</div>
+                    <div class="day-btn" data-day="Tuesday"   onclick="toggleDay(this)">Tue</div>
+                    <div class="day-btn" data-day="Wednesday" onclick="toggleDay(this)">Wed</div>
+                    <div class="day-btn" data-day="Thursday"  onclick="toggleDay(this)">Thu</div>
+                    <div class="day-btn" data-day="Friday"    onclick="toggleDay(this)">Fri</div>
+                    <div class="day-btn" data-day="Saturday"  onclick="toggleDay(this)">Sat</div>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                    <div class="form-group" style="margin:0;flex:1"><label style="font-size:0.7rem">Time</label><input type="time" id="sched-jam" style="width:100%"></div>
+                    <div class="form-group" style="margin:0;flex:1"><label style="font-size:0.7rem">Duration (min)</label><input type="number" id="sched-durasi" value="60" min="15" step="15" style="width:100%"></div>
+                    <div style="padding-top:20px"><button class="btn sm primary" onclick="addScheduleSlot()">+ Add</button></div>
+                  </div>
+                </div>
               </div>
-              <input type="hidden" id="s-hari">
             </div>
             <div class="form-group">
               <label>Billing Mode</label>
@@ -1317,7 +1311,7 @@ td.nowrap { white-space:nowrap }
           <table>
             <thead><tr>
               <th>#</th><th>Name</th><th>Nickname</th><th>School / Class</th>
-              <th>Level</th><th>Schedule</th><th>Billing</th><th>Fee</th><th>Parent</th><th>Phone</th><th>Actions</th>
+              <th>Level</th><th>Class Days</th><th>Billing</th><th>Fee</th><th>Parent</th><th>Phone</th><th>Actions</th>
             </tr></thead>
             <tbody id="tbody-students"></tbody>
           </table>
@@ -1335,6 +1329,7 @@ td.nowrap { white-space:nowrap }
       <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
         <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Select Date</label><input type="date" id="absen-date" onchange="loadAbsensi()"></div>
         <div style="font-size:0.82rem;color:var(--muted);font-weight:600" id="week-label"></div>
+        <div id="sched-hint" style="font-size:0.78rem;color:var(--accent);font-weight:700;display:none">📅 <span id="sched-hint-text"></span> scheduled today</div>
       </div>
       <div class="card">
         <div class="absen-grid" id="absen-grid"><div class="empty"><div class="ei">📋</div><p>Add students first.</p></div></div>
@@ -2332,7 +2327,7 @@ async function renderAccessPanel(){
 // ════════════════════════════════════════════════
 //  FIRESTORE DATA LAYER — CLASS-SCOPED
 // ════════════════════════════════════════════════
-const COLS = ['siswa','absensi','materi','evaluasi','bayar'];
+const COLS = ['siswa','absensi','materi','evaluasi','bayar','schedules'];
 
 async function loadFromFirestore(){
   if(!userDocRef){ return; }  // not logged in yet — silent
@@ -2346,6 +2341,7 @@ async function loadFromFirestore(){
       materiList   = d.materi   || [];
       evaluasiList = d.evaluasi || [];
       bayarList    = d.bayar    || [];
+      scheduleList = d.schedules|| [];
     } else {
       siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
     }
@@ -2354,7 +2350,7 @@ async function loadFromFirestore(){
   } catch(e){
     setSyncErr(e.code || e.message);
     console.error('Load error', e);
-    siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+    siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
     renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
   }
 }
@@ -2373,7 +2369,7 @@ async function _flushToFirestore(){
   try{
     await userDocRef.set({
       siswa:siswaList, absensi:absensiList, materi:materiList,
-      evaluasi:evaluasiList, bayar:bayarList,
+      evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     },{merge:true});
     setSynced();
@@ -2396,7 +2392,7 @@ async function migrateLocalStorage(){
   const snap = await userDocRef.get();
   if(snap.exists && (snap.data().siswa||[]).length > 0) return;
   siswaList=lsSiswa; absensiList=lsGet('absensi'); materiList=lsGet('materi');
-  evaluasiList=lsGet('evaluasi'); bayarList=lsGet('bayar');
+  evaluasiList=lsGet('evaluasi'); bayarList=lsGet('bayar'); scheduleList=lsGet('schedules');
   await _flushToFirestore();
   COLS.forEach(k => localStorage.removeItem(k));
   renderAll(); setCurrentMonthDashFilter();
@@ -2425,6 +2421,7 @@ let absensiList  = [];
 let materiList   = [];
 let evaluasiList = [];
 let bayarList    = [];
+let scheduleList = [];  // { id, siswaId, days:['Monday','Wednesday'], jam:'15:00', durasi:60 }
 
 // ════════════════════════════════════════════════
 //  HELPERS
@@ -2452,195 +2449,6 @@ function closePanel(id){
   const p=document.getElementById(id);
   p.classList.add('hidden'); p.classList.remove('open');
   p.style.maxHeight='0';
-}
-
-// ════════════════════════════════════════════════
-//  SCHEDULE PICKER & HELPERS
-// ════════════════════════════════════════════════
-const DAYS_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const DAYS_LABEL = {Mon:'Monday',Tue:'Tuesday',Wed:'Wednesday',Thu:'Thursday',Fri:'Friday',Sat:'Saturday',Sun:'Sunday'};
-
-// Convert schedules[] → hari display text (backward compat)
-function schedulesToHari(schedules){
-  if(!schedules||!schedules.length) return '';
-  const sorted=[...schedules].sort((a,b)=>(DAYS_ORDER.indexOf(a.day)||9)-(DAYS_ORDER.indexOf(b.day)||9));
-  return sorted.map(s=>{
-    let p = DAYS_LABEL[s.day]||s.day;
-    if(s.start) p+=' '+s.start;
-    if(s.end) p+='–'+s.end;
-    return p;
-  }).join(' & ');
-}
-
-// Get student's schedules with fallback to parsing hari text
-function getStudentSchedules(s){
-  if(s.schedules&&s.schedules.length) return s.schedules;
-  // Fallback: parse legacy hari text
-  if(!s.hari) return [];
-  return _parseHariText(s.hari);
-}
-
-// Best-effort parse "Mon & Wed 4-5PM" → [{day,start,end}]
-function _parseHariText(text){
-  if(!text) return [];
-  const result=[];
-  const dayMap={
-    mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun',
-    sen:'Mon',sel:'Tue',rab:'Wed',kam:'Thu',jum:'Fri',sab:'Sat',ming:'Sun',
-    monday:'Mon',tuesday:'Tue',wednesday:'Wed',thursday:'Thu',friday:'Fri',saturday:'Sat',sunday:'Sun',
-    senin:'Mon',selasa:'Tue',rabu:'Wed',kamis:'Thu',jumat:'Fri',sabtu:'Sat',minggu:'Sun'
-  };
-  const t=text.toLowerCase();
-  // Extract time if present (e.g. "4-5PM", "16:00-17:00", "4PM")
-  let start='',end='';
-  const tm=t.match(/(\d{1,2})[:\.]?(\d{2})?\s*[-–]\s*(\d{1,2})[:\.]?(\d{2})?\s*(am|pm)?/i);
-  if(tm){
-    let h1=parseInt(tm[1]),m1=tm[2]||'00',h2=parseInt(tm[3]),m2=tm[4]||'00';
-    const pm=tm[5]&&tm[5].toLowerCase()==='pm';
-    if(pm&&h1<12) h1+=12; if(pm&&h2<12) h2+=12;
-    if(h1<8&&h2<=12) { h1+=12; if(h2<h1) h2+=12; } // heuristic: "4-5" likely means 16-17
-    start=String(h1).padStart(2,'0')+':'+m1;
-    end=String(h2).padStart(2,'0')+':'+m2;
-  }
-  Object.entries(dayMap).forEach(([k,v])=>{
-    if(t.includes(k)&&!result.find(r=>r.day===v)){
-      result.push({day:v, start, end});
-    }
-  });
-  return result;
-}
-
-// ── Schedule Picker UI ──
-function addSchedSlot(day='',start='',end=''){
-  const container=document.getElementById('sched-slots');
-  const idx=container.children.length;
-  const div=document.createElement('div');
-  div.className='sched-slot';
-  div.dataset.idx=idx;
-  div.innerHTML=`
-    <select onchange="updateSchedPreview()">
-      <option value="">Day…</option>
-      ${DAYS_ORDER.map(d=>`<option value="${d}"${d===day?' selected':''}>${DAYS_LABEL[d]}</option>`).join('')}
-    </select>
-    <input type="time" value="${start||'16:00'}" onchange="updateSchedPreview()" title="Start time">
-    <span style="color:var(--muted);font-size:0.82rem">–</span>
-    <input type="time" value="${end||'17:00'}" onchange="updateSchedPreview()" title="End time">
-    <button type="button" class="sched-remove" onclick="removeSchedSlot(this)" title="Remove">✕</button>
-  `;
-  container.appendChild(div);
-  updateSchedPreview();
-}
-
-function removeSchedSlot(btn){
-  btn.closest('.sched-slot').remove();
-  updateSchedPreview();
-}
-
-function getSchedSlotsData(){
-  const slots=document.querySelectorAll('#sched-slots .sched-slot');
-  const result=[];
-  slots.forEach(sl=>{
-    const sel=sl.querySelector('select');
-    const times=sl.querySelectorAll('input[type="time"]');
-    const day=sel.value;
-    if(!day) return;
-    result.push({day, start:times[0]?.value||'', end:times[1]?.value||''});
-  });
-  return result;
-}
-
-function updateSchedPreview(){
-  const data=getSchedSlotsData();
-  const prev=document.getElementById('sched-preview');
-  const hari=schedulesToHari(data);
-  if(hari){
-    prev.style.display='inline-block';
-    prev.textContent='📅 '+hari;
-  } else {
-    prev.style.display='none';
-  }
-}
-
-function populateSchedPicker(schedules){
-  const container=document.getElementById('sched-slots');
-  container.innerHTML='';
-  if(schedules&&schedules.length){
-    schedules.forEach(s=>addSchedSlot(s.day,s.start,s.end));
-  }
-  updateSchedPreview();
-}
-
-function resetSchedPicker(){
-  const container=document.getElementById('sched-slots');
-  container.innerHTML='';
-  addSchedSlot(); // start with 1 empty slot
-  updateSchedPreview();
-}
-
-// ════════════════════════════════════════════════
-//  WEEKLY VIEW (Dashboard)
-// ════════════════════════════════════════════════
-function renderWeeklyView(){
-  const el=document.getElementById('weekly-view');
-  if(!el) return;
-  const todayIdx=new Date().getDay(); // 0=Sun,1=Mon...
-  const dayToIdx={Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
-  const dayShort={Mon:'MON',Tue:'TUE',Wed:'WED',Thu:'THU',Fri:'FRI',Sat:'SAT'};
-  const displayDays=['Mon','Tue','Wed','Thu','Fri','Sat'];
-
-  // Build schedule map: day → [{student, start, end}]
-  const dayMap={};
-  displayDays.forEach(d=>dayMap[d]=[]);
-
-  siswaList.forEach(s=>{
-    const scheds=getStudentSchedules(s);
-    scheds.forEach(sc=>{
-      if(dayMap[sc.day]!==undefined){
-        dayMap[sc.day].push({
-          id:s.id, nama:s.nama, nick:s.nick, level:s.level,
-          start:sc.start||'', end:sc.end||''
-        });
-      }
-    });
-  });
-
-  // Sort each day by start time
-  displayDays.forEach(d=>{
-    dayMap[d].sort((a,b)=>(a.start||'99').localeCompare(b.start||'99'));
-  });
-
-  // Update today label
-  const todayLabel=document.getElementById('wv-today-label');
-  if(todayLabel){
-    const now=new Date();
-    todayLabel.textContent=now.toLocaleDateString('en-US',{weekday:'long',day:'numeric',month:'short'});
-  }
-
-  let html='<div class="wv-grid">';
-  displayDays.forEach(d=>{
-    const isToday=dayToIdx[d]===todayIdx;
-    html+=`<div class="wv-col">`;
-    html+=`<div class="wv-day-hdr${isToday?' wv-today':''}">${dayShort[d]}${isToday?' •':''}</div>`;
-    if(dayMap[d].length===0){
-      html+=`<div class="wv-empty">—</div>`;
-    } else {
-      dayMap[d].forEach(slot=>{
-        const timeStr=slot.start?(slot.start+(slot.end?'–'+slot.end:'')):'';
-        html+=`<div class="wv-slot" onclick="openStudentProfile('${slot.id}')">
-          <div class="wv-name">${slot.nick||slot.nama}</div>
-          ${timeStr?`<div class="wv-time">${timeStr}</div>`:''}
-        </div>`;
-      });
-    }
-    html+=`</div>`;
-  });
-  html+=`</div>`;
-
-  // Summary
-  const totalSlots=displayDays.reduce((n,d)=>n+dayMap[d].length,0);
-  html+=`<div style="margin-top:10px;font-size:0.73rem;color:var(--muted);text-align:right">${totalSlots} session(s)/week across ${siswaList.length} student(s)</div>`;
-
-  el.innerHTML=html;
 }
 
 // ════════════════════════════════════════════════
@@ -2801,45 +2609,8 @@ function renderDashboard(){
   if(noEvalThisWeek.length>0 && siswaList.length>0) alerts.push(`<div class="alert-card alert-warn">📝 ${noEvalThisWeek.length} student(s) have no evaluation this week.</div>`);
   document.getElementById('dash-alerts').innerHTML = alerts.join('');
 
-  // Map today's short day name to schedule key
-  const todayDayFull = new Date().toLocaleDateString('en-US',{weekday:'long'}).toLowerCase();
-  const dayShortMap = {0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
-  const todaySchedKey = dayShortMap[new Date().getDay()];
-
-  // Build today's students using structured schedules with fallback to hari text
-  const todayStudentsData = [];
-  siswaList.forEach(s=>{
-    const scheds = getStudentSchedules(s);
-    if(scheds.length){
-      // Structured: exact match
-      const todaySched = scheds.find(sc=>sc.day===todaySchedKey);
-      if(todaySched){
-        todayStudentsData.push({s, start:todaySched.start||'', end:todaySched.end||''});
-      }
-    } else {
-      // Legacy fallback: string matching on hari
-      const h=(s.hari||'').toLowerCase();
-      if(h.includes(todayDay.toLowerCase()) || h.includes(todayDayFull)){
-        todayStudentsData.push({s, start:'', end:''});
-      }
-    }
-  });
-  // Sort by start time
-  todayStudentsData.sort((a,b)=>(a.start||'99').localeCompare(b.start||'99'));
-
-  const schedEl = document.getElementById('dash-schedule');
-  if(todayStudentsData.length===0){
-    schedEl.innerHTML=`<div style="color:var(--muted);font-size:0.87rem;text-align:center;padding:20px">No classes scheduled for today.</div>`;
-  } else {
-    schedEl.innerHTML = todayStudentsData.map(({s,start,end})=>{
-      const timeStr = start ? `<span style="font-weight:700;color:var(--accent);font-size:0.78rem">${start}${end?'–'+end:''}</span> · ` : '';
-      return `<div class="schedule-row">
-        <div class="schedule-day">${todayDay}</div>
-        <div><div style="font-weight:700;font-size:0.87rem">${s.nama}</div><div style="font-size:0.75rem;color:var(--muted)">${timeStr}${s.hari||''}</div></div>
-        ${levelChip(s.level)}
-      </div>`;
-    }).join('');
-  }
+  // Weekly schedule grid
+  renderWeekGrid();
 
   const recentPay = filteredPay.sort((a,b)=>b.tanggal.localeCompare(a.tanggal)).slice(0,5);
   const payEl = document.getElementById('dash-payments');
@@ -2899,11 +2670,11 @@ function renderRevenueChart(canvasId, fDari='', fSampai='', fPeriode=''){
 function openStudentForm(){
   document.getElementById('form-student-title').textContent='Add New Student';
   document.getElementById('s-id').value='';
-  ['s-nama','s-nick','s-kelas','s-hp','s-hari','s-catatan','s-namaOrtu','s-fee','s-feemonthly'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  ['s-nama','s-nick','s-kelas','s-hp','s-catatan','s-namaOrtu','s-fee','s-feemonthly'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   document.getElementById('s-level').value='Beginner';
   document.getElementById('s-billingtype').value='per_session';
   onBillingTypeChange();
-  resetSchedPicker();
+  renderSchedEntries([]);
   openPanel('form-student','900px');
 }
 function closeStudentForm(){ closePanel('form-student') }
@@ -2916,17 +2687,15 @@ function openEditStudent(id){
   document.getElementById('s-kelas').value=s.kelas||'';
   document.getElementById('s-level').value=s.level||'Beginner';
   document.getElementById('s-hp').value=s.hp||'';
-  document.getElementById('s-hari').value=s.hari||'';
   document.getElementById('s-namaOrtu').value=s.namaOrtu||'';
   document.getElementById('s-catatan').value=s.catatan||'';
   document.getElementById('s-fee').value=s.feePerSesi||'';
   document.getElementById('s-feemonthly').value=s.feeMonthly||'';
   document.getElementById('s-billingtype').value=s.billingType||'per_session';
   onBillingTypeChange();
-  // Populate schedule picker (structured or parsed from legacy hari)
-  const scheds = getStudentSchedules(s);
-  if(scheds.length){ populateSchedPicker(scheds); }
-  else { resetSchedPicker(); }
+  // Load existing schedules for this student
+  const existing = scheduleList.filter(sc=>sc.siswaId===id);
+  renderSchedEntries(existing);
   openPanel('form-student','900px');
   document.getElementById('form-student').scrollIntoView({behavior:'smooth'});
 }
@@ -2935,32 +2704,153 @@ function saveStudent(){
   if(!nama){ alert('Full name is required!'); return; }
   const id=document.getElementById('s-id').value;
   const billingType=document.getElementById('s-billingtype').value||'per_session';
-  // Collect structured schedules from picker
-  const schedules=getSchedSlotsData();
-  // Auto-generate hari display text from schedules (backward compat)
-  const hariText=schedulesToHari(schedules);
+  // Derive hari string from scheduleList for backward compat display
+  const studentId = id || uid();
+  const hariArr = scheduleList.filter(sc=>sc.siswaId===(id||'__new__')).flatMap(sc=>sc.days);
+  const hariUniq = [...new Set(hariArr)].map(d=>d.slice(0,3)).join(' & ');
   const data={
     nama, nick:document.getElementById('s-nick').value.trim(),
     kelas:document.getElementById('s-kelas').value.trim(),
     level:document.getElementById('s-level').value,
     hp:document.getElementById('s-hp').value.trim(),
-    hari:hariText || document.getElementById('s-hari').value.trim(),
-    schedules,
+    hari: hariUniq,
     namaOrtu:document.getElementById('s-namaOrtu').value.trim(),
     catatan:document.getElementById('s-catatan').value.trim(),
     feePerSesi:Number(document.getElementById('s-fee').value)||0,
     billingType,
     feeMonthly:billingType==='monthly'?Number(document.getElementById('s-feemonthly').value)||0:0,
   };
-  if(id){ const i=siswaList.findIndex(s=>s.id===id); if(i>-1) siswaList[i]={...siswaList[i],...data}; }
-  else siswaList.push({id:uid(),...data});
+  if(id){
+    const i=siswaList.findIndex(s=>s.id===id);
+    if(i>-1) siswaList[i]={...siswaList[i],...data};
+    // Re-stamp siswaId on pending schedules
+    scheduleList.forEach(sc=>{ if(sc.siswaId==='__new__') sc.siswaId=id; });
+  } else {
+    const newId=uid();
+    siswaList.push({id:newId,...data});
+    // Assign new id to pending schedules
+    scheduleList.forEach(sc=>{ if(sc.siswaId==='__new__') sc.siswaId=newId; });
+  }
   DB.set('siswa',siswaList);
+  DB.set('schedules',scheduleList);
   closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge();
 }
 function deleteStudent(id){
   if(!confirm('Delete this student?')) return;
   siswaList=siswaList.filter(s=>s.id!==id);
   DB.set('siswa',siswaList); renderStudents(); updateSelects();
+}
+
+// ── Schedule slot management ──
+let _pendingSchedEntries = [];
+
+function renderSchedEntries(entries){
+  _pendingSchedEntries = entries.map(e=>({...e}));
+  const el = document.getElementById('sched-entries');
+  if(!el) return;
+  if(!_pendingSchedEntries.length){
+    el.innerHTML='<div style="font-size:0.75rem;color:var(--muted);padding:4px 0 8px">No schedule slots yet.</div>';
+    return;
+  }
+  const dayAbbr = {Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
+  el.innerHTML = _pendingSchedEntries.map((sc,i)=>`
+    <div class="sched-entry">
+      <div class="sched-entry-info">
+        <div class="sched-entry-days">${sc.days.map(d=>dayAbbr[d]||d).join(' & ')}</div>
+        <div class="sched-entry-time">${sc.jam||'—'} · ${sc.durasi||60} min</div>
+      </div>
+      <button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="removeSchedEntry(${i})">✕</button>
+    </div>`).join('');
+}
+
+function toggleDay(el){
+  el.classList.toggle('selected');
+}
+
+function addScheduleSlot(){
+  const selectedDays = [...document.querySelectorAll('#sched-day-picker .day-btn.selected')].map(b=>b.dataset.day);
+  if(!selectedDays.length){ showToast('Select at least one day','warning'); return; }
+  const jam = document.getElementById('sched-jam').value;
+  const durasi = parseInt(document.getElementById('sched-durasi').value)||60;
+  const siswaId = document.getElementById('s-id').value || '__new__';
+
+  // Check for duplicate day conflict
+  const existingDays = _pendingSchedEntries.flatMap(e=>e.days);
+  const conflicts = selectedDays.filter(d=>existingDays.includes(d));
+  if(conflicts.length){
+    showToast(`${conflicts.map(d=>d.slice(0,3)).join(', ')} already assigned to another slot`,'warning');
+    return;
+  }
+
+  const newSlot = { id:uid(), siswaId, days:selectedDays, jam, durasi };
+  _pendingSchedEntries.push(newSlot);
+  scheduleList = scheduleList.filter(sc=>sc.siswaId!==siswaId);
+  scheduleList.push(..._pendingSchedEntries.filter(sc=>sc.siswaId===siswaId));
+
+  // Reset day picker
+  document.querySelectorAll('#sched-day-picker .day-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('sched-jam').value='';
+  renderSchedEntries(_pendingSchedEntries);
+  showToast('Schedule slot added','success');
+}
+
+function removeSchedEntry(idx){
+  const siswaId = document.getElementById('s-id').value || '__new__';
+  _pendingSchedEntries.splice(idx,1);
+  scheduleList = scheduleList.filter(sc=>sc.siswaId!==siswaId);
+  scheduleList.push(..._pendingSchedEntries);
+  renderSchedEntries(_pendingSchedEntries);
+}
+
+// ── Get students scheduled for a given day name ──
+function getStudentsForDay(dayName){
+  const slots = scheduleList.filter(sc=>sc.days.includes(dayName));
+  return slots.map(sc=>{
+    const s = siswaList.find(x=>x.id===sc.siswaId);
+    return s ? { ...s, schedJam:sc.jam, schedDurasi:sc.durasi } : null;
+  }).filter(Boolean);
+}
+
+// ── Render weekly schedule grid on dashboard ──
+function renderWeekGrid(){
+  const grid = document.getElementById('dash-week-grid');
+  const label = document.getElementById('week-range-label');
+  if(!grid) return;
+
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const monday = new Date(now); monday.setDate(now.getDate()-(dow===0?6:dow-1));
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const dayShort = ['Mon','Tue','Wed','Thu','Fri'];
+
+  // Week range label
+  const fri = new Date(monday); fri.setDate(monday.getDate()+4);
+  if(label) label.textContent = `${monday.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${fri.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  // Today's day name
+  const todayName = now.toLocaleDateString('en-US',{weekday:'long'});
+
+  // Check if any student has Sat schedule → show 6 cols
+  const hasSat = scheduleList.some(sc=>sc.days.includes('Saturday'));
+  if(hasSat){ days.push('Saturday'); dayShort.push('Sat'); grid.style.gridTemplateColumns='repeat(6,1fr)'; }
+  else grid.style.gridTemplateColumns='repeat(5,1fr)';
+
+  grid.innerHTML = days.map((day,i)=>{
+    const isToday = day===todayName;
+    const students = getStudentsForDay(day);
+    const slots = students.length
+      ? students.map(s=>`
+          <div class="week-slot" onclick="openStudentProfile('${s.id}')" title="${s.nama}${s.schedJam?' · '+s.schedJam:''}">
+            <div class="week-slot-name">${s.nick||s.nama.split(' ')[0]}</div>
+            ${s.schedJam?`<div class="week-slot-time">${s.schedJam}</div>`:''}
+          </div>`).join('')
+      : `<div class="week-empty">—</div>`;
+    return `
+      <div class="week-col">
+        <div class="week-col-hd${isToday?' today-col':''}">${dayShort[i]}${isToday?' ★':''}</div>
+        ${slots}
+      </div>`;
+  }).join('');
 }
 
 // ── Billing type UI toggle ──
@@ -2997,24 +2887,20 @@ function renderStudents(){
     const billingChip = isMonthly
       ? `<span class="chip chip-purple" style="font-size:0.72rem">📅 Monthly</span>`
       : `<span class="chip chip-muted" style="font-size:0.72rem">💳 Per Session</span>`;
-    // Build schedule display for table
-    const schedDisplay = (()=>{
-      const scheds = getStudentSchedules(s);
-      if(scheds.length){
-        return scheds.map(sc=>{
-          const timeStr = sc.start ? ' '+sc.start : '';
-          return `<span class="chip chip-blue" style="font-size:0.68rem;margin:1px">${sc.day}${timeStr}</span>`;
-        }).join('');
-      }
-      return `<span style="font-size:0.83rem;color:var(--muted)">${s.hari||'-'}</span>`;
-    })();
     tbody.innerHTML+=`<tr>
       <td style="color:var(--muted)">${i+1}</td>
       <td><strong>${s.nama}</strong></td>
       <td>${s.nick?`<span class="chip chip-yellow">${s.nick}</span>`:'-'}</td>
       <td style="color:var(--muted);font-size:0.83rem">${s.kelas||'-'}</td>
       <td>${levelChip(s.level)}</td>
-      <td>${schedDisplay}</td>
+      <td style="font-size:0.83rem;color:var(--muted)">${
+        (()=>{
+          const dayAbbr={Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
+          const slots=scheduleList.filter(sc=>sc.siswaId===s.id);
+          if(!slots.length) return s.hari||'—';
+          return slots.map(sc=>sc.days.map(d=>dayAbbr[d]||d).join('&')+' '+(sc.jam||'')).join(', ');
+        })()
+      }</td>
       <td>${billingChip}</td>
       <td>${feeDisplay}</td>
       <td style="font-size:0.83rem">${s.namaOrtu||'-'}</td>
@@ -3037,13 +2923,38 @@ function loadAbsensi(){
   const sun=new Date(mon); sun.setDate(mon.getDate()+6);
   document.getElementById('week-label').textContent=
     `Week: ${mon.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${sun.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  // Schedule hint
+  const dayName = dt.toLocaleDateString('en-US',{weekday:'long'});
+  const scheduledToday = getStudentsForDay(dayName);
+  const hintEl = document.getElementById('sched-hint');
+  const hintTxt = document.getElementById('sched-hint-text');
+  if(hintEl && scheduledToday.length){
+    hintEl.style.display='block';
+    hintTxt.textContent = `${scheduledToday.length} student${scheduledToday.length>1?'s':''} (${scheduledToday.map(s=>s.nick||s.nama.split(' ')[0]).join(', ')})`;
+  } else if(hintEl){
+    hintEl.style.display='none';
+  }
+
   const grid=document.getElementById('absen-grid');
   if(!siswaList.length){ grid.innerHTML='<div class="empty"><div class="ei">📋</div><p>Add students first.</p></div>'; return; }
   const existing={};
   absensiList.filter(a=>a.tanggal===d).forEach(a=>existing[a.siswaId]=a);
-  grid.innerHTML=siswaList.map(s=>`
-    <div class="absen-card">
-      <div class="a-name">👤 ${s.nama}</div>
+
+  // Sort: scheduled students for this day first
+  const scheduledIds = new Set(scheduledToday.map(s=>s.id));
+  const sorted = [...siswaList].sort((a,b)=>{
+    const aS = scheduledIds.has(a.id)?0:1;
+    const bS = scheduledIds.has(b.id)?0:1;
+    return aS-bS || a.nama.localeCompare(b.nama);
+  });
+
+  grid.innerHTML=sorted.map(s=>{
+    const isScheduled = scheduledIds.has(s.id);
+    const sc = scheduleList.find(x=>x.siswaId===s.id && x.days.includes(dayName));
+    return `
+    <div class="absen-card${isScheduled?'':' style="opacity:0.65"'}">
+      <div class="a-name">👤 ${s.nama}${isScheduled?` <span style="font-size:0.65rem;background:rgba(108,99,255,0.15);color:var(--accent);border-radius:4px;padding:1px 5px;font-weight:700">📅 ${sc?.jam||'Scheduled'}</span>`:''}</div>
       ${s.nick?`<div class="a-nick">${s.nick}</div>`:''}
       <select id="att-${s.id}">
         <option value="Hadir" ${existing[s.id]?.status==='Hadir'?'selected':''}>✅ Present</option>
@@ -3051,7 +2962,8 @@ function loadAbsensi(){
         <option value="Alpha" ${existing[s.id]?.status==='Alpha'?'selected':''}>❌ Absent</option>
       </select>
       <input type="text" placeholder="Note (optional)" id="att-ket-${s.id}" value="${existing[s.id]?.keterangan||''}">
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function saveAbsensi(){
   const d=document.getElementById('absen-date').value;
@@ -3821,19 +3733,15 @@ function openPaymentFormForStudent(siswaId){
 //  RECEIPT
 // ════════════════════════════════════════════════
 // ── Estimate how many times/week from Class Days text ──
-// Enhanced: prefer structured schedules, fallback to text parsing
-function _estimateWeeklyFreq(hariTextOrStudent){
-  // If passed a student object with schedules[], use that directly
-  if(hariTextOrStudent && typeof hariTextOrStudent === 'object' && hariTextOrStudent.schedules && hariTextOrStudent.schedules.length){
-    return hariTextOrStudent.schedules.length;
-  }
-  const hariText = typeof hariTextOrStudent === 'string' ? hariTextOrStudent : (hariTextOrStudent?.hari || '');
+function _estimateWeeklyFreq(hariText){
   if(!hariText) return 0;
   const t = hariText.toLowerCase();
+  // Count keyword matches for day names (en + id)
   const dayWords = ['mon','tue','wed','thu','fri','sat','sun',
                     'sen','sel','rab','kam','jum','sab','ming'];
   let count = 0;
   dayWords.forEach(d=>{ if(t.includes(d)) count++; });
+  // If no day names found, try counting separators (&, ,, +, dan, and)
   if(count === 0){
     const seps = (t.match(/[&,+]|\bdan\b|\band\b/g)||[]).length;
     count = seps + (seps > 0 ? 1 : 0);
@@ -5866,7 +5774,6 @@ function sendWaTemplate(){
     _origDash();
     if(document.getElementById('cal-grid')) renderCalendar();
     if(document.getElementById('dash-reminders')) renderPaymentReminders();
-    if(document.getElementById('weekly-view')) renderWeeklyView();
   };
 
   const _origAll = renderAll;
@@ -5933,7 +5840,6 @@ DB.set = function(k,v){
     try {
       if(document.getElementById('cal-grid')) renderCalendar();
       if(document.getElementById('dash-reminders')) renderPaymentReminders();
-      if(document.getElementById('weekly-view')) renderWeeklyView();
       updateMbnBadge();
     } catch(e) { /* non-critical */ }
   }, 300);
