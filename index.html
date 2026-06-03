@@ -1025,7 +1025,7 @@ td.nowrap { white-space:nowrap }
       <div class="filter-bar" style="margin-bottom:20px">
         <div class="form-group"><label>📅 From</label><input type="date" id="dash-dari" onchange="renderDashboard()"></div>
         <div class="form-group"><label>📅 To</label><input type="date" id="dash-sampai" onchange="renderDashboard()"></div>
-        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2025'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2025" oninput="renderDashboard()"></div>
+        <div class="form-group"><label title="Filter by payment period label, e.g. 'June 2026'">🏷️ Period Label <span style="font-size:0.65rem;color:var(--muted);font-weight:500">(payment label)</span></label><input type="text" id="dash-periode" placeholder="e.g. June 2026" oninput="renderDashboard()"></div>
         <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
           <div style="display:flex;gap:6px">
             <button class="btn sm" onclick="setCurrentMonthDashFilter()" title="Set filter to current month" style="white-space:nowrap">📅 This Month</button>
@@ -1389,7 +1389,7 @@ td.nowrap { white-space:nowrap }
           <input type="hidden" id="b-id">
           <div class="form-row">
             <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select --</option></select></div>
-            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2025" oninput="refreshMonthlyPanel()"></div>
+            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2026" oninput="refreshMonthlyPanel()"></div>
           </div>
 
           <!-- ── MONTHLY BILLING PANEL ── -->
@@ -1563,7 +1563,7 @@ td.nowrap { white-space:nowrap }
 
       <div class="filter-bar">
         <div class="form-group"><label>Student</label><select id="r-siswa" onchange="renderReports()"><option value="">-- All Students --</option></select></div>
-        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2025" oninput="renderReports()"></div>
+        <div class="form-group"><label>Period</label><input type="text" id="r-periode" placeholder="e.g. June 2026" oninput="renderReports()"></div>
       </div>
       <div id="report-list"></div>
       <div class="empty" id="empty-reports"><div class="ei">📤</div><p>Add evaluations to generate reports.</p></div>
@@ -3093,7 +3093,7 @@ function savePayment(){
 
 // ── Monthly billing helpers ──
 function getMonthlySessionIds(siswaId, periodeText){
-  // Parse "June 2025" or "Juni 2025" → year+month range
+  // Parse "June 2026" or "Juni 2025" → year+month range
   // Fall back to ALL unpaid if we can't parse
   const parsed = parsePeriodeToYearMonth(periodeText);
   if(!parsed) return absensiList.filter(a=>a.siswaId===siswaId&&a.status==='Hadir').map(a=>a.id);
@@ -3110,7 +3110,7 @@ function parsePeriodeToYearMonth(text){
   // try "YYYY-MM" format
   const m1=text.match(/(\d{4})[.\-\/](\d{1,2})/);
   if(m1) return {y:+m1[1],m:+m1[2]};
-  // try "June 2025" or "Juni 2025"
+  // try "June 2026" or "Juni 2025"
   const months={jan:1,feb:2,mar:3,apr:4,may:5,mei:5,jun:6,jul:7,aug:8,agu:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
   const m2=text.toLowerCase().match(/([a-z]+)[.\s\-\/]+(\d{4})/);
   if(m2){const key=m2[1].slice(0,3); const mo=months[key]; if(mo) return {y:+m2[2],m:mo};}
@@ -3154,7 +3154,7 @@ function refreshMonthlyPanel(){
       ? `<span style="color:var(--green)">✅ ${sesiCount} sessions present this month</span>`
       : `<span style="color:var(--muted)">⚠️ No attendance records this month</span>`;
   } else {
-    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2025")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2025)</span>`;
+    sesiInfo=periodeText?`<span style="color:var(--yellow)">⚠️ Unrecognized period format (try: "June 2026")</span>`:`<span style="color:var(--muted)">— Enter a period first (e.g. June 2026)</span>`;
   }
   body.innerHTML=`
     <div>👤 <strong>${s.nama}</strong></div>
