@@ -484,6 +484,28 @@ td.nowrap { white-space:nowrap }
 .bulk-quick-fill { background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center }
 .bulk-quick-fill label { font-size:0.78rem;font-weight:700;color:var(--muted);margin:0;white-space:nowrap }
 
+/* ── EVAL RECORD CARDS ── */
+.eval-list { display:flex;flex-direction:column;gap:10px }
+.eval-card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;transition:border-color .18s,box-shadow .18s;
+  display:grid;grid-template-columns:auto 1fr auto;gap:0 16px;align-items:start;
+}
+.eval-card:hover { border-color:var(--accent);box-shadow:0 2px 12px rgba(108,99,255,0.1) }
+.eval-score-badge {
+  width:52px;height:52px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-family:'Fredoka One',sans-serif;font-size:1.3rem;
+  font-weight:800;color:#fff;flex-shrink:0;
+}
+.eval-meta { min-width:0 }
+.eval-student { font-weight:800;font-size:0.95rem;margin-bottom:2px }
+.eval-date-row { font-size:0.72rem;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px }
+.eval-text { font-size:0.82rem;color:var(--muted);line-height:1.5;margin-top:5px }
+.eval-text strong { color:var(--text);font-weight:700 }
+.eval-actions { display:flex;gap:5px;flex-shrink:0;padding-top:2px }
+.eval-filter-bar { display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px }
+.eval-filter-bar .form-group { margin:0;flex:1;min-width:140px }
+
 /* ── SESSION PAYMENT TRACKER ── */
 .session-chip {
   display:inline-flex;align-items:center;gap:4px;
@@ -1430,36 +1452,56 @@ td.nowrap { white-space:nowrap }
 
       <!-- SINGLE ENTRY PANEL -->
       <div id="eval-single-panel">
-        <div class="card">
-          <div class="form-panel hidden" id="form-eval" style="max-height:0">
-            <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-eval-title">Add Evaluation</div>
-            <input type="hidden" id="e-id">
-            <div class="form-row">
-              <div class="form-group"><label>Date</label><input type="date" id="e-tanggal"></div>
-              <div class="form-group"><label>Student *</label><select id="e-siswa"><option value="">-- Select --</option></select></div>
+        <!-- Filter bar -->
+        <div class="card" style="padding:14px 18px;margin-bottom:12px">
+          <div class="eval-filter-bar">
+            <div class="form-group"><label>Student</label>
+              <select id="eval-filter-siswa" onchange="renderEval()">
+                <option value="">All Students</option>
+              </select>
             </div>
-            <div class="form-row">
-              <div class="form-group"><label>Score (0–100)</label><input type="number" id="e-nilai" placeholder="0–100" min="0" max="100"></div>
-              <div class="form-group"><label>Participation</label>
-                <select id="e-rating">
-                  <option value="5">⭐⭐⭐⭐⭐ Excellent</option><option value="4">⭐⭐⭐⭐ Good</option>
-                  <option value="3">⭐⭐⭐ Average</option><option value="2">⭐⭐ Below Average</option>
-                  <option value="1">⭐ Passive</option>
-                </select>
-              </div>
+            <div class="form-group"><label>From</label><input type="date" id="eval-filter-dari" onchange="renderEval()"></div>
+            <div class="form-group"><label>To</label><input type="date" id="eval-filter-sampai" onchange="renderEval()"></div>
+            <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
+              <button class="btn sm" onclick="clearEvalFilter()">✕ Clear</button>
             </div>
-            <div class="form-group"><label>Progress / Achievement</label><textarea id="e-progress" placeholder="What has the student mastered this week?"></textarea></div>
-            <div class="form-group"><label>Notes & Recommendations</label><textarea id="e-catatan" placeholder="Homework, areas to improve..."></textarea></div>
-            <div class="btn-row">
-              <button class="btn primary" onclick="saveEval()">💾 Save</button>
-              <button class="btn" onclick="closePanel('form-eval')">Cancel</button>
-            </div>
-            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
           </div>
-          <div class="tbl-wrap">
-            <table><thead><tr><th>Date</th><th>Student</th><th>Score</th><th>Participation</th><th>Progress</th><th>Notes</th><th>Print</th><th></th></tr></thead>
-            <tbody id="tbody-eval"></tbody></table>
+        </div>
+
+        <!-- Form panel -->
+        <div class="card" id="eval-form-card" style="display:none;margin-bottom:12px">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+            <span id="form-eval-title">Add Evaluation</span>
+            <button class="btn sm icon-only" onclick="closeEvalForm()">✕</button>
           </div>
+          <input type="hidden" id="e-id">
+          <div class="form-row">
+            <div class="form-group"><label>Date *</label><input type="date" id="e-tanggal"></div>
+            <div class="form-group"><label>Student *</label><select id="e-siswa"><option value="">-- Select --</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Score (0–100)</label><input type="number" id="e-nilai" placeholder="0–100" min="0" max="100"></div>
+            <div class="form-group"><label>Participation</label>
+              <select id="e-rating">
+                <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                <option value="4">⭐⭐⭐⭐ Good</option>
+                <option value="3">⭐⭐⭐ Average</option>
+                <option value="2">⭐⭐ Below Average</option>
+                <option value="1">⭐ Passive</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group"><label>Progress / Achievement</label><textarea id="e-progress" placeholder="What has the student mastered this week?"></textarea></div>
+          <div class="form-group"><label>Notes & Recommendations</label><textarea id="e-catatan" placeholder="Homework, areas to improve..."></textarea></div>
+          <div class="btn-row">
+            <button class="btn primary" onclick="saveEval()">💾 Save</button>
+            <button class="btn" onclick="closeEvalForm()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Card list -->
+        <div id="eval-list-wrap">
+          <div class="eval-list" id="eval-list"></div>
           <div class="empty" id="empty-eval"><div class="ei">⭐</div><p>No evaluations yet.</p></div>
         </div>
       </div>
@@ -2481,7 +2523,7 @@ const pageNames = {
 const pageActions = {
   students: `<button class="btn-topbar primary" onclick="openStudentForm()">＋ Add Student</button>`,
   lessons:  `<button class="btn-topbar primary" onclick="resetLessonForm();openPanel('form-lesson','700px')">＋ Add Lesson</button>`,
-  evaluation:`<button class="btn-topbar primary" onclick="resetEvalForm();openPanel('form-eval','700px');switchEvalTab('single')">＋ Add Evaluation</button>`,
+  evaluation:`<button class="btn-topbar primary" onclick="resetEvalForm();switchEvalTab('single')">＋ Add Evaluation</button>`,
   payment:  `<button class="btn-topbar primary" onclick="openPaymentForm()">＋ Record Payment</button>`,
 };
 
@@ -3183,27 +3225,6 @@ function renderLessons(){
 // ════════════════════════════════════════════════
 //  EVALUATION
 // ════════════════════════════════════════════════
-function resetEvalForm(){
-  document.getElementById('form-eval-title').textContent='Add Evaluation';
-  document.getElementById('e-id').value='';
-  document.getElementById('e-tanggal').value=new Date().toISOString().slice(0,10);
-  document.getElementById('e-siswa').value='';
-  document.getElementById('e-rating').value='5';
-  ['e-nilai','e-progress','e-catatan'].forEach(i=>document.getElementById(i).value='');
-}
-function openEditEval(id){
-  const e=evaluasiList.find(x=>x.id===id); if(!e) return;
-  document.getElementById('form-eval-title').textContent='Edit Evaluation';
-  document.getElementById('e-id').value=e.id;
-  document.getElementById('e-tanggal').value=e.tanggal||'';
-  document.getElementById('e-siswa').value=e.siswaId||'';
-  document.getElementById('e-nilai').value=e.nilai||'';
-  document.getElementById('e-rating').value=e.rating||'5';
-  document.getElementById('e-progress').value=e.progress||'';
-  document.getElementById('e-catatan').value=e.catatan||'';
-  openPanel('form-eval','700px');
-  document.getElementById('form-eval').scrollIntoView({behavior:'smooth'});
-}
 function saveEval(){
   const siswaId=document.getElementById('e-siswa').value;
   if(!siswaId){ alert('Select a student!'); return; }
@@ -3223,36 +3244,88 @@ function saveEval(){
   document.getElementById('e-id').value='';
   ['e-nilai','e-progress','e-catatan'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('form-eval-title').textContent='Add Evaluation';
-  closePanel('form-eval'); renderEval();
+  closeEvalForm(); renderEval();
 }
 function deleteEval(id){
   if(!confirm('Delete?')) return;
   evaluasiList=evaluasiList.filter(e=>e.id!==id); DB.set('evaluasi',evaluasiList); renderEval();
 }
-function renderEval(){
-  const tbody=document.getElementById('tbody-eval');
-  const empty=document.getElementById('empty-eval');
-  tbody.innerHTML='';
-  const sorted=[...evaluasiList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-  if(!sorted.length){ empty.style.display='block'; return; }
-  empty.style.display='none';
-  sorted.forEach(e=>{
-    const n=Number(e.nilai||0);
-    const nc=n>=80?'var(--green)':n>=60?'var(--yellow)':'var(--red)';
-    tbody.innerHTML+=`<tr>
-      <td style="color:var(--muted);font-size:0.83rem">${tglFmt(e.tanggal)}</td>
-      <td><strong>${e.namaSiswa}</strong></td>
-      <td><span style="font-family:'Fredoka One',sans-serif;font-size:1.1rem;font-weight:800;color:${nc}">${e.nilai||'-'}</span></td>
-      <td style="font-size:1rem">${stars(e.rating)}</td>
-      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.progress||'-'}</td>
-      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.catatan||'-'}</td>
-      <td class="nowrap">
-        <button class="btn sm" style="margin-right:4px" onclick="showEvalPrint('${e.id}')">🖨️</button>
-        <button class="btn sm icon-only" title="Edit" onclick="openEditEval('${e.id}')" style="margin-right:4px">✏️</button>
-        <button class="btn danger sm icon-only" onclick="deleteEval('${e.id}')">🗑️</button>
-      </td>
-    </tr>`;
+function closeEvalForm(){
+  document.getElementById('eval-form-card').style.display='none';
+}
+function clearEvalFilter(){
+  ['eval-filter-siswa','eval-filter-dari','eval-filter-sampai'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
   });
+  renderEval();
+}
+function renderEval(){
+  const list   = document.getElementById('eval-list');
+  const empty  = document.getElementById('empty-eval');
+  const fSiswa = document.getElementById('eval-filter-siswa')?.value||'';
+  const fDari  = document.getElementById('eval-filter-dari')?.value||'';
+  const fSampai= document.getElementById('eval-filter-sampai')?.value||'';
+
+  let sorted=[...evaluasiList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  if(fSiswa)  sorted=sorted.filter(e=>e.siswaId===fSiswa);
+  if(fDari)   sorted=sorted.filter(e=>e.tanggal>=fDari);
+  if(fSampai) sorted=sorted.filter(e=>e.tanggal<=fSampai);
+
+  if(!sorted.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  const ratingLabel=['','Passive','Below Avg','Average','Good','Excellent'];
+  list.innerHTML = sorted.map(e=>{
+    const n=Number(e.nilai||0);
+    const bg=n>=80?'var(--green)':n>=60?'var(--yellow)':'var(--red)';
+    const starRow='⭐'.repeat(Number(e.rating)||0);
+    return `
+    <div class="eval-card">
+      <div class="eval-score-badge" style="background:${bg}">${e.nilai||'—'}</div>
+      <div class="eval-meta">
+        <div class="eval-student">${e.namaSiswa}</div>
+        <div class="eval-date-row">
+          <span>${tglFmt(e.tanggal)}</span>
+          ${e.rating?`<span style="font-size:0.9rem">${starRow}</span><span style="color:var(--accent);font-weight:700">${ratingLabel[Number(e.rating)]||''}</span>`:''}
+        </div>
+        ${e.progress?`<div class="eval-text"><strong>Progress:</strong> ${e.progress}</div>`:''}
+        ${e.catatan?`<div class="eval-text"><strong>Notes:</strong> ${e.catatan}</div>`:''}
+      </div>
+      <div class="eval-actions">
+        <button class="btn sm" title="Print" onclick="showEvalPrint('${e.id}')">🖨️</button>
+        <button class="btn sm" title="Edit" onclick="openEditEval('${e.id}')">✏️</button>
+        <button class="btn danger sm" title="Delete" onclick="deleteEval('${e.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetEvalForm(){
+  document.getElementById('form-eval-title').textContent='Add Evaluation';
+  document.getElementById('e-id').value='';
+  document.getElementById('e-tanggal').value=new Date().toISOString().split('T')[0];
+  document.getElementById('e-siswa').value='';
+  document.getElementById('e-nilai').value='';
+  document.getElementById('e-rating').value='5';
+  document.getElementById('e-progress').value='';
+  document.getElementById('e-catatan').value='';
+  document.getElementById('eval-form-card').style.display='block';
+  document.getElementById('eval-form-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function openEditEval(id){
+  const e=evaluasiList.find(x=>x.id===id); if(!e) return;
+  switchEvalTab('single');
+  document.getElementById('form-eval-title').textContent='Edit Evaluation';
+  document.getElementById('e-id').value=e.id;
+  document.getElementById('e-tanggal').value=e.tanggal||'';
+  document.getElementById('e-siswa').value=e.siswaId||'';
+  document.getElementById('e-nilai').value=e.nilai||'';
+  document.getElementById('e-rating').value=e.rating||'5';
+  document.getElementById('e-progress').value=e.progress||'';
+  document.getElementById('e-catatan').value=e.catatan||'';
+  document.getElementById('eval-form-card').style.display='block';
+  document.getElementById('eval-form-card').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ════════════════════════════════════════════════
@@ -4107,6 +4180,8 @@ function updateSelects(){
   document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
   document.getElementById('m-target').innerHTML='<option value="Semua">All Students</option>'+opts;
   document.getElementById('r-siswa').innerHTML='<option value="">-- All Students --</option>'+opts;
+  const filterEl=document.getElementById('eval-filter-siswa');
+  if(filterEl) filterEl.innerHTML='<option value="">All Students</option>'+opts;
 }
 
 // ════════════════════════════════════════════════
