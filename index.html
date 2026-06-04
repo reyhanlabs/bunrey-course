@@ -4905,17 +4905,24 @@ Please confirm at your earliest convenience. Thank you 🙏
 function globalSearch(q){
   const res = document.getElementById('search-results');
   if(!q || q.length < 2){ res.classList.remove('open'); return; }
+  if(!siswaList.length){
+    res.innerHTML=`<div style="padding:12px 14px;font-size:0.82rem;color:var(--muted);text-align:center">No students loaded yet.</div>`;
+    res.classList.add('open'); return;
+  }
   const ql = q.toLowerCase();
   const matches = siswaList
-    .filter(s=>s.nama.toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
+    .filter(s=>(s.nama||'').toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
     .slice(0,6);
-  if(!matches.length){ res.classList.remove('open'); return; }
+  if(!matches.length){
+    res.innerHTML=`<div style="padding:12px 14px;font-size:0.82rem;color:var(--muted);text-align:center">No student found for "<strong>${q}</strong>"</div>`;
+    res.classList.add('open'); return;
+  }
   res.innerHTML = matches.map(s=>`
-    <div class="search-result-item" onclick="goToStudent('${s.id}')">
+    <div class="search-result-item" onmousedown="goToStudent('${s.id}')">
       <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.8rem;font-weight:800;flex-shrink:0">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
       <div>
-        <div style="font-weight:700">${s.nama}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${s.level}${s.kelas?' · '+s.kelas:''}</div>
+        <div style="font-weight:700">${s.nama}${s.nick?` <span style="color:var(--muted);font-weight:500">(${s.nick})</span>`:''}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${s.level||''}${s.kelas?' · '+s.kelas:''}</div>
       </div>
     </div>`).join('');
   res.classList.add('open');
