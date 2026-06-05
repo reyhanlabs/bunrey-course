@@ -3604,6 +3604,28 @@ function updateSesiCount(){
   const checked = document.querySelectorAll('#sesi-picker-wrap .sesi-check.checked:not(.disabled)').length;
   const countEl = document.getElementById('sesi-selected-count');
   if(countEl) countEl.textContent = checked > 0 ? `${checked} session(s) selected` : '';
+  
+  // ✅ NEW: Auto-calculate Total Invoice and Amount Paid
+  const siswaId = document.getElementById('b-siswa').value;
+  const siswa = siswaId ? siswaList.find(x => x.id === siswaId) : null;
+  
+  if(siswa && checked > 0){
+    const feePerSesi = siswa.feePerSesi || 0;
+    const totalAmount = checked * feePerSesi;
+    
+    // Auto-fill invoice dan amount
+    document.getElementById('b-tagihan').value = totalAmount;
+    document.getElementById('b-jumlah').value = totalAmount;
+    
+    // Show feedback
+    if(totalAmount > 0){
+      showToast(`✅ Auto-calculated: ${checked} session(s) × ${fmt(feePerSesi)} = ${fmt(totalAmount)}`, 'success');
+    }
+  } else if(!siswa){
+    // If no student, clear amounts
+    document.getElementById('b-tagihan').value = '';
+    document.getElementById('b-jumlah').value = '';
+  }
 }
 
 function selectAllSesi(select){
