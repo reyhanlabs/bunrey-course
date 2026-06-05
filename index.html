@@ -3215,6 +3215,83 @@ function saveAbsensi(){
   const d=document.getElementById('absen-date').value;
   if(!d){ alert('Select a date!'); return; }
   if(!siswaList.length){ alert('No students found!'); return; }
+  
+  // ✅ VALIDASI: Check apakah ada yang ubah dari Hadir ke bukan-Hadir dengan payment
+  const conflicts = [];
+  siswaList.forEach(s => {
+    const newStatus = document.getElementById(`att-${s.id}`)?.value || 'Hadir';
+    const oldAtt = absensiList.find(a => a.tanggal === d && a.siswaId === s.id);
+    const oldStatus = oldAtt?.status || 'Hadir';
+    
+    // Jika ubah dari Hadir ke bukan-Hadir
+    if(oldStatus === 'Hadir' && newStatus !== 'Hadir') {
+      const attendanceId = oldAtt?.id;
+      if(attendanceId) {
+        // Check apakah ada payment untuk sesi ini
+        const paymentWithThisSesi = bayarList.find(b => 
+          b.sesiIds && b.sesiIds.includes(attendanceId)
+        );
+        
+        if(paymentWithThisSesi) {
+          conflicts.push({
+            siswaId: s.id,
+            nama: s.nama,
+            tanggal: d,
+            oldStatus: oldStatus,  // ✅ FIX: Store oldStatus
+            newStatus: newStatus,
+            payment: paymentWithThisSesi
+          });
+        }
+      }
+    }
+  });
+  
+  // ❌ Ada conflicts - BLOCK dan tampilkan SEMUA yang bermasalah
+  if(conflicts.length > 0) {
+    const conflictHtml = conflicts.map((c, idx) => `
+      <div style="background: var(--bg3); padding: 12px; border-radius: 8px; margin: 8px 0; border-left: 4px solid var(--yellow)">
+        <div style="font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px">
+          <span style="background: var(--accent); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem">${idx + 1}</span>
+          👤 ${c.nama}
+        </div>
+        <div style="font-size: 0.9rem; color: var(--muted); margin-left: 32px">
+          <div>📅 Tanggal: <strong>${tglFmt(c.tanggal)}</strong></div>
+          <div>Status: <strong>${c.oldStatus}</strong> → <strong style="color: var(--red)">${c.newStatus}</strong></div>
+          <div>💰 Pembayaran: <strong>${fmt(c.payment.jumlah)}</strong> (${c.payment.status})</div>
+          <div style="font-size: 0.8rem; margin-top: 4px; color: var(--muted)">Payment ID: ${c.payment.id}</div>
+        </div>
+      </div>
+    `).join('');
+    
+    const pluralText = conflicts.length === 1 ? 'siswa' : 'siswa';
+    
+    dangerModal(
+      `⚠️ Ada ${conflicts.length} ${pluralText} dengan Pembayaran`,
+      `<div style="text-align: left; line-height: 1.8">
+        <p>❌ <strong>Tidak bisa simpan attendance.</strong></p>
+        <p>Ada ${conflicts.length} siswa yang mau diubah status ke bukan-Hadir tapi MASIH ADA PEMBAYARAN:</p>
+        
+        ${conflictHtml}
+        
+        <p style="margin-top: 16px; padding: 12px; background: var(--bg2); border-radius: 6px; border-left: 4px solid var(--blue)">
+          💡 <strong>Catatan:</strong> Siswa yang tidak ada di list di atas bisa diubah status-nya.
+        </p>
+        
+        <p style="margin-top: 16px">✅ <strong>Langkah-langkah:</strong></p>
+        <ol style="margin: 8px 0 8px 20px">
+          <li>Buka halaman <strong>Payment</strong></li>
+          <li>Cari dan hapus pembayaran untuk ${conflicts.length} siswa di atas</li>
+          <li>Kembali ke <strong>Attendance</strong></li>
+          <li>Select date ${tglFmt(d)} dan coba simpan lagi</li>
+        </ol>
+      </div>`,
+      null,
+      { okText: 'Mengerti', showCancel: false }
+    );
+    return;  // ← BLOCK
+  }
+  
+  // ✅ AMAN: Tidak ada conflicts, bisa save
   absensiList=absensiList.filter(a=>a.tanggal!==d);
   siswaList.forEach(s=>{
     absensiList.push({
@@ -3223,7 +3300,9 @@ function saveAbsensi(){
       keterangan:document.getElementById(`att-ket-${s.id}`)?.value||'',
     });
   });
-  DB.set('absensi',absensiList); renderAttendance(); alert('✅ Attendance saved!');
+  DB.set('absensi',absensiList); 
+  renderAttendance(); 
+  showToast('✅ Attendance saved!', 'success');
 }
 function setCurrentMonthAttFilter(){
   const now = new Date();
