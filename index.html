@@ -200,7 +200,7 @@ body{font-family:'Fredoka One',sans-serif;background:var(--bg);color:var(--text)
 @media(max-width:640px){ .form-row{grid-template-columns:1fr} }
 .form-group { display:flex;flex-direction:column;gap:5px;margin-top:12px }
 .form-group label { font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px }
-input[type=text],input[type=date],input[type=number],textarea,select {
+input[type=text],input[type=date],input[type=number],input[type=time],textarea,select {
   width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--border);
   border-radius:9px;color:var(--text);font-family:'Fredoka One',sans-serif;font-size:0.9rem;
   outline:none;transition:border .18s,box-shadow .18s;
@@ -209,6 +209,25 @@ input:focus,textarea:focus,select:focus { border-color:var(--accent);box-shadow:
 textarea { resize:vertical;min-height:76px }
 input[type=number].rp { text-align:right;font-weight:700 }
 select option { background:var(--bg2) }
+
+/* ── TIME INPUT ── */
+input[type=time] {
+  font-size:1rem;font-weight:700;letter-spacing:0.5px;
+  padding:9px 12px 9px 38px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c63ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:11px center;
+  background-size:16px;
+  cursor:pointer;
+}
+input[type=time]::-webkit-calendar-picker-indicator {
+  opacity:0;width:20px;cursor:pointer;
+}
+input[type=time]:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(108,99,255,0.15);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236c63ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E");
+}
 
 /* ── BUTTONS ── */
 .btn {
@@ -345,22 +364,43 @@ td.nowrap { white-space:nowrap }
 .filter-bar .form-group label { font-size:0.7rem }
 
 /* ── DASHBOARD SCHEDULE ── */
-/* ── STUDENT TABLE ENHANCED ── */
-.stu-avatar{width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',sans-serif;font-size:1rem;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2,#9c8fff))}
-.stu-name-cell{display:flex;align-items:center;gap:10px}
-.stu-name-main{font-weight:800;font-size:0.9rem;line-height:1.2}
-.stu-name-sub{font-size:0.72rem;color:var(--muted);margin-top:1px}
-.stu-search-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.stu-search-bar input{flex:1;min-width:180px;padding:8px 12px 8px 34px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.85rem;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:11px center;transition:border .18s}
-.stu-search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,0.15)}
-.stu-search-bar select{padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:0.85rem;outline:none;cursor:pointer}
-.level-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.level-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;font-size:0.72rem;font-weight:700;cursor:pointer;transition:all .15s;color:var(--muted)}
-.level-pill:hover,.level-pill.active{background:rgba(108,99,255,0.12);border-color:var(--accent);color:var(--accent)}
-.level-pill .pc{background:var(--accent);color:#fff;border-radius:20px;padding:0px 6px;font-size:0.65rem;margin-left:2px}
-.level-pill.active .pc{background:#fff;color:var(--accent)}
+/* ── WEEKLY SCHEDULE VIEW ── */
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:4px}
+.week-col{min-width:0}
+.week-col-hd{
+  text-align:center;font-size:0.65rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:0.6px;
+  padding:5px 2px;border-radius:7px;margin-bottom:5px;
+  color:var(--muted);background:var(--bg3);
+}
+.week-col-hd.today-col{background:var(--accent);color:#fff}
+.week-slot{
+  background:var(--bg3);border-radius:8px;padding:6px 7px;
+  margin-bottom:4px;cursor:pointer;transition:all .15s;
+  border-left:3px solid var(--accent);
+}
+.week-slot:hover{background:rgba(108,99,255,0.12);transform:translateY(-1px)}
+.week-slot-name{font-size:0.75rem;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week-slot-time{font-size:0.65rem;color:var(--muted);margin-top:1px}
+.week-empty{color:var(--muted);font-size:0.72rem;text-align:center;padding:10px 0}
 
-/* ── SCHEDULE ROW ── */
+/* ── SCHEDULE FORM ── */
+.day-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.day-btn{
+  padding:5px 10px;border-radius:8px;border:2px solid var(--border);
+  background:var(--bg3);color:var(--muted);font-weight:700;font-size:0.78rem;
+  cursor:pointer;transition:all .15s;user-select:none;
+}
+.day-btn.selected{border-color:var(--accent);background:rgba(108,99,255,0.15);color:var(--accent)}
+.sched-entry{
+  background:var(--bg3);border-radius:10px;padding:10px 12px;
+  margin-bottom:8px;display:flex;align-items:center;gap:10px;
+  border-left:3px solid var(--accent);
+}
+.sched-entry-info{flex:1;min-width:0}
+.sched-entry-days{font-size:0.8rem;font-weight:700;color:var(--text)}
+.sched-entry-time{font-size:0.72rem;color:var(--muted);margin-top:2px}
+
 .schedule-row {
   display:flex;align-items:center;gap:12px;padding:10px 0;
   border-bottom:1px solid var(--border);font-size:0.87rem;
@@ -443,6 +483,28 @@ td.nowrap { white-space:nowrap }
 .bulk-progress-fill { height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:10px;transition:width .3s }
 .bulk-quick-fill { background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center }
 .bulk-quick-fill label { font-size:0.78rem;font-weight:700;color:var(--muted);margin:0;white-space:nowrap }
+
+/* ── EVAL RECORD CARDS ── */
+.eval-list { display:flex;flex-direction:column;gap:10px }
+.eval-card {
+  background:var(--bg2);border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;transition:border-color .18s,box-shadow .18s;
+  display:grid;grid-template-columns:auto 1fr auto;gap:0 16px;align-items:start;
+}
+.eval-card:hover { border-color:var(--accent);box-shadow:0 2px 12px rgba(108,99,255,0.1) }
+.eval-score-badge {
+  width:52px;height:52px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-family:'Fredoka One',sans-serif;font-size:1.3rem;
+  font-weight:800;color:#fff;flex-shrink:0;
+}
+.eval-meta { min-width:0 }
+.eval-student { font-weight:800;font-size:0.95rem;margin-bottom:2px }
+.eval-date-row { font-size:0.72rem;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px }
+.eval-text { font-size:0.82rem;color:var(--muted);line-height:1.5;margin-top:5px }
+.eval-text strong { color:var(--text);font-weight:700 }
+.eval-actions { display:flex;gap:5px;flex-shrink:0;padding-top:2px }
+.eval-filter-bar { display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px }
+.eval-filter-bar .form-group { margin:0;flex:1;min-width:140px }
 
 /* ── SESSION PAYMENT TRACKER ── */
 .session-chip {
@@ -1174,12 +1236,14 @@ td.nowrap { white-space:nowrap }
             </div>
             <div class="cal-holiday-info" id="cal-holiday-info"></div>
           </div>
-          <!-- Today's Schedule -->
+          <!-- Weekly Schedule -->
           <div class="card" style="margin-bottom:0;border-top:3px solid var(--accent)">
-            <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px">
-              <span style="background:linear-gradient(135deg,#6c63ff,#9c8fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">📅 Today's Schedule</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-family:'Fredoka One',sans-serif;font-weight:800;background:linear-gradient(135deg,#6c63ff,#9c8fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">📅 This Week's Schedule</div>
+              <div style="font-size:0.72rem;color:var(--muted);font-weight:600" id="week-range-label"></div>
             </div>
-            <div id="dash-schedule"></div>
+            <div class="week-grid" id="dash-week-grid"></div>
+            <div id="dash-schedule" style="display:none"></div>
           </div>
         </div>
         <div>
@@ -1210,33 +1274,10 @@ td.nowrap { white-space:nowrap }
       <div class="sec-hd">
         <div><h2>👤 Students</h2><div class="sub">Manage all your students</div></div>
       </div>
-
-      <!-- Stats row -->
-      <div class="card-grid card-grid-4" id="student-stats" style="margin-bottom:16px"></div>
-
-      <!-- Table card -->
+      <div class="card-grid card-grid-4" id="student-stats" style="margin-bottom:20px"></div>
       <div class="card">
-        <!-- Search & filter bar -->
-        <div class="stu-search-bar">
-          <input type="text" id="stu-search" placeholder="Search name, nickname, school…" oninput="renderStudents()">
-          <select id="stu-filter-level" onchange="renderStudents()" style="min-width:140px">
-            <option value="">All Levels</option>
-            <option>Beginner</option><option>Elementary</option>
-            <option>Intermediate</option><option>Upper-Intermediate</option><option>Advanced</option>
-          </select>
-          <select id="stu-filter-billing" onchange="renderStudents()" style="min-width:130px">
-            <option value="">All Billing</option>
-            <option value="per_session">Per Session</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
-
-        <!-- Form panel (hidden by default) -->
         <div class="form-panel hidden" id="form-student" style="max-height:0">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <div style="font-weight:800;font-size:1rem" id="form-student-title">Add New Student</div>
-            <button class="btn sm icon-only" onclick="closeStudentForm()">✕</button>
-          </div>
+          <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-student-title">Add New Student</div>
           <input type="hidden" id="s-id">
           <div class="form-row">
             <div class="form-group"><label>Full Name *</label><input type="text" id="s-nama" placeholder="e.g. Budi Santoso"></div>
@@ -1260,7 +1301,9 @@ td.nowrap { white-space:nowrap }
             <div class="form-group" style="flex:2">
               <label>Class Schedule</label>
               <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:4px">
+                <!-- Existing schedule entries -->
                 <div id="sched-entries"></div>
+                <!-- Add new slot -->
                 <div style="margin-bottom:8px">
                   <div style="font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Add Schedule Slot</div>
                   <div class="day-picker" id="sched-day-picker">
@@ -1271,10 +1314,10 @@ td.nowrap { white-space:nowrap }
                     <div class="day-btn" data-day="Friday"    onclick="toggleDay(this)">Fri</div>
                     <div class="day-btn" data-day="Saturday"  onclick="toggleDay(this)">Sat</div>
                   </div>
-                  <div style="display:flex;gap:8px;margin-top:8px;align-items:flex-end">
+                  <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
                     <div class="form-group" style="margin:0;flex:1"><label style="font-size:0.7rem">Time</label><input type="time" id="sched-jam" style="width:100%"></div>
                     <div class="form-group" style="margin:0;flex:1"><label style="font-size:0.7rem">Duration (min)</label><input type="number" id="sched-durasi" value="60" min="15" step="15" style="width:100%"></div>
-                    <div><button class="btn sm primary" onclick="addScheduleSlot()">+ Add</button></div>
+                    <div style="padding-top:20px"><button class="btn sm primary" onclick="addScheduleSlot()">+ Add</button></div>
                   </div>
                 </div>
               </div>
@@ -1293,8 +1336,9 @@ td.nowrap { white-space:nowrap }
               <input type="number" id="s-fee" placeholder="e.g. 75000" min="0" style="width:100%">
             </div>
             <div class="form-group" id="grp-monthly-fee" style="display:none">
-              <label>Monthly Fee (Rp)</label>
+              <label>Monthly Fee (Rp) <span style="font-weight:400;color:var(--muted);font-size:0.75rem">— flat monthly rate</span></label>
               <input type="number" id="s-feemonthly" placeholder="e.g. 300000" min="0" style="width:100%">
+              <div style="font-size:0.73rem;color:var(--muted);margin-top:3px">Charged once per month, covering all sessions in that month.</div>
             </div>
           </div>
           <div class="form-group"><label>Notes</label><textarea id="s-catatan" placeholder="Special needs, allergies, etc."></textarea></div>
@@ -1304,24 +1348,15 @@ td.nowrap { white-space:nowrap }
           </div>
           <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
         </div>
-
-        <!-- Table -->
         <div class="tbl-wrap">
-          <table id="tbl-students">
+          <table>
             <thead><tr>
-              <th style="width:36px">#</th>
-              <th>Student</th>
-              <th>Level</th>
-              <th>Schedule</th>
-              <th>Billing</th>
-              <th>Fee</th>
-              <th>Parent / Phone</th>
-              <th style="width:80px"></th>
+              <th>#</th><th>Name</th><th>Nickname</th><th>School / Class</th>
+              <th>Level</th><th>Class Days</th><th>Billing</th><th>Fee</th><th>Parent</th><th>Phone</th><th>Actions</th>
             </tr></thead>
             <tbody id="tbody-students"></tbody>
           </table>
         </div>
-        <div id="stu-count-label" style="font-size:0.75rem;color:var(--muted);padding:8px 4px 0;display:none"></div>
         <div class="empty" id="empty-students"><div class="ei">👤</div><p>No students yet. Click "Add Student".</p></div>
       </div>
     </div>
@@ -1335,6 +1370,7 @@ td.nowrap { white-space:nowrap }
       <div class="card" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px">
         <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Select Date</label><input type="date" id="absen-date" onchange="loadAbsensi()"></div>
         <div style="font-size:0.82rem;color:var(--muted);font-weight:600" id="week-label"></div>
+        <div id="sched-hint" style="font-size:0.78rem;color:var(--accent);font-weight:700;display:none">📅 <span id="sched-hint-text"></span> scheduled today</div>
       </div>
       <div class="card">
         <div class="absen-grid" id="absen-grid"><div class="empty"><div class="ei">📋</div><p>Add students first.</p></div></div>
@@ -1416,36 +1452,56 @@ td.nowrap { white-space:nowrap }
 
       <!-- SINGLE ENTRY PANEL -->
       <div id="eval-single-panel">
-        <div class="card">
-          <div class="form-panel hidden" id="form-eval" style="max-height:0">
-            <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-eval-title">Add Evaluation</div>
-            <input type="hidden" id="e-id">
-            <div class="form-row">
-              <div class="form-group"><label>Date</label><input type="date" id="e-tanggal"></div>
-              <div class="form-group"><label>Student *</label><select id="e-siswa"><option value="">-- Select --</option></select></div>
+        <!-- Filter bar -->
+        <div class="card" style="padding:14px 18px;margin-bottom:12px">
+          <div class="eval-filter-bar">
+            <div class="form-group"><label>Student</label>
+              <select id="eval-filter-siswa" onchange="renderEval()">
+                <option value="">All Students</option>
+              </select>
             </div>
-            <div class="form-row">
-              <div class="form-group"><label>Score (0–100)</label><input type="number" id="e-nilai" placeholder="0–100" min="0" max="100"></div>
-              <div class="form-group"><label>Participation</label>
-                <select id="e-rating">
-                  <option value="5">⭐⭐⭐⭐⭐ Excellent</option><option value="4">⭐⭐⭐⭐ Good</option>
-                  <option value="3">⭐⭐⭐ Average</option><option value="2">⭐⭐ Below Average</option>
-                  <option value="1">⭐ Passive</option>
-                </select>
-              </div>
+            <div class="form-group"><label>From</label><input type="date" id="eval-filter-dari" onchange="renderEval()"></div>
+            <div class="form-group"><label>To</label><input type="date" id="eval-filter-sampai" onchange="renderEval()"></div>
+            <div class="form-group" style="justify-content:flex-end"><label>&nbsp;</label>
+              <button class="btn sm" onclick="clearEvalFilter()">✕ Clear</button>
             </div>
-            <div class="form-group"><label>Progress / Achievement</label><textarea id="e-progress" placeholder="What has the student mastered this week?"></textarea></div>
-            <div class="form-group"><label>Notes & Recommendations</label><textarea id="e-catatan" placeholder="Homework, areas to improve..."></textarea></div>
-            <div class="btn-row">
-              <button class="btn primary" onclick="saveEval()">💾 Save</button>
-              <button class="btn" onclick="closePanel('form-eval')">Cancel</button>
-            </div>
-            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
           </div>
-          <div class="tbl-wrap">
-            <table><thead><tr><th>Date</th><th>Student</th><th>Score</th><th>Participation</th><th>Progress</th><th>Notes</th><th>Print</th><th></th></tr></thead>
-            <tbody id="tbody-eval"></tbody></table>
+        </div>
+
+        <!-- Form panel -->
+        <div class="card" id="eval-form-card" style="display:none;margin-bottom:12px">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+            <span id="form-eval-title">Add Evaluation</span>
+            <button class="btn sm icon-only" onclick="closeEvalForm()">✕</button>
           </div>
+          <input type="hidden" id="e-id">
+          <div class="form-row">
+            <div class="form-group"><label>Date *</label><input type="date" id="e-tanggal"></div>
+            <div class="form-group"><label>Student *</label><select id="e-siswa"><option value="">-- Select --</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Score (0–100)</label><input type="number" id="e-nilai" placeholder="0–100" min="0" max="100"></div>
+            <div class="form-group"><label>Participation</label>
+              <select id="e-rating">
+                <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                <option value="4">⭐⭐⭐⭐ Good</option>
+                <option value="3">⭐⭐⭐ Average</option>
+                <option value="2">⭐⭐ Below Average</option>
+                <option value="1">⭐ Passive</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group"><label>Progress / Achievement</label><textarea id="e-progress" placeholder="What has the student mastered this week?"></textarea></div>
+          <div class="form-group"><label>Notes & Recommendations</label><textarea id="e-catatan" placeholder="Homework, areas to improve..."></textarea></div>
+          <div class="btn-row">
+            <button class="btn primary" onclick="saveEval()">💾 Save</button>
+            <button class="btn" onclick="closeEvalForm()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Card list -->
+        <div id="eval-list-wrap">
+          <div class="eval-list" id="eval-list"></div>
           <div class="empty" id="empty-eval"><div class="ei">⭐</div><p>No evaluations yet.</p></div>
         </div>
       </div>
@@ -2332,7 +2388,7 @@ async function renderAccessPanel(){
 // ════════════════════════════════════════════════
 //  FIRESTORE DATA LAYER — CLASS-SCOPED
 // ════════════════════════════════════════════════
-const COLS = ['siswa','absensi','materi','evaluasi','bayar'];
+const COLS = ['siswa','absensi','materi','evaluasi','bayar','schedules'];
 
 async function loadFromFirestore(){
   if(!userDocRef){ return; }  // not logged in yet — silent
@@ -2346,6 +2402,7 @@ async function loadFromFirestore(){
       materiList   = d.materi   || [];
       evaluasiList = d.evaluasi || [];
       bayarList    = d.bayar    || [];
+      scheduleList = d.schedules|| [];
     } else {
       siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
     }
@@ -2354,7 +2411,7 @@ async function loadFromFirestore(){
   } catch(e){
     setSyncErr(e.code || e.message);
     console.error('Load error', e);
-    siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+    siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
     renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
   }
 }
@@ -2373,7 +2430,7 @@ async function _flushToFirestore(){
   try{
     await userDocRef.set({
       siswa:siswaList, absensi:absensiList, materi:materiList,
-      evaluasi:evaluasiList, bayar:bayarList,
+      evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     },{merge:true});
     setSynced();
@@ -2396,7 +2453,7 @@ async function migrateLocalStorage(){
   const snap = await userDocRef.get();
   if(snap.exists && (snap.data().siswa||[]).length > 0) return;
   siswaList=lsSiswa; absensiList=lsGet('absensi'); materiList=lsGet('materi');
-  evaluasiList=lsGet('evaluasi'); bayarList=lsGet('bayar');
+  evaluasiList=lsGet('evaluasi'); bayarList=lsGet('bayar'); scheduleList=lsGet('schedules');
   await _flushToFirestore();
   COLS.forEach(k => localStorage.removeItem(k));
   renderAll(); setCurrentMonthDashFilter();
@@ -2425,6 +2482,7 @@ let absensiList  = [];
 let materiList   = [];
 let evaluasiList = [];
 let bayarList    = [];
+let scheduleList = [];  // { id, siswaId, days:['Monday','Wednesday'], jam:'15:00', durasi:60 }
 
 // ════════════════════════════════════════════════
 //  HELPERS
@@ -2465,7 +2523,7 @@ const pageNames = {
 const pageActions = {
   students: `<button class="btn-topbar primary" onclick="openStudentForm()">＋ Add Student</button>`,
   lessons:  `<button class="btn-topbar primary" onclick="resetLessonForm();openPanel('form-lesson','700px')">＋ Add Lesson</button>`,
-  evaluation:`<button class="btn-topbar primary" onclick="resetEvalForm();openPanel('form-eval','700px');switchEvalTab('single')">＋ Add Evaluation</button>`,
+  evaluation:`<button class="btn-topbar primary" onclick="resetEvalForm();switchEvalTab('single')">＋ Add Evaluation</button>`,
   payment:  `<button class="btn-topbar primary" onclick="openPaymentForm()">＋ Record Payment</button>`,
 };
 
@@ -2612,19 +2670,8 @@ function renderDashboard(){
   if(noEvalThisWeek.length>0 && siswaList.length>0) alerts.push(`<div class="alert-card alert-warn">📝 ${noEvalThisWeek.length} student(s) have no evaluation this week.</div>`);
   document.getElementById('dash-alerts').innerHTML = alerts.join('');
 
-  const todayStudents = siswaList.filter(s=>(s.hari||'').toLowerCase().includes(todayDay.toLowerCase())||
-    (s.hari||'').toLowerCase().includes(new Date().toLocaleDateString('en-US',{weekday:'long'}).toLowerCase()));
-  const schedEl = document.getElementById('dash-schedule');
-  if(todayStudents.length===0){
-    schedEl.innerHTML=`<div style="color:var(--muted);font-size:0.87rem;text-align:center;padding:20px">No classes scheduled for today.</div>`;
-  } else {
-    schedEl.innerHTML = todayStudents.map(s=>`
-      <div class="schedule-row">
-        <div class="schedule-day">${todayDay}</div>
-        <div><div style="font-weight:700;font-size:0.87rem">${s.nama}</div><div style="font-size:0.75rem;color:var(--muted)">${s.hari||''}</div></div>
-        ${levelChip(s.level)}
-      </div>`).join('');
-  }
+  // Weekly schedule grid
+  renderWeekGrid();
 
   const recentPay = filteredPay.sort((a,b)=>b.tanggal.localeCompare(a.tanggal)).slice(0,5);
   const payEl = document.getElementById('dash-payments');
@@ -2684,10 +2731,11 @@ function renderRevenueChart(canvasId, fDari='', fSampai='', fPeriode=''){
 function openStudentForm(){
   document.getElementById('form-student-title').textContent='Add New Student';
   document.getElementById('s-id').value='';
-  ['s-nama','s-nick','s-kelas','s-hp','s-hari','s-catatan','s-namaOrtu','s-fee','s-feemonthly'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
+  ['s-nama','s-nick','s-kelas','s-hp','s-catatan','s-namaOrtu','s-fee','s-feemonthly'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   document.getElementById('s-level').value='Beginner';
   document.getElementById('s-billingtype').value='per_session';
   onBillingTypeChange();
+  renderSchedEntries([], '__new__');  // clean state, new student
   openPanel('form-student','900px');
 }
 function closeStudentForm(){ closePanel('form-student') }
@@ -2700,13 +2748,15 @@ function openEditStudent(id){
   document.getElementById('s-kelas').value=s.kelas||'';
   document.getElementById('s-level').value=s.level||'Beginner';
   document.getElementById('s-hp').value=s.hp||'';
-  document.getElementById('s-hari').value=s.hari||'';
   document.getElementById('s-namaOrtu').value=s.namaOrtu||'';
   document.getElementById('s-catatan').value=s.catatan||'';
   document.getElementById('s-fee').value=s.feePerSesi||'';
   document.getElementById('s-feemonthly').value=s.feeMonthly||'';
   document.getElementById('s-billingtype').value=s.billingType||'per_session';
   onBillingTypeChange();
+  // Load existing schedules for this student, keyed to their actual id
+  const existing = scheduleList.filter(sc=>sc.siswaId===id);
+  renderSchedEntries(existing, id);  // pass id so _pendingSchedSiswaId is set correctly
   openPanel('form-student','900px');
   document.getElementById('form-student').scrollIntoView({behavior:'smooth'});
 }
@@ -2715,27 +2765,164 @@ function saveStudent(){
   if(!nama){ alert('Full name is required!'); return; }
   const id=document.getElementById('s-id').value;
   const billingType=document.getElementById('s-billingtype').value||'per_session';
+
+  // Derive hari string from pending entries for backward compat
+  const dayAbbr={Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
+  const hariUniq=[...new Set(_pendingSchedEntries.flatMap(sc=>sc.days))].map(d=>dayAbbr[d]||d).join(' & ');
+
   const data={
     nama, nick:document.getElementById('s-nick').value.trim(),
     kelas:document.getElementById('s-kelas').value.trim(),
     level:document.getElementById('s-level').value,
     hp:document.getElementById('s-hp').value.trim(),
-    hari:document.getElementById('s-hari').value.trim(),
+    hari: hariUniq,
     namaOrtu:document.getElementById('s-namaOrtu').value.trim(),
     catatan:document.getElementById('s-catatan').value.trim(),
     feePerSesi:Number(document.getElementById('s-fee').value)||0,
     billingType,
     feeMonthly:billingType==='monthly'?Number(document.getElementById('s-feemonthly').value)||0:0,
   };
-  if(id){ const i=siswaList.findIndex(s=>s.id===id); if(i>-1) siswaList[i]={...siswaList[i],...data}; }
-  else siswaList.push({id:uid(),...data});
+
+  let finalId;
+  if(id){
+    finalId = id;
+    const i=siswaList.findIndex(s=>s.id===id);
+    if(i>-1) siswaList[i]={...siswaList[i],...data};
+  } else {
+    finalId = uid();
+    siswaList.push({id:finalId,...data});
+  }
+
+  // Commit pending schedules to the correct student id — this is the single source of truth
+  _commitSchedules(finalId);
+
   DB.set('siswa',siswaList);
+  DB.set('schedules',scheduleList);
   closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge();
 }
 function deleteStudent(id){
   if(!confirm('Delete this student?')) return;
   siswaList=siswaList.filter(s=>s.id!==id);
   DB.set('siswa',siswaList); renderStudents(); updateSelects();
+}
+
+// ── Schedule slot management ──
+let _pendingSchedEntries = [];
+let _pendingSchedSiswaId = null;  // tracks which student the form is for
+
+function renderSchedEntries(entries, siswaId){
+  _pendingSchedSiswaId = siswaId || '__new__';
+  // Deep-clone and normalize all entries to current siswaId
+  _pendingSchedEntries = entries.map(e=>({...e, siswaId: _pendingSchedSiswaId}));
+  const el = document.getElementById('sched-entries');
+  if(!el) return;
+  if(!_pendingSchedEntries.length){
+    el.innerHTML='<div style="font-size:0.75rem;color:var(--muted);padding:4px 0 8px">No schedule slots yet.</div>';
+    return;
+  }
+  const dayAbbr = {Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
+  el.innerHTML = _pendingSchedEntries.map((sc,i)=>`
+    <div class="sched-entry">
+      <div class="sched-entry-info">
+        <div class="sched-entry-days">${sc.days.map(d=>dayAbbr[d]||d).join(' & ')}</div>
+        <div class="sched-entry-time">${sc.jam||'—'} · ${sc.durasi||60} min</div>
+      </div>
+      <button class="btn sm" style="color:var(--red);border-color:var(--red)" onclick="removeSchedEntry(${i})">✕</button>
+    </div>`).join('');
+}
+
+function toggleDay(el){
+  el.classList.toggle('selected');
+}
+
+function addScheduleSlot(){
+  const selectedDays = [...document.querySelectorAll('#sched-day-picker .day-btn.selected')].map(b=>b.dataset.day);
+  if(!selectedDays.length){ showToast('Select at least one day','warning'); return; }
+  const jam = document.getElementById('sched-jam').value;
+  const durasi = parseInt(document.getElementById('sched-durasi').value)||60;
+
+  // Check for duplicate day conflict within pending entries
+  const existingDays = _pendingSchedEntries.flatMap(e=>e.days);
+  const conflicts = selectedDays.filter(d=>existingDays.includes(d));
+  if(conflicts.length){
+    showToast(`${conflicts.map(d=>d.slice(0,3)).join(', ')} already assigned to another slot`,'warning');
+    return;
+  }
+
+  // Always use _pendingSchedSiswaId — never read from DOM here
+  const newSlot = { id:uid(), siswaId: _pendingSchedSiswaId, days:selectedDays, jam, durasi };
+  _pendingSchedEntries.push(newSlot);
+
+  // Reset day picker
+  document.querySelectorAll('#sched-day-picker .day-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('sched-jam').value='';
+  renderSchedEntries(_pendingSchedEntries, _pendingSchedSiswaId);
+  showToast('Schedule slot added','success');
+}
+
+function removeSchedEntry(idx){
+  _pendingSchedEntries.splice(idx,1);
+  renderSchedEntries(_pendingSchedEntries, _pendingSchedSiswaId);
+}
+
+function _commitSchedules(finalSiswaId){
+  // Remove all existing schedules for this student, replace with pending entries
+  scheduleList = scheduleList.filter(sc=>sc.siswaId !== finalSiswaId && sc.siswaId !== '__new__');
+  const committed = _pendingSchedEntries.map(sc=>({...sc, siswaId: finalSiswaId}));
+  scheduleList.push(...committed);
+  _pendingSchedEntries = [];
+  _pendingSchedSiswaId = null;
+}
+
+// ── Get students scheduled for a given day name ──
+function getStudentsForDay(dayName){
+  const slots = scheduleList.filter(sc=>sc.days.includes(dayName));
+  return slots.map(sc=>{
+    const s = siswaList.find(x=>x.id===sc.siswaId);
+    return s ? { ...s, schedJam:sc.jam, schedDurasi:sc.durasi } : null;
+  }).filter(Boolean);
+}
+
+// ── Render weekly schedule grid on dashboard ──
+function renderWeekGrid(){
+  const grid = document.getElementById('dash-week-grid');
+  const label = document.getElementById('week-range-label');
+  if(!grid) return;
+
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun
+  const monday = new Date(now); monday.setDate(now.getDate()-(dow===0?6:dow-1));
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const dayShort = ['Mon','Tue','Wed','Thu','Fri'];
+
+  // Week range label
+  const fri = new Date(monday); fri.setDate(monday.getDate()+4);
+  if(label) label.textContent = `${monday.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${fri.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  // Today's day name
+  const todayName = now.toLocaleDateString('en-US',{weekday:'long'});
+
+  // Check if any student has Sat schedule → show 6 cols
+  const hasSat = scheduleList.some(sc=>sc.days.includes('Saturday'));
+  if(hasSat){ days.push('Saturday'); dayShort.push('Sat'); grid.style.gridTemplateColumns='repeat(6,1fr)'; }
+  else grid.style.gridTemplateColumns='repeat(5,1fr)';
+
+  grid.innerHTML = days.map((day,i)=>{
+    const isToday = day===todayName;
+    const students = getStudentsForDay(day);
+    const slots = students.length
+      ? students.map(s=>`
+          <div class="week-slot" onclick="openStudentProfile('${s.id}')" title="${s.nama}${s.schedJam?' · '+s.schedJam:''}">
+            <div class="week-slot-name">${s.nick||s.nama.split(' ')[0]}</div>
+            ${s.schedJam?`<div class="week-slot-time">${s.schedJam}</div>`:''}
+          </div>`).join('')
+      : `<div class="week-empty">—</div>`;
+    return `
+      <div class="week-col">
+        <div class="week-col-hd${isToday?' today-col':''}">${dayShort[i]}${isToday?' ★':''}</div>
+        ${slots}
+      </div>`;
+  }).join('');
 }
 
 // ── Billing type UI toggle ──
@@ -2752,111 +2939,47 @@ function onBillingTypeChange(){
   }
 }
 function renderStudents(){
-  const tbody  = document.getElementById('tbody-students');
-  const empty  = document.getElementById('empty-students');
-  const stats  = document.getElementById('student-stats');
-  const countEl= document.getElementById('stu-count-label');
-  const q      = (document.getElementById('stu-search')?.value||'').toLowerCase();
-  const fLevel = document.getElementById('stu-filter-level')?.value||'';
-  const fBill  = document.getElementById('stu-filter-billing')?.value||'';
-
+  const tbody=document.getElementById('tbody-students');
+  const empty=document.getElementById('empty-students');
+  const stats=document.getElementById('student-stats');
   tbody.innerHTML='';
-  if(!siswaList.length){ empty.style.display='block'; stats.innerHTML=''; if(countEl) countEl.style.display='none'; return; }
+  if(!siswaList.length){ empty.style.display='block'; stats.innerHTML=''; return; }
   empty.style.display='none';
-
-  // ── Stats ──
-  const levels={}, billing={per_session:0,monthly:0};
-  siswaList.forEach(s=>{
-    levels[s.level]=(levels[s.level]||0)+1;
-    billing[s.billingType==='monthly'?'monthly':'per_session']++;
-  });
-  const levelColors=['s-blue','s-green','s-yellow','s-purple','s-red'];
-  const levelOrder=['Beginner','Elementary','Intermediate','Upper-Intermediate','Advanced'];
+  const levels={};
+  siswaList.forEach(s=>levels[s.level]=(levels[s.level]||0)+1);
   stats.innerHTML=`
-    <div class="stat-card s-purple">
-      <div class="ico">👤</div>
-      <div class="val">${siswaList.length}</div>
-      <div class="lbl">Total Students</div>
-    </div>
-    ${levelOrder.filter(l=>levels[l]).map((l,i)=>`
-      <div class="stat-card ${levelColors[i%levelColors.length]}">
-        <div class="val">${levels[l]}</div>
-        <div class="lbl">${l}</div>
-      </div>`).join('')}
-    <div class="stat-card s-green">
-      <div class="ico">💳</div>
-      <div class="val">${billing.per_session}</div>
-      <div class="lbl">Per Session</div>
-    </div>
-    <div class="stat-card s-yellow">
-      <div class="ico">📅</div>
-      <div class="val">${billing.monthly}</div>
-      <div class="lbl">Monthly</div>
-    </div>`;
-
-  // ── Filter ──
-  let filtered = siswaList.filter(s=>{
-    if(q && !`${s.nama} ${s.nick||''} ${s.kelas||''}`.toLowerCase().includes(q)) return false;
-    if(fLevel && s.level!==fLevel) return false;
-    if(fBill  && (s.billingType||'per_session')!==fBill) return false;
-    return true;
-  });
-
-  if(countEl){
-    if(filtered.length < siswaList.length){
-      countEl.style.display='block';
-      countEl.textContent=`Showing ${filtered.length} of ${siswaList.length} students`;
-    } else { countEl.style.display='none'; }
-  }
-
-  if(!filtered.length){
-    tbody.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">No students match the filter.</td></tr>`;
-    return;
-  }
-
-  const dayAbbr={Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
-
-  filtered.forEach((s,i)=>{
+    <div class="stat-card s-purple"><div class="ico">👤</div><div class="val">${siswaList.length}</div><div class="lbl">Total Students</div></div>
+    ${Object.entries(levels).map(([l,n])=>`<div class="stat-card s-blue"><div class="val">${n}</div><div class="lbl">${l}</div></div>`).join('')}
+  `;
+  siswaList.forEach((s,i)=>{
     const isMonthly = s.billingType==='monthly';
-    const initials  = (s.nick||s.nama).slice(0,1).toUpperCase();
-    const schedSlots= scheduleList.filter(sc=>sc.siswaId===s.id);
-    const schedText = schedSlots.length
-      ? schedSlots.map(sc=>sc.days.map(d=>dayAbbr[d]||d).join('&')+(sc.jam?' '+sc.jam:'')).join(', ')
-      : (s.hari||'—');
-    const feeText = isMonthly
-      ? `<div style="font-weight:700">${fmt(s.feeMonthly||0)}</div><div style="font-size:0.7rem;color:var(--muted)">/ month</div>`
-      : (s.feePerSesi
-          ? `<div style="font-weight:700">${fmt(s.feePerSesi)}</div><div style="font-size:0.7rem;color:var(--muted)">/ session</div>`
-          : `<span style="color:var(--muted)">—</span>`);
+    const feeDisplay = isMonthly
+      ? `<span class="chip chip-purple" style="font-size:0.75rem">📅 ${fmt(s.feeMonthly||0)}<span style="font-weight:400">/bln</span></span>`
+      : (s.feePerSesi ? `<span style="font-size:0.83rem">${fmt(s.feePerSesi)}<span style="color:var(--muted)">/session</span></span>` : '<span style="color:var(--muted);font-size:0.8rem">-</span>');
     const billingChip = isMonthly
-      ? `<span class="chip chip-purple" style="font-size:0.7rem">📅 Monthly</span>`
-      : `<span class="chip chip-muted" style="font-size:0.7rem">💳 Session</span>`;
-    const waLink = s.hp
-      ? `<a href="https://wa.me/62${s.hp.replace(/^0/,'').replace(/\D/,'')}" target="_blank" style="color:var(--accent);font-size:0.72rem;text-decoration:none">📱 ${s.hp}</a>`
-      : `<span style="color:var(--muted);font-size:0.75rem">—</span>`;
-
-    tbody.innerHTML+=`<tr style="cursor:pointer" onclick="openStudentProfile('${s.id}')">
-      <td style="color:var(--muted);font-size:0.8rem;text-align:center">${i+1}</td>
-      <td>
-        <div class="stu-name-cell">
-          <div class="stu-avatar">${initials}</div>
-          <div>
-            <div class="stu-name-main">${s.nama}${s.nick?` <span style="font-size:0.72rem;color:var(--muted);font-weight:500">(${s.nick})</span>`:''}</div>
-            <div class="stu-name-sub">${s.kelas||'—'}</div>
-          </div>
-        </div>
-      </td>
+      ? `<span class="chip chip-purple" style="font-size:0.72rem">📅 Monthly</span>`
+      : `<span class="chip chip-muted" style="font-size:0.72rem">💳 Per Session</span>`;
+    tbody.innerHTML+=`<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td><strong>${s.nama}</strong></td>
+      <td>${s.nick?`<span class="chip chip-yellow">${s.nick}</span>`:'-'}</td>
+      <td style="color:var(--muted);font-size:0.83rem">${s.kelas||'-'}</td>
       <td>${levelChip(s.level)}</td>
-      <td style="font-size:0.78rem;color:var(--muted);max-width:140px">${schedText}</td>
+      <td style="font-size:0.83rem;color:var(--muted)">${
+        (()=>{
+          const dayAbbr={Monday:'Mon',Tuesday:'Tue',Wednesday:'Wed',Thursday:'Thu',Friday:'Fri',Saturday:'Sat'};
+          const slots=scheduleList.filter(sc=>sc.siswaId===s.id);
+          if(!slots.length) return s.hari||'—';
+          return slots.map(sc=>sc.days.map(d=>dayAbbr[d]||d).join('&')+' '+(sc.jam||'')).join(', ');
+        })()
+      }</td>
       <td>${billingChip}</td>
-      <td style="text-align:right;line-height:1.3">${feeText}</td>
-      <td>
-        <div style="font-size:0.82rem;font-weight:600">${s.namaOrtu||'—'}</div>
-        <div>${waLink}</div>
-      </td>
-      <td class="nowrap" onclick="event.stopPropagation()">
-        <button class="btn sm" title="Edit" onclick="openEditStudent('${s.id}')" style="margin-right:4px">✏️</button>
-        <button class="btn danger sm" title="Delete" onclick="deleteStudent('${s.id}')">🗑️</button>
+      <td>${feeDisplay}</td>
+      <td style="font-size:0.83rem">${s.namaOrtu||'-'}</td>
+      <td style="font-size:0.83rem;color:var(--muted)">${s.hp||'-'}</td>
+      <td class="nowrap">
+        <button class="btn sm" onclick="openEditStudent('${s.id}')" style="margin-right:4px">✏️</button>
+        <button class="btn danger sm" onclick="deleteStudent('${s.id}')">🗑️</button>
       </td>
     </tr>`;
   });
@@ -2872,13 +2995,38 @@ function loadAbsensi(){
   const sun=new Date(mon); sun.setDate(mon.getDate()+6);
   document.getElementById('week-label').textContent=
     `Week: ${mon.toLocaleDateString('en-GB',{day:'2-digit',month:'short'})} – ${sun.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  // Schedule hint
+  const dayName = dt.toLocaleDateString('en-US',{weekday:'long'});
+  const scheduledToday = getStudentsForDay(dayName);
+  const hintEl = document.getElementById('sched-hint');
+  const hintTxt = document.getElementById('sched-hint-text');
+  if(hintEl && scheduledToday.length){
+    hintEl.style.display='block';
+    hintTxt.textContent = `${scheduledToday.length} student${scheduledToday.length>1?'s':''} (${scheduledToday.map(s=>s.nick||s.nama.split(' ')[0]).join(', ')})`;
+  } else if(hintEl){
+    hintEl.style.display='none';
+  }
+
   const grid=document.getElementById('absen-grid');
   if(!siswaList.length){ grid.innerHTML='<div class="empty"><div class="ei">📋</div><p>Add students first.</p></div>'; return; }
   const existing={};
   absensiList.filter(a=>a.tanggal===d).forEach(a=>existing[a.siswaId]=a);
-  grid.innerHTML=siswaList.map(s=>`
-    <div class="absen-card">
-      <div class="a-name">👤 ${s.nama}</div>
+
+  // Sort: scheduled students for this day first
+  const scheduledIds = new Set(scheduledToday.map(s=>s.id));
+  const sorted = [...siswaList].sort((a,b)=>{
+    const aS = scheduledIds.has(a.id)?0:1;
+    const bS = scheduledIds.has(b.id)?0:1;
+    return aS-bS || a.nama.localeCompare(b.nama);
+  });
+
+  grid.innerHTML=sorted.map(s=>{
+    const isScheduled = scheduledIds.has(s.id);
+    const sc = scheduleList.find(x=>x.siswaId===s.id && x.days.includes(dayName));
+    return `
+    <div class="absen-card${isScheduled?'':' style="opacity:0.65"'}">
+      <div class="a-name">👤 ${s.nama}${isScheduled?` <span style="font-size:0.65rem;background:rgba(108,99,255,0.15);color:var(--accent);border-radius:4px;padding:1px 5px;font-weight:700">📅 ${sc?.jam||'Scheduled'}</span>`:''}</div>
       ${s.nick?`<div class="a-nick">${s.nick}</div>`:''}
       <select id="att-${s.id}">
         <option value="Hadir" ${existing[s.id]?.status==='Hadir'?'selected':''}>✅ Present</option>
@@ -2886,7 +3034,8 @@ function loadAbsensi(){
         <option value="Alpha" ${existing[s.id]?.status==='Alpha'?'selected':''}>❌ Absent</option>
       </select>
       <input type="text" placeholder="Note (optional)" id="att-ket-${s.id}" value="${existing[s.id]?.keterangan||''}">
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function saveAbsensi(){
   const d=document.getElementById('absen-date').value;
@@ -3076,27 +3225,6 @@ function renderLessons(){
 // ════════════════════════════════════════════════
 //  EVALUATION
 // ════════════════════════════════════════════════
-function resetEvalForm(){
-  document.getElementById('form-eval-title').textContent='Add Evaluation';
-  document.getElementById('e-id').value='';
-  document.getElementById('e-tanggal').value=new Date().toISOString().slice(0,10);
-  document.getElementById('e-siswa').value='';
-  document.getElementById('e-rating').value='5';
-  ['e-nilai','e-progress','e-catatan'].forEach(i=>document.getElementById(i).value='');
-}
-function openEditEval(id){
-  const e=evaluasiList.find(x=>x.id===id); if(!e) return;
-  document.getElementById('form-eval-title').textContent='Edit Evaluation';
-  document.getElementById('e-id').value=e.id;
-  document.getElementById('e-tanggal').value=e.tanggal||'';
-  document.getElementById('e-siswa').value=e.siswaId||'';
-  document.getElementById('e-nilai').value=e.nilai||'';
-  document.getElementById('e-rating').value=e.rating||'5';
-  document.getElementById('e-progress').value=e.progress||'';
-  document.getElementById('e-catatan').value=e.catatan||'';
-  openPanel('form-eval','700px');
-  document.getElementById('form-eval').scrollIntoView({behavior:'smooth'});
-}
 function saveEval(){
   const siswaId=document.getElementById('e-siswa').value;
   if(!siswaId){ alert('Select a student!'); return; }
@@ -3116,36 +3244,88 @@ function saveEval(){
   document.getElementById('e-id').value='';
   ['e-nilai','e-progress','e-catatan'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('form-eval-title').textContent='Add Evaluation';
-  closePanel('form-eval'); renderEval();
+  closeEvalForm(); renderEval();
 }
 function deleteEval(id){
   if(!confirm('Delete?')) return;
   evaluasiList=evaluasiList.filter(e=>e.id!==id); DB.set('evaluasi',evaluasiList); renderEval();
 }
-function renderEval(){
-  const tbody=document.getElementById('tbody-eval');
-  const empty=document.getElementById('empty-eval');
-  tbody.innerHTML='';
-  const sorted=[...evaluasiList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
-  if(!sorted.length){ empty.style.display='block'; return; }
-  empty.style.display='none';
-  sorted.forEach(e=>{
-    const n=Number(e.nilai||0);
-    const nc=n>=80?'var(--green)':n>=60?'var(--yellow)':'var(--red)';
-    tbody.innerHTML+=`<tr>
-      <td style="color:var(--muted);font-size:0.83rem">${tglFmt(e.tanggal)}</td>
-      <td><strong>${e.namaSiswa}</strong></td>
-      <td><span style="font-family:'Fredoka One',sans-serif;font-size:1.1rem;font-weight:800;color:${nc}">${e.nilai||'-'}</span></td>
-      <td style="font-size:1rem">${stars(e.rating)}</td>
-      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.progress||'-'}</td>
-      <td style="max-width:160px;font-size:0.82rem;color:var(--muted)">${e.catatan||'-'}</td>
-      <td class="nowrap">
-        <button class="btn sm" style="margin-right:4px" onclick="showEvalPrint('${e.id}')">🖨️</button>
-        <button class="btn sm icon-only" title="Edit" onclick="openEditEval('${e.id}')" style="margin-right:4px">✏️</button>
-        <button class="btn danger sm icon-only" onclick="deleteEval('${e.id}')">🗑️</button>
-      </td>
-    </tr>`;
+function closeEvalForm(){
+  document.getElementById('eval-form-card').style.display='none';
+}
+function clearEvalFilter(){
+  ['eval-filter-siswa','eval-filter-dari','eval-filter-sampai'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
   });
+  renderEval();
+}
+function renderEval(){
+  const list   = document.getElementById('eval-list');
+  const empty  = document.getElementById('empty-eval');
+  const fSiswa = document.getElementById('eval-filter-siswa')?.value||'';
+  const fDari  = document.getElementById('eval-filter-dari')?.value||'';
+  const fSampai= document.getElementById('eval-filter-sampai')?.value||'';
+
+  let sorted=[...evaluasiList].sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  if(fSiswa)  sorted=sorted.filter(e=>e.siswaId===fSiswa);
+  if(fDari)   sorted=sorted.filter(e=>e.tanggal>=fDari);
+  if(fSampai) sorted=sorted.filter(e=>e.tanggal<=fSampai);
+
+  if(!sorted.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  const ratingLabel=['','Passive','Below Avg','Average','Good','Excellent'];
+  list.innerHTML = sorted.map(e=>{
+    const n=Number(e.nilai||0);
+    const bg=n>=80?'var(--green)':n>=60?'var(--yellow)':'var(--red)';
+    const starRow='⭐'.repeat(Number(e.rating)||0);
+    return `
+    <div class="eval-card">
+      <div class="eval-score-badge" style="background:${bg}">${e.nilai||'—'}</div>
+      <div class="eval-meta">
+        <div class="eval-student">${e.namaSiswa}</div>
+        <div class="eval-date-row">
+          <span>${tglFmt(e.tanggal)}</span>
+          ${e.rating?`<span style="font-size:0.9rem">${starRow}</span><span style="color:var(--accent);font-weight:700">${ratingLabel[Number(e.rating)]||''}</span>`:''}
+        </div>
+        ${e.progress?`<div class="eval-text"><strong>Progress:</strong> ${e.progress}</div>`:''}
+        ${e.catatan?`<div class="eval-text"><strong>Notes:</strong> ${e.catatan}</div>`:''}
+      </div>
+      <div class="eval-actions">
+        <button class="btn sm" title="Print" onclick="showEvalPrint('${e.id}')">🖨️</button>
+        <button class="btn sm" title="Edit" onclick="openEditEval('${e.id}')">✏️</button>
+        <button class="btn danger sm" title="Delete" onclick="deleteEval('${e.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetEvalForm(){
+  document.getElementById('form-eval-title').textContent='Add Evaluation';
+  document.getElementById('e-id').value='';
+  document.getElementById('e-tanggal').value=new Date().toISOString().split('T')[0];
+  document.getElementById('e-siswa').value='';
+  document.getElementById('e-nilai').value='';
+  document.getElementById('e-rating').value='5';
+  document.getElementById('e-progress').value='';
+  document.getElementById('e-catatan').value='';
+  document.getElementById('eval-form-card').style.display='block';
+  document.getElementById('eval-form-card').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function openEditEval(id){
+  const e=evaluasiList.find(x=>x.id===id); if(!e) return;
+  switchEvalTab('single');
+  document.getElementById('form-eval-title').textContent='Edit Evaluation';
+  document.getElementById('e-id').value=e.id;
+  document.getElementById('e-tanggal').value=e.tanggal||'';
+  document.getElementById('e-siswa').value=e.siswaId||'';
+  document.getElementById('e-nilai').value=e.nilai||'';
+  document.getElementById('e-rating').value=e.rating||'5';
+  document.getElementById('e-progress').value=e.progress||'';
+  document.getElementById('e-catatan').value=e.catatan||'';
+  document.getElementById('eval-form-card').style.display='block';
+  document.getElementById('eval-form-card').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ════════════════════════════════════════════════
@@ -4000,6 +4180,8 @@ function updateSelects(){
   document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
   document.getElementById('m-target').innerHTML='<option value="Semua">All Students</option>'+opts;
   document.getElementById('r-siswa').innerHTML='<option value="">-- All Students --</option>'+opts;
+  const filterEl=document.getElementById('eval-filter-siswa');
+  if(filterEl) filterEl.innerHTML='<option value="">All Students</option>'+opts;
 }
 
 // ════════════════════════════════════════════════
@@ -4798,17 +4980,24 @@ Please confirm at your earliest convenience. Thank you 🙏
 function globalSearch(q){
   const res = document.getElementById('search-results');
   if(!q || q.length < 2){ res.classList.remove('open'); return; }
+  if(!siswaList.length){
+    res.innerHTML=`<div style="padding:12px 14px;font-size:0.82rem;color:var(--muted);text-align:center">No students loaded yet.</div>`;
+    res.classList.add('open'); return;
+  }
   const ql = q.toLowerCase();
   const matches = siswaList
-    .filter(s=>s.nama.toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
+    .filter(s=>(s.nama||'').toLowerCase().includes(ql)||(s.nick||'').toLowerCase().includes(ql)||(s.kelas||'').toLowerCase().includes(ql))
     .slice(0,6);
-  if(!matches.length){ res.classList.remove('open'); return; }
+  if(!matches.length){
+    res.innerHTML=`<div style="padding:12px 14px;font-size:0.82rem;color:var(--muted);text-align:center">No student found for "<strong>${q}</strong>"</div>`;
+    res.classList.add('open'); return;
+  }
   res.innerHTML = matches.map(s=>`
-    <div class="search-result-item" onclick="goToStudent('${s.id}')">
+    <div class="search-result-item" onmousedown="goToStudent('${s.id}')">
       <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.8rem;font-weight:800;flex-shrink:0">${(s.nick||s.nama).charAt(0).toUpperCase()}</div>
       <div>
-        <div style="font-weight:700">${s.nama}</div>
-        <div style="font-size:0.72rem;color:var(--muted)">${s.level}${s.kelas?' · '+s.kelas:''}</div>
+        <div style="font-weight:700">${s.nama}${s.nick?` <span style="color:var(--muted);font-weight:500">(${s.nick})</span>`:''}</div>
+        <div style="font-size:0.72rem;color:var(--muted)">${s.level||''}${s.kelas?' · '+s.kelas:''}</div>
       </div>
     </div>`).join('');
   res.classList.add('open');
