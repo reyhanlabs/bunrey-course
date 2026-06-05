@@ -3220,16 +3220,46 @@ function saveAbsensi(){
   const conflicts = [];
   siswaList.forEach(s => {
     const newStatus = document.getElementById(`att-${s.id}`)?.value || 'Hadir';
+    
+    // ✅ PENTING: Check old attendance (bisa existing atau baru)
     const oldAtt = absensiList.find(a => a.tanggal === d && a.siswaId === s.id);
-    const oldStatus = oldAtt?.status || 'Hadir';
+    const oldStatus = oldAtt?.status || 'Hadir';  // Default Hadir jika baru
     
     // Jika ubah dari Hadir ke bukan-Hadir
     if(oldStatus === 'Hadir' && newStatus !== 'Hadir') {
-      const attendanceId = oldAtt?.id;
-      if(attendanceId) {
-        // Check apakah ada payment untuk sesi ini
+      let attendanceIdToCheck = oldAtt?.id;
+      
+      // ✅ PENTING FIX: Jika attendance belum ada (BARU), cek payment di tanggal+siswa itu
+      // Attendance baru akan punya ID setelah di-create, tapi saat check, belum ada
+      // Jadi kita cek: apakah sudah ada payment untuk siswa ini di tanggal ini?
+      if(!attendanceIdToCheck) {
+        // Attendance baru - check payment untuk tanggal+siswa ini
+        const paymentForThisDateStudent = bayarList.find(b =>
+          b.siswaId === s.id && b.sesiIds && b.sesiIds.length > 0
+        );
+        
+        if(paymentForThisDateStudent) {
+          // Check apakah payment-nya ada sesi di tanggal ini
+          const sesiDiTanggalIni = paymentForThisDateStudent.sesiIds.find(sesiId => {
+            const att = absensiList.find(a => a.id === sesiId);
+            return att && att.tanggal === d;
+          });
+          
+          if(sesiDiTanggalIni) {
+            conflicts.push({
+              siswaId: s.id,
+              nama: s.nama,
+              tanggal: d,
+              oldStatus: oldStatus,
+              newStatus: newStatus,
+              payment: paymentForThisDateStudent
+            });
+          }
+        }
+      } else {
+        // Attendance sudah ada - cek payment berdasarkan attendance ID
         const paymentWithThisSesi = bayarList.find(b => 
-          b.sesiIds && b.sesiIds.includes(attendanceId)
+          b.sesiIds && b.sesiIds.includes(attendanceIdToCheck)
         );
         
         if(paymentWithThisSesi) {
@@ -3237,7 +3267,7 @@ function saveAbsensi(){
             siswaId: s.id,
             nama: s.nama,
             tanggal: d,
-            oldStatus: oldStatus,  // ✅ FIX: Store oldStatus
+            oldStatus: oldStatus,
             newStatus: newStatus,
             payment: paymentWithThisSesi
           });
