@@ -3608,7 +3608,7 @@ function loadSesiForPayment(){
   const siswaId = document.getElementById('b-siswa').value;
   const wrap    = document.getElementById('sesi-picker-wrap');
   const countEl = document.getElementById('sesi-selected-count');
-  if(!siswaId){ wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">Please select a student first.</div>'; return; }
+  if(!siswaId){ wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">Pilih siswa terlebih dahulu.</div>'; return; }
 
   // Get the payment ID being edited (if any)
   const editId = document.getElementById('b-id').value;
@@ -3618,26 +3618,30 @@ function loadSesiForPayment(){
     if(editBayar?.sesiIds) editBayar.sesiIds.forEach(id=>linkedInCurrentPayment.add(id));
   }
 
-  // ✅ FIX: Include attendance yang statusnya 'Hadir' ATAU sudah linked di payment yang sedang diedit
-  // Ini memastikan jika attendance diedit statusnya, tapi masih terlihat di payment form
-  const sesiSiswa = absensiList
-    .filter(a => {
-      if(a.siswaId !== siswaId) return false;
-      // Tampilkan jika: status 'Hadir' ATAU sudah linked di payment yang sedang diedit
-      return a.status === 'Hadir' || linkedInCurrentPayment.has(a.id);
-    })
-    .sort((a,b) => b.tanggal.localeCompare(a.tanggal));
-
-  // Get all already-paid session IDs for this student
+  // ✅ PENTING FIX: Get all paid sessions FIRST (dari sesiIds)
   const paidSesiIds = new Set();
   bayarList.filter(b => b.siswaId === siswaId && b.sesiIds && b.sesiIds.length)
     .forEach(b => b.sesiIds.forEach(id => paidSesiIds.add(id)));
 
-  // Also exclude editId's own sesiIds from "paid"
+  // Exclude editId's own sesiIds from "paid" (jangan hitung diri sendiri sebagai paid)
   if(editId){
     const editBayar = bayarList.find(b=>b.id===editId);
     if(editBayar?.sesiIds) editBayar.sesiIds.forEach(id=>paidSesiIds.delete(id));
   }
+
+  // ✅ CRITICAL FIX: Tampilkan SEMUA attendance (tidak peduli status)
+  // yang PENTING: harus ada di absensiList (not orphaned)
+  // Include attendance yang statusnya 'Hadir' ATAU sudah dibayar (dalam paidSesiIds)
+  const sesiSiswa = absensiList
+    .filter(a => {
+      if(a.siswaId !== siswaId) return false;
+      // ✅ TAMPILKAN jika:
+      // 1. Status Hadir (belum dibayar, bisa dibayar)
+      // 2. Sudah dibayar (paidSesiIds) - meskipun status berubah!
+      // 3. Linked di payment yang sedang diedit
+      return a.status === 'Hadir' || paidSesiIds.has(a.id) || linkedInCurrentPayment.has(a.id);
+    })
+    .sort((a,b) => b.tanggal.localeCompare(a.tanggal));
 
   if(!sesiSiswa.length){
     wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">No attendance records found for this student yet.</div>';
@@ -3645,23 +3649,25 @@ function loadSesiForPayment(){
   }
 
   wrap.innerHTML = sesiSiswa.map(a => {
-    const isPaid = paidSesiIds.has(a.id);
+    const isPaid = paidSesiIds.has(a.id);  // ✅ Check dari paidSesiIds (sesiIds history)
     const isLinkedInCurrent = linkedInCurrentPayment.has(a.id);
-    const isInvalid = isLinkedInCurrent && a.status !== 'Hadir';  // Mark if status changed
+    const isStatusChanged = isLinkedInCurrent && a.status !== 'Hadir';  // Mark if status changed since linking
+    
     const label  = tglFmt(a.tanggal) + (a.keterangan ? ' · '+a.keterangan : '');
     
     let statusHtml = '';
     if(isPaid){
-      statusHtml = '<div style="font-size:0.72rem;color:var(--green)">✅ Already paid in another payment</div>';
-    } else if(isInvalid){
-      // ✅ NEW: Visual warning if attendance status changed
-      statusHtml = `<div style="font-size:0.72rem;color:var(--yellow)">⚠️ Status changed to ${a.status} - still linked to this payment</div>`;
+      // ✅ CLEAR FLAG: Sudah dibayar, MESKIPUN status attendance berubah
+      statusHtml = `<div style="font-size:0.72rem;color:var(--green)">✅ Sudah dibayar (tidak perlu bayar lagi)</div>`;
+    } else if(isStatusChanged){
+      // ✅ WARNING: Status berubah tapi masih linked ke payment ini
+      statusHtml = `<div style="font-size:0.72rem;color:var(--yellow)">⚠️ Status berubah ke ${a.status} - tetap linked ke pembayaran ini</div>`;
     } else {
-      statusHtml = '<div style="font-size:0.72rem;color:var(--muted)">Not yet paid</div>';
+      statusHtml = '<div style="font-size:0.72rem;color:var(--muted)">Belum dibayar</div>';
     }
     
-    return `<div class="sesi-row" onclick="toggleSesiCheck('${a.id}')" ${isInvalid ? 'style="opacity:0.7"' : ''}>
-      <div class="sesi-check ${isPaid?'checked disabled':''}" id="scheck-${a.id}" title="${isPaid?'Already paid in another transaction':''}">
+    return `<div class="sesi-row" onclick="${isPaid ? '' : `toggleSesiCheck('${a.id}')`}" ${isPaid || isStatusChanged ? 'style="opacity:0.7;cursor:not-allowed"' : ''}>
+      <div class="sesi-check ${isPaid?'checked disabled':isStatusChanged?'disabled':''}" id="scheck-${a.id}" title="${isPaid?'Sudah dibayar di pembayaran lain - tidak bisa dipilih':''}">
         ${isPaid?'✓':''}
       </div>
       <div style="flex:1">
