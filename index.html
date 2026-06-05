@@ -3146,31 +3146,22 @@ function saveAttEdit(){
     keterangan: document.getElementById('att-edit-note').value.trim(),
   };
   
-  // ✅ ENHANCED FIX: Handle kedua skenario
+  // ✅ IMPROVED FIX: Don't remove from sesiIds, keep for history
+  // Let rendering logic handle status checks
   
-  // Scenario 1: Hadir → Non-Hadir (Remove from payments)
+  // Just notify user about status change
   if(oldStatus === 'Hadir' && newStatus !== 'Hadir'){
-    bayarList.forEach(b => {
-      if(b.sesiIds && b.sesiIds.includes(id)){
-        b.sesiIds = b.sesiIds.filter(sid => sid !== id);
-      }
-    });
-    DB.set('bayar', bayarList);
-    showToast('⚠️ Session removed from payments (attendance no longer present)', 'warn');
+    showToast('⚠️ Attendance status changed - payment record preserved', 'warn');
   }
   
-  // Scenario 2: Non-Hadir → Hadir (ADD to unpaid sessions info)
-  // NOTE: Tidak otomatis add ke existing payment, tapi user bisa add via payment form
   if(oldStatus !== 'Hadir' && newStatus === 'Hadir'){
-    // Optional: Auto-detect if this attendance should be added to any pending payment
-    // For now: just notify user that session is now available
-    showToast('✅ Attendance now marked as Present - available for payment', 'success');
+    showToast('✅ Attendance marked as Present again - payment record intact', 'success');
   }
   
   DB.set('absensi', absensiList);
   closeModal('modal-att-edit');
   renderAttendance();
-  renderPayment();  // Refresh payment display untuk reflect perubahan
+  renderPayment();  // Refresh to handle status changes in rendering
 }
 
 function deleteAttendance(id){
@@ -3658,7 +3649,11 @@ function renderPayment(){
     bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
 
     const totalSesiHadir     = absensiList.filter(a=>a.status==='Hadir').length;
-    const totalSesiTerbayar  = absensiList.filter(a=>a.status==='Hadir' && paidSesiIds.has(a.id)).length;
+    // ✅ IMPROVED: Count paid sessions = sudah di dalam sesiIds (regardless of current status)
+    const totalSesiTerbayar  = Array.from(paidSesiIds).filter(id => {
+      const att = absensiList.find(a => a.id === id);
+      return att !== undefined;  // Count jika attendance masih exist (even if status changed)
+    }).length;
     const sesiHutang         = totalSesiHadir - totalSesiTerbayar;
     const totalRevenue       = bayarList.reduce((s,b)=>s+b.jumlah, 0);
 
@@ -3682,6 +3677,7 @@ function renderPayment(){
       } else {
         const fee = s.feePerSesi || 0;
         if(!fee) return;
+        // ✅ IMPROVED: Exclude attendance yang sudah dibayar (dalam paidSesiIds) meskipun statusnya bukan Hadir
         const unpaidCount = absensiList.filter(a =>
           a.siswaId === s.id && a.status === 'Hadir' && !paidSesiIds.has(a.id)
         ).length;
