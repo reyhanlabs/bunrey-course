@@ -3136,14 +3136,41 @@ function saveAttEdit(){
   const id = document.getElementById('att-edit-id').value;
   const idx = absensiList.findIndex(a=>a.id===id);
   if(idx===-1) return;
+  
+  const oldStatus = absensiList[idx].status;
+  const newStatus = document.getElementById('att-edit-status').value;
+  
   absensiList[idx] = {
     ...absensiList[idx],
-    status:     document.getElementById('att-edit-status').value,
+    status:     newStatus,
     keterangan: document.getElementById('att-edit-note').value.trim(),
   };
+  
+  // ✅ ENHANCED FIX: Handle kedua skenario
+  
+  // Scenario 1: Hadir → Non-Hadir (Remove from payments)
+  if(oldStatus === 'Hadir' && newStatus !== 'Hadir'){
+    bayarList.forEach(b => {
+      if(b.sesiIds && b.sesiIds.includes(id)){
+        b.sesiIds = b.sesiIds.filter(sid => sid !== id);
+      }
+    });
+    DB.set('bayar', bayarList);
+    showToast('⚠️ Session removed from payments (attendance no longer present)', 'warn');
+  }
+  
+  // Scenario 2: Non-Hadir → Hadir (ADD to unpaid sessions info)
+  // NOTE: Tidak otomatis add ke existing payment, tapi user bisa add via payment form
+  if(oldStatus !== 'Hadir' && newStatus === 'Hadir'){
+    // Optional: Auto-detect if this attendance should be added to any pending payment
+    // For now: just notify user that session is now available
+    showToast('✅ Attendance now marked as Present - available for payment', 'success');
+  }
+  
   DB.set('absensi', absensiList);
   closeModal('modal-att-edit');
   renderAttendance();
+  renderPayment();  // Refresh payment display untuk reflect perubahan
 }
 
 function deleteAttendance(id){
@@ -3349,9 +3376,22 @@ function loadSesiForPayment(){
   const countEl = document.getElementById('sesi-selected-count');
   if(!siswaId){ wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">Please select a student first.</div>'; return; }
 
-  // Get all sessions for this student (sorted newest first)
+  // Get the payment ID being edited (if any)
+  const editId = document.getElementById('b-id').value;
+  const linkedInCurrentPayment = new Set();
+  if(editId){
+    const editBayar = bayarList.find(b=>b.id===editId);
+    if(editBayar?.sesiIds) editBayar.sesiIds.forEach(id=>linkedInCurrentPayment.add(id));
+  }
+
+  // ✅ FIX: Include attendance yang statusnya 'Hadir' ATAU sudah linked di payment yang sedang diedit
+  // Ini memastikan jika attendance diedit statusnya, tapi masih terlihat di payment form
   const sesiSiswa = absensiList
-    .filter(a => a.siswaId === siswaId && a.status === 'Hadir')
+    .filter(a => {
+      if(a.siswaId !== siswaId) return false;
+      // Tampilkan jika: status 'Hadir' ATAU sudah linked di payment yang sedang diedit
+      return a.status === 'Hadir' || linkedInCurrentPayment.has(a.id);
+    })
     .sort((a,b) => b.tanggal.localeCompare(a.tanggal));
 
   // Get all already-paid session IDs for this student
@@ -3359,28 +3399,40 @@ function loadSesiForPayment(){
   bayarList.filter(b => b.siswaId === siswaId && b.sesiIds && b.sesiIds.length)
     .forEach(b => b.sesiIds.forEach(id => paidSesiIds.add(id)));
 
-  // Also get editId to exclude its own sesiIds from "paid"
-  const editId = document.getElementById('b-id').value;
+  // Also exclude editId's own sesiIds from "paid"
   if(editId){
     const editBayar = bayarList.find(b=>b.id===editId);
     if(editBayar?.sesiIds) editBayar.sesiIds.forEach(id=>paidSesiIds.delete(id));
   }
 
   if(!sesiSiswa.length){
-    wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">No attendance records (Present) found for this student yet.</div>';
+    wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">No attendance records found for this student yet.</div>';
     return;
   }
 
   wrap.innerHTML = sesiSiswa.map(a => {
     const isPaid = paidSesiIds.has(a.id);
+    const isLinkedInCurrent = linkedInCurrentPayment.has(a.id);
+    const isInvalid = isLinkedInCurrent && a.status !== 'Hadir';  // Mark if status changed
     const label  = tglFmt(a.tanggal) + (a.keterangan ? ' · '+a.keterangan : '');
-    return `<div class="sesi-row" onclick="toggleSesiCheck('${a.id}')">
-      <div class="sesi-check ${isPaid?'checked disabled':''}  " id="scheck-${a.id}" title="${isPaid?'Already paid in another transaction':''}">
+    
+    let statusHtml = '';
+    if(isPaid){
+      statusHtml = '<div style="font-size:0.72rem;color:var(--green)">✅ Already paid in another payment</div>';
+    } else if(isInvalid){
+      // ✅ NEW: Visual warning if attendance status changed
+      statusHtml = `<div style="font-size:0.72rem;color:var(--yellow)">⚠️ Status changed to ${a.status} - still linked to this payment</div>`;
+    } else {
+      statusHtml = '<div style="font-size:0.72rem;color:var(--muted)">Not yet paid</div>';
+    }
+    
+    return `<div class="sesi-row" onclick="toggleSesiCheck('${a.id}')" ${isInvalid ? 'style="opacity:0.7"' : ''}>
+      <div class="sesi-check ${isPaid?'checked disabled':''}" id="scheck-${a.id}" title="${isPaid?'Already paid in another transaction':''}">
         ${isPaid?'✓':''}
       </div>
       <div style="flex:1">
         <div style="font-size:0.87rem;font-weight:700">${label}</div>
-        ${isPaid?`<div style="font-size:0.72rem;color:var(--green)">✅ Already paid</div>`:'<div style="font-size:0.72rem;color:var(--muted)">Not yet paid</div>'}
+        ${statusHtml}
       </div>
     </div>`;
   }).join('');
@@ -5962,6 +6014,67 @@ function updateMbnBadge(){
   const n = siswaList.filter(s=>absensiList.some(a=>a.siswaId===s.id&&a.status==='Hadir'&&!paidSesiIds.has(a.id))).length;
   const badge = document.getElementById('mbn-badge-payment');
   if(badge){ badge.className='mbn-badge'+(n>0?' show':''); }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  HELPER FUNCTIONS: Payment Integrity Validation & Repair
+//  Digunakan untuk debug dan maintenance data payment
+// ════════════════════════════════════════════════════════════════════════
+
+function validatePaymentIntegrity(){
+  // Check if all sesiIds in payments are valid attendance records
+  let issues = [];
+  
+  bayarList.forEach(payment => {
+    if(payment.sesiIds && payment.sesiIds.length){
+      payment.sesiIds.forEach(sesiId => {
+        const att = absensiList.find(a => a.id === sesiId);
+        if(!att){
+          issues.push({
+            type: 'MISSING_ATTENDANCE',
+            paymentId: payment.id,
+            paymentStudent: payment.namaSiswa,
+            sesiId: sesiId,
+            message: `Attendance ${sesiId} not found for payment ${payment.id}`
+          });
+        }
+      });
+    }
+  });
+  
+  return {
+    isValid: issues.length === 0,
+    issueCount: issues.length,
+    issues: issues
+  };
+}
+
+function repairPaymentSessions(){
+  // Remove sesiIds yang attendance-nya tidak 'Hadir' atau tidak ada
+  let repaired = 0;
+  
+  bayarList.forEach(payment => {
+    if(payment.sesiIds && payment.sesiIds.length){
+      const originalLength = payment.sesiIds.length;
+      payment.sesiIds = payment.sesiIds.filter(sesiId => {
+        const att = absensiList.find(a => a.id === sesiId);
+        return att && att.status === 'Hadir';
+      });
+      
+      if(payment.sesiIds.length < originalLength){
+        repaired++;
+        console.log(`🔧 Repaired payment ${payment.id}: removed ${originalLength - payment.sesiIds.length} invalid session(s)`);
+      }
+    }
+  });
+  
+  if(repaired > 0){
+    DB.set('bayar', bayarList);
+    renderPayment();
+    showToast(`✅ Repaired ${repaired} payment record(s)`, 'success');
+  } else {
+    showToast('ℹ️ No repairs needed', 'info');
+  }
 }
 
 </script>
