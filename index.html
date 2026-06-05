@@ -1800,7 +1800,7 @@ td.nowrap { white-space:nowrap }
         <div class="tbl-wrap">
           <table><thead><tr>
             <th>Date</th><th>Student</th><th>Period</th><th>Sessions Paid</th>
-            <th class="r">Invoice</th><th class="r">Paid</th>
+            <th class="r">Invoice</th>
             <th>Status</th><th>Notes</th><th></th>
           </tr></thead>
           <tbody id="tbody-payment"></tbody></table>
@@ -2629,6 +2629,47 @@ const levelChip = l => {
   const map={Beginner:'chip-muted',Elementary:'chip-blue',Intermediate:'chip-green','Upper-Intermediate':'chip-purple',Advanced:'chip-red'};
   return chip(l, map[l]||'chip-muted');
 };
+
+// ═══════════════════════════════════════════════════════════
+// ✨ NUMBER FORMATTING FOR INPUT FIELDS
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Format number input dengan auto-separator (1000000 -> 1.000.000)
+ */
+function formatNumberInput(inputId){
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  
+  input.addEventListener('input', function(){
+    // Remove semua non-digit characters
+    let value = this.value.replace(/\D/g, '');
+    
+    // Add separator ribuan + Rp prefix
+    if(value){
+      value = 'Rp ' + Number(value).toLocaleString('id-ID');
+    }
+    
+    this.value = value;
+  });
+  
+  // Format existing value on load dengan Rp prefix
+  if(input.value){
+    const rawNum = Number(input.value.replace(/\D/g, ''));
+    if(rawNum > 0){
+      input.value = 'Rp ' + rawNum.toLocaleString('id-ID');
+    }
+  }
+}
+
+/**
+ * Get raw number value from formatted input (removes Rp prefix and separators)
+ */
+function getNumberValue(inputId){
+  const input = document.getElementById(inputId);
+  if(!input) return 0;
+  return Number(input.value.replace(/\D/g, '')) || 0;
+}
 
 function openModal(id){ document.getElementById(id).classList.add('open') }
 function closeModal(id){ document.getElementById(id).classList.remove('open') }
@@ -3613,9 +3654,10 @@ function updateSesiCount(){
     const feePerSesi = siswa.feePerSesi || 0;
     const totalAmount = checked * feePerSesi;
     
-    // Auto-fill invoice dan amount
-    document.getElementById('b-tagihan').value = totalAmount;
-    document.getElementById('b-jumlah').value = totalAmount;
+    // Auto-fill invoice dan amount dengan formatting
+    const formattedAmount = totalAmount > 0 ? Number(totalAmount).toLocaleString('id-ID') : '';
+    document.getElementById('b-tagihan').value = formattedAmount;
+    document.getElementById('b-jumlah').value = formattedAmount;
     
     // Show feedback
     if(totalAmount > 0){
@@ -3665,6 +3707,11 @@ function openPaymentForm(id){
   document.getElementById('b-tagihan').value=b?.tagihan||'';
   document.getElementById('b-status').value=b?.status||'Lunas';
   document.getElementById('b-catatan').value=b?.catatan||'';
+  
+  // ✨ Format number inputs
+  formatNumberInput('b-jumlah');
+  formatNumberInput('b-tagihan');
+  
   if(b){
     const opts=siswaList.map(s=>`<option value="${s.id}"${s.id===b.siswaId?' selected':''}>${s.nama}</option>`).join('');
     document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
@@ -3696,8 +3743,8 @@ function savePayment(){
     siswaId, namaSiswa:s?.nama||'-',
     periode:document.getElementById('b-periode').value.trim(),
     tanggal:document.getElementById('b-tanggal').value,
-    jumlah:Number(document.getElementById('b-jumlah').value)||0,
-    tagihan:Number(document.getElementById('b-tagihan').value)||0,
+    jumlah:getNumberValue('b-jumlah'),
+    tagihan:getNumberValue('b-tagihan'),
     status:document.getElementById('b-status').value,
     catatan:document.getElementById('b-catatan').value.trim(),
     sesiIds,
@@ -3950,8 +3997,8 @@ function renderPayment(){
       <td><strong>${b.namaSiswa}</strong></td>
       <td style="color:var(--muted);font-size:0.83rem">${b.periode||'-'}</td>
       <td style="max-width:200px">${sesiHtml}</td>
-      <td class="r" style="font-size:0.87rem">${fmt(b.tagihan)}</td>
-      <td class="r" style="font-weight:800;color:var(--green)">${fmt(b.jumlah)}</td>
+      <td class="r" style="font-weight:800;color:var(--green);font-size:0.87rem">${fmt(b.tagihan)}</td>
+      <td class="r" style="font-weight:800;color:var(--green);font-size:0.87rem">${fmt(b.jumlah)}</td>
       <td>${chip(sl,sc)}</td>
       <td style="font-size:0.82rem;color:var(--muted)">${b.catatan||'-'}</td>
       <td class="nowrap">
