@@ -277,17 +277,150 @@ td.nowrap { white-space:nowrap }
 .overlay {
   display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);
   z-index:200;align-items:center;justify-content:center;padding:20px;
-  backdrop-filter:blur(4px);
+  backdrop-filter:blur(8px);
+  animation:fadeIn .25s ease-out;
 }
 .overlay.open { display:flex }
+
+/* ── ENHANCED MODAL STYLING ── */
 .modal {
-  background:var(--bg2);border:1px solid var(--border);border-radius:20px;
-  padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;
-  animation:fadeIn .22s ease;box-shadow:0 30px 80px rgba(0,0,0,0.4);
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:32px;
+  max-width:520px;
+  width:100%;
+  max-height:90vh;
+  overflow-y:auto;
+  animation:slideUp .3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:0 25px 50px rgba(0,0,0,0.5), 0 0 1px rgba(0,0,0,0.1);
+  position:relative;
 }
-.modal-title { font-family:'Fredoka One',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:18px }
+
+.modal::before {
+  content:'';
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, var(--border), transparent);
+  border-radius:24px 24px 0 0;
+}
+
+.modal-title {
+  font-family:'Fredoka One',sans-serif;
+  font-size:1.35rem;
+  font-weight:800;
+  margin-bottom:20px;
+  color:var(--text);
+  letter-spacing:-0.5px;
+}
+
 .modal-sm { max-width:420px }
 .modal-lg { max-width:640px }
+
+/* ── MODAL CONTENT STYLING ── */
+.modal-content {
+  margin-bottom:20px;
+  line-height:1.6;
+  color:var(--text);
+  font-size:0.95rem;
+}
+
+.modal-footer {
+  display:flex;
+  gap:12px;
+  margin-top:24px;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+  justify-content:flex-end;
+}
+
+.modal-footer.center {
+  justify-content:center;
+}
+
+.modal-footer.full-width {
+  flex-direction:column;
+}
+
+.modal-footer.full-width .btn {
+  width:100%;
+}
+
+/* ── MODAL BUTTONS ── */
+.modal .btn {
+  padding:11px 28px;
+  font-weight:600;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  transition:all .2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size:0.95rem;
+  min-width:100px;
+}
+
+.modal .btn.primary {
+  background:linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(108, 99, 255, 0.3);
+}
+
+.modal .btn.primary:hover {
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(108, 99, 255, 0.4);
+}
+
+.modal .btn.primary:active {
+  transform:translateY(0);
+}
+
+.modal .btn.secondary {
+  background:var(--bg3);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+
+.modal .btn.secondary:hover {
+  background:var(--border);
+  border-color:var(--border);
+  transform:translateY(-2px);
+}
+
+.modal .btn.danger {
+  background:linear-gradient(135deg, var(--red) 0%, #dc2626 100%);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(255, 79, 109, 0.3);
+}
+
+.modal .btn.danger:hover {
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(255, 79, 109, 0.4);
+}
+
+.modal .btn.success {
+  background:linear-gradient(135deg, var(--green) 0%, #10b981 100%);
+  color:#fff;
+  box-shadow:0 8px 20px rgba(0, 214, 143, 0.3);
+}
+
+.modal .btn.success:hover {
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(0, 214, 143, 0.4);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes slideUp {
+  from {
+    opacity:0;
+    transform:translateY(20px);
+  }
+  to {
+    opacity:1;
+    transform:translateY(0);
+  }
+}
 
 /* ── SECTION HEADER ── */
 .sec-hd { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px }
@@ -3165,10 +3298,38 @@ function saveAttEdit(){
 }
 
 function deleteAttendance(id){
-  if(!confirm('Delete this attendance record?')) return;
-  absensiList = absensiList.filter(a=>a.id!==id);
-  DB.set('absensi', absensiList);
-  renderAttendance();
+  // ✅ VALIDATION: Check apakah attendance ini ada di pembayaran
+  const paymentWithThisAttendance = bayarList.find(b => 
+    b.sesiIds && b.sesiIds.includes(id)
+  );
+  
+  if(paymentWithThisAttendance){
+    // ❌ BLOCK: Ada pembayaran yang reference attendance ini
+    dangerModal(
+      '❌ Cannot Delete',
+      `This attendance has an associated payment:<br><br>` +
+      `<strong>Student:</strong> ${paymentWithThisAttendance.namaSiswa}<br>` +
+      `<strong>Status:</strong> ${paymentWithThisAttendance.status}<br>` +
+      `<strong>Amount:</strong> ${fmt(paymentWithThisAttendance.jumlah)}<br><br>` +
+      `Please delete the payment record first, then you can delete this attendance.`,
+      null,
+      { okText: 'Close', cancelText: null }
+    );
+    return;
+  }
+  
+  // ✅ ALLOWED: Tidak ada pembayaran, boleh delete
+  dangerModal(
+    '🗑️ Delete Attendance?',
+    'Are you sure you want to delete this attendance record? This action cannot be undone.',
+    () => {
+      absensiList = absensiList.filter(a=>a.id!==id);
+      DB.set('absensi', absensiList);
+      renderAttendance();
+      showToast('✅ Attendance deleted', 'success');
+    },
+    { okText: 'Delete', cancelText: 'Cancel' }
+  );
 }
 
 // ════════════════════════════════════════════════
@@ -3616,8 +3777,25 @@ function applyMonthlyBilling(){
   alert('✅ Invoice & Amount terisi otomatis! Periksa lalu klik Save.');
 }
 function deletePayment(id){
-  if(!confirm('Delete this payment?')) return;
-  bayarList=bayarList.filter(b=>b.id!==id); DB.set('bayar',bayarList); renderPayment(); updateUnpaidBadge();
+  const payment = bayarList.find(b => b.id === id);
+  if(!payment) return;
+  
+  dangerModal(
+    '🗑️ Delete Payment?',
+    `Are you sure you want to delete this payment?<br><br>` +
+    `<strong>Student:</strong> ${payment.namaSiswa}<br>` +
+    `<strong>Amount:</strong> ${fmt(payment.jumlah)}<br>` +
+    `<strong>Status:</strong> ${payment.status}<br><br>` +
+    `This action cannot be undone.`,
+    () => {
+      bayarList = bayarList.filter(b => b.id !== id);
+      DB.set('bayar', bayarList);
+      renderPayment();
+      updateUnpaidBadge();
+      showToast('✅ Payment deleted', 'success');
+    },
+    { okText: 'Delete', cancelText: 'Cancel' }
+  );
 }
 function deleteBayar(id){ deletePayment(id) }
 function setCurrentMonthFilter(){
@@ -4708,6 +4886,119 @@ function showToast(msg, type='info', duration=3500){
     setTimeout(()=>t.remove(), 300);
   }, duration);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ✨ BEAUTIFUL MODAL DIALOG FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Show beautiful confirmation dialog
+ */
+function showModalDialog(title, message, onConfirm, options = {}) {
+  const { okText = 'OK', cancelText = 'Cancel', type = 'confirm' } = options;
+  const modalId = 'modal-dialog-' + Date.now();
+  const overlayHTML = `
+    <div class="overlay open" id="${modalId}">
+      <div class="modal modal-sm">
+        <div class="modal-title">${title}</div>
+        <div class="modal-content">${message}</div>
+        <div class="modal-footer">
+          <button class="btn secondary" onclick="closeModalDialog('${modalId}')">
+            ${cancelText}
+          </button>
+          <button class="btn ${type === 'danger' ? 'danger' : (type === 'success' ? 'success' : 'primary')}" 
+                  onclick="confirmModalDialog('${modalId}')">
+            ${okText}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  const div = document.createElement('div');
+  div.innerHTML = overlayHTML;
+  document.body.appendChild(div.firstElementChild);
+  window['modalCallback_' + modalId] = onConfirm;
+  setTimeout(() => {
+    document.querySelector(`#${modalId} .btn.${type === 'danger' ? 'danger' : (type === 'success' ? 'success' : 'primary')}`).focus();
+  }, 100);
+}
+
+function confirmModal(title, message, onConfirm, options = {}) {
+  showModalDialog(title, message, onConfirm, {
+    okText: options.okText || 'Confirm',
+    cancelText: options.cancelText || 'Cancel',
+    type: 'confirm'
+  });
+}
+
+function warningModal(title, message, onConfirm, options = {}) {
+  showModalDialog(title, message, onConfirm, {
+    okText: options.okText || 'Proceed',
+    cancelText: options.cancelText || 'Cancel',
+    type: 'warning'
+  });
+}
+
+function dangerModal(title, message, onConfirm, options = {}) {
+  showModalDialog(title, message, onConfirm, {
+    okText: options.okText || 'Delete',
+    cancelText: options.cancelText || 'Cancel',
+    type: 'danger'
+  });
+}
+
+function infoModal(title, message, options = {}) {
+  const modalId = 'modal-dialog-' + Date.now();
+  const overlayHTML = `
+    <div class="overlay open" id="${modalId}">
+      <div class="modal modal-sm">
+        <div class="modal-title">ℹ️ ${title}</div>
+        <div class="modal-content">${message}</div>
+        <div class="modal-footer">
+          <button class="btn primary" onclick="closeModalDialog('${modalId}')">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const div = document.createElement('div');
+  div.innerHTML = overlayHTML;
+  document.body.appendChild(div.firstElementChild);
+}
+
+function successModal(title, message, options = {}) {
+  const modalId = 'modal-dialog-' + Date.now();
+  const overlayHTML = `
+    <div class="overlay open" id="${modalId}">
+      <div class="modal modal-sm">
+        <div class="modal-title">✅ ${title}</div>
+        <div class="modal-content">${message}</div>
+        <div class="modal-footer">
+          <button class="btn success" onclick="closeModalDialog('${modalId}')">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const div = document.createElement('div');
+  div.innerHTML = overlayHTML;
+  document.body.appendChild(div.firstElementChild);
+  if(options.autoClose) setTimeout(() => closeModalDialog(modalId), options.autoClose);
+}
+
+function closeModalDialog(modalId) {
+  const modal = document.getElementById(modalId);
+  if(modal) {
+    modal.classList.remove('open');
+    setTimeout(() => modal.remove(), 300);
+  }
+  delete window['modalCallback_' + modalId];
+}
+
+function confirmModalDialog(modalId) {
+  const callback = window['modalCallback_' + modalId];
+  if(callback) callback();
+  closeModalDialog(modalId);
+}
+
 
 // Patch saveAbsensi to use toast instead of alert + refresh calendar
 const _origSaveAbsensi = window.saveAbsensi;
