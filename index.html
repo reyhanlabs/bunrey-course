@@ -3314,28 +3314,69 @@ function saveAttEdit(){
   const oldStatus = absensiList[idx].status;
   const newStatus = document.getElementById('att-edit-status').value;
   
+  if(oldStatus === newStatus) {
+    showToast('ℹ️ Status tidak berubah', 'info');
+    closeModal('modal-att-edit');
+    return;
+  }
+  
+  // ✅ Cek apakah sesi ini sudah dibayar
+  const isPaid = PaymentIntegrity.isSessionPaid(id);
+  const payment = PaymentIntegrity.getPaymentBySessionId(id);
+  
+  // Peringatan untuk kasus kritis: Hadir → jadi bukan Hadir (padahal sudah dibayar)
+  if(oldStatus === 'Hadir' && newStatus !== 'Hadir' && isPaid) {
+    dangerModal(
+      '⚠️ Perhatian: Sesi Sudah Dibayar',
+      `Sesi ini sudah tercatat dibayar (${fmt(payment?.jumlah || 0)} · ${payment?.status || 'Lunas'}).<br><br>` +
+      `Jika diubah menjadi <strong>${newStatus}</strong>, ` +
+      `dana pembayaran <strong>tidak akan diretur otomatis</strong>.<br><br>` +
+      `Lanjutkan perubahan status?`,
+      () => {
+        // User confirm: lanjutkan perubahan
+        updateAttendanceStatus(idx, newStatus);
+      },
+      { 
+        okText: 'Lanjutkan',
+        cancelText: 'Batal'
+      }
+    );
+    return;
+  }
+  
+  // Kasus normal: Izin/Alpha → Hadir (tapi sudah pernah dibayar)
+  if(oldStatus !== 'Hadir' && newStatus === 'Hadir' && isPaid) {
+    showToast(
+      '✅ Sesi ini sudah tercatat dibayar. Tidak perlu bayar lagi.',
+      'success'
+    );
+  }
+  
+  // Update tanpa warning
+  updateAttendanceStatus(idx, newStatus);
+}
+
+/**
+ * Helper: Update status attendance (dipanggil setelah validasi)
+ */
+function updateAttendanceStatus(idx, newStatus) {
+  const oldStatus = absensiList[idx].status;
+  
+  // ✅ PENTING: Hanya update attendance status, JANGAN ubah payment record!
   absensiList[idx] = {
     ...absensiList[idx],
-    status:     newStatus,
+    status: newStatus,
     keterangan: document.getElementById('att-edit-note').value.trim(),
   };
   
-  // ✅ IMPROVED FIX: Don't remove from sesiIds, keep for history
-  // Let rendering logic handle status checks
-  
-  // Just notify user about status change
-  if(oldStatus === 'Hadir' && newStatus !== 'Hadir'){
-    showToast('⚠️ Attendance status changed - payment record preserved', 'warn');
-  }
-  
-  if(oldStatus !== 'Hadir' && newStatus === 'Hadir'){
-    showToast('✅ Attendance marked as Present again - payment record intact', 'success');
-  }
-  
   DB.set('absensi', absensiList);
+  // ⚠️ JANGAN: DB.set('bayar', bayarList) - payment record tidak boleh diubah!
+  
   closeModal('modal-att-edit');
   renderAttendance();
-  renderPayment();  // Refresh to handle status changes in rendering
+  renderPayment();
+  
+  showToast('✅ Status attendance diperbarui', 'success');
 }
 
 function deleteAttendance(id){
@@ -3725,20 +3766,97 @@ function openPaymentForm(id){
 }
 function closePaymentForm(){ closePanel('form-payment') }
 function openEditBayar(id){ openPaymentForm(id) }
+
+// ════════════════════════════════════════════════════════════════════════════
+//  ✅ PAYMENT INTEGRITY MODULE - Fix untuk duplikasi pembayaran
+// ════════════════════════════════════════════════════════════════════════════
+const PaymentIntegrity = {
+  isSessionPaid(sessionId) {
+    return bayarList.some(payment =>
+      payment.sesiIds && payment.sesiIds.includes(sessionId)
+    );
+  },
+
+  getPaidSessionIds(siswaId) {
+    const paid = new Set();
+    bayarList
+      .filter(b => b.siswaId === siswaId)
+      .forEach(b => {
+        if(b.sesiIds) b.sesiIds.forEach(id => paid.add(id));
+      });
+    return paid;
+  },
+
+  getUnpaidSessions(siswaId) {
+    const paidSesiIds = this.getPaidSessionIds(siswaId);
+    return absensiList.filter(a =>
+      a.siswaId === siswaId &&
+      a.status === 'Hadir' &&
+      !paidSesiIds.has(a.id)
+    );
+  },
+
+  validateNewPayment(siswaId, selectedSesiIds) {
+    if(!selectedSesiIds || selectedSesiIds.length === 0) {
+      return { valid: true, conflicts: [], message: null };
+    }
+    const alreadyPaid = selectedSesiIds.filter(id =>
+      this.isSessionPaid(id)
+    );
+    return {
+      valid: alreadyPaid.length === 0,
+      conflicts: alreadyPaid,
+      message: alreadyPaid.length
+        ? `${alreadyPaid.length} sesi sudah pernah dibayar sebelumnya`
+        : null
+    };
+  },
+
+  getPaymentBySessionId(sessionId) {
+    return bayarList.find(b =>
+      b.sesiIds && b.sesiIds.includes(sessionId)
+    );
+  }
+};
+
 function savePayment(){
   const siswaId=document.getElementById('b-siswa').value;
-  if(!siswaId){ alert('Select a student!'); return; }
+  if(!siswaId){ alert('Pilih siswa!'); return; }
   const s=siswaList.find(x=>x.id===siswaId);
   const id=document.getElementById('b-id').value;
   const isMonthly = (s?.billingType||'per_session')==='monthly';
   let sesiIds;
   if(isMonthly){
-    // auto-link ALL sessions for this student in the selected month
     const periode=document.getElementById('b-periode').value.trim();
     sesiIds = getMonthlySessionIds(siswaId, periode);
   } else {
     sesiIds = getSelectedSesiIds();
   }
+  
+  // ✅ VALIDASI BARU: Cek duplikasi pembayaran
+  const validation = PaymentIntegrity.validateNewPayment(siswaId, sesiIds);
+  if(!validation.valid) {
+    const conflictDates = validation.conflicts
+      .map(conflictId => {
+        const att = absensiList.find(a => a.id === conflictId);
+        const payment = PaymentIntegrity.getPaymentBySessionId(conflictId);
+        return att
+          ? `${tglFmt(att.tanggal)} (sudah bayar ${fmt(payment?.jumlah || 0)})`
+          : conflictId;
+      })
+      .join('\n');
+    
+    dangerModal(
+      '⚠️ Duplikasi Pembayaran Terdeteksi',
+      `${validation.message}:<br><br>` +
+      `<code style="background:var(--bg3);padding:8px;border-radius:6px;display:block;margin:8px 0;font-size:0.8rem;word-break:break-all">${conflictDates}</code>` +
+      `Pilih ulang sesi yang belum dibayar saja.`,
+      null,
+      { okText: 'OK', showCancel: false }
+    );
+    return;
+  }
+  
   const data={
     siswaId, namaSiswa:s?.nama||'-',
     periode:document.getElementById('b-periode').value.trim(),
@@ -3750,8 +3868,26 @@ function savePayment(){
     sesiIds,
     billingType: isMonthly ? 'monthly' : 'per_session',
   };
-  if(id){ const i=bayarList.findIndex(b=>b.id===id); if(i>-1) bayarList[i]={...bayarList[i],...data}; }
-  else bayarList.push({id:uid(),...data});
+  
+  if(id){ 
+    // EDIT: Jangan ubah sesiIds (payment record sudah final)
+    const idx=bayarList.findIndex(b=>b.id===id);
+    if(idx>-1) {
+      const oldPayment = bayarList[idx];
+      bayarList[idx] = {
+        ...oldPayment,
+        tanggal: data.tanggal,
+        jumlah: data.jumlah,
+        tagihan: data.tagihan,
+        status: data.status,
+        catatan: data.catatan
+        // ✅ PENTING: sesiIds TIDAK diubah!
+      };
+    }
+  } else {
+    bayarList.push({id:uid(),...data});
+  }
+  
   DB.set('bayar',bayarList);
   closePaymentForm(); renderPayment(); updateUnpaidBadge();
 }
