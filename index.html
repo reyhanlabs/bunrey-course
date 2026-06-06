@@ -439,7 +439,7 @@ td.nowrap { white-space:nowrap }
   transition:all .2s;
 }
 .kpi-card:hover{transform:translateY(-2px);filter:brightness(1.06)}
-.kpi-card .kpi-val{font-family:'Fredoka One',sans-serif;font-size:1.8rem;font-weight:800;line-height:1;color:#fff}
+.kpi-card .kpi-val{font-family:'Fredoka One',sans-serif;font-size:clamp(1rem,2.2vw,1.8rem);font-weight:800;line-height:1.1;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .kpi-card .kpi-lbl{font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.78);margin-top:4px}
 .kpi-card .kpi-trend{font-size:0.72rem;font-weight:700;margin-top:6px;color:rgba(255,255,255,0.85)}
 
@@ -1125,7 +1125,7 @@ td.nowrap { white-space:nowrap }
   background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
   padding:18px 16px;
 }
-.kpi-card .kpi-val{font-family:'Fredoka One',sans-serif;font-size:1.8rem;font-weight:800;line-height:1}
+.kpi-card .kpi-val{font-family:'Fredoka One',sans-serif;font-size:clamp(1rem,2.2vw,1.8rem);font-weight:800;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .kpi-card .kpi-lbl{font-size:0.75rem;font-weight:600;color:var(--muted);margin-top:4px}
 .kpi-card .kpi-trend{font-size:0.72rem;font-weight:700;margin-top:6px}
 
@@ -6022,8 +6022,14 @@ function renderAnalyticsKPIs(){
     return absensiList.some(a=>a.siswaId===s.id && a.status==='Hadir' && !paidSesiIds.has(a.id));
   }).length;
 
+  const fmtCompact = n => {
+    if(n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'') + ' Jt';
+    if(n >= 1000)    return (n/1000).toFixed(0) + ' Rb';
+    return String(n);
+  };
+
   el.innerHTML = `
-    <div class="kpi-card" style="background:linear-gradient(135deg,#00d68f,#00b371);box-shadow:0 6px 20px rgba(0,214,143,0.35)"><div class="kpi-val">${fmt(totalRev).replace('Rp ','')}</div><div class="kpi-lbl">Total Revenue</div></div>
+    <div class="kpi-card" style="background:linear-gradient(135deg,#00d68f,#00b371);box-shadow:0 6px 20px rgba(0,214,143,0.35)"><div class="kpi-val" title="${fmt(totalRev)}">Rp ${fmtCompact(totalRev)}</div><div class="kpi-lbl">Total Revenue</div></div>
     <div class="kpi-card" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6);box-shadow:0 6px 20px rgba(167,139,250,0.35)"><div class="kpi-val">${avgScore}<span style="font-size:1rem;opacity:0.75">/100</span></div><div class="kpi-lbl">Avg Score</div></div>
     <div class="kpi-card" style="background:linear-gradient(135deg,#38bdf8,#0284c7);box-shadow:0 6px 20px rgba(56,189,248,0.35)"><div class="kpi-val">${attRate}%</div><div class="kpi-lbl">Attendance Rate</div></div>
     <div class="kpi-card" style="background:${unpaidCount?'linear-gradient(135deg,#ff4f6d,#e11d48);box-shadow:0 6px 20px rgba(255,79,109,0.35)':'linear-gradient(135deg,#00d68f,#00b371);box-shadow:0 6px 20px rgba(0,214,143,0.35)'}"><div class="kpi-val">${unpaidCount}</div><div class="kpi-lbl">Students w/ Unpaid</div></div>
