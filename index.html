@@ -3248,7 +3248,6 @@ function saveAbsensi(){
         }
       }
     }
-    // ✅ Jika attendance BARU (tidak ada oldAtt), abaikan - tidak perlu validasi
   });
   
   // ❌ Ada conflicts - BLOCK dan tampilkan SEMUA yang bermasalah
@@ -3268,10 +3267,8 @@ function saveAbsensi(){
       </div>
     `).join('');
     
-    const pluralText = conflicts.length === 1 ? 'siswa' : 'siswa';
-    
     dangerModal(
-      `⚠️ Ada ${conflicts.length} ${pluralText} dengan Pembayaran`,
+      `⚠️ Ada ${conflicts.length} siswa dengan Pembayaran`,
       `<div style="text-align: left; line-height: 1.8">
         <p>❌ <strong>Tidak bisa simpan attendance.</strong></p>
         <p>Ada ${conflicts.length} siswa yang mau diubah status ke bukan-Hadir tapi MASIH ADA PEMBAYARAN:</p>
@@ -3398,54 +3395,39 @@ function saveAttEdit(){
   const oldStatus = absensiList[idx].status;
   const newStatus = document.getElementById('att-edit-status').value;
   
-  if(oldStatus === newStatus) {
-    showToast('ℹ️ Status tidak berubah', 'info');
-    closeModal('modal-att-edit');
-    return;
-  }
-  
-  // ✅ VALIDASI: Jika rubah dari Hadir ke status lain, cek payment
+  // ✅ VALIDASI: Check apakah ada payment untuk sesi ini
   if(oldStatus === 'Hadir' && newStatus !== 'Hadir') {
-    // Cek apakah ada payment untuk sesi ini
     const paymentWithThisSesi = bayarList.find(b => 
       b.sesiIds && b.sesiIds.includes(id)
     );
     
     if(paymentWithThisSesi) {
-      // ❌ ADA PEMBAYARAN - BLOCK dan minta hapus dulu
-      const att = absensiList[idx];
-      
       dangerModal(
         '⚠️ Pembayaran Masih Ada',
         `<div style="text-align: left; line-height: 1.8">
-          <p>❌ Tidak bisa ubah status ke <strong>${newStatus}</strong>.</p>
+          <p>❌ <strong>Tidak bisa mengubah status.</strong></p>
           <p>Ada pembayaran untuk sesi ini:</p>
-          
           <div style="background: var(--bg3); padding: 12px; border-radius: 8px; margin: 12px 0; border-left: 4px solid var(--yellow)">
-            <div style="font-weight: 700; margin-bottom: 4px">📅 ${tglFmt(att.tanggal)}</div>
-            <div style="font-size: 0.9rem; color: var(--muted)">
-              <div>Siswa: <strong>${paymentWithThisSesi.namaSiswa}</strong></div>
-              <div>Jumlah: <strong>${fmt(paymentWithThisSesi.jumlah)}</strong></div>
-              <div>Status: <strong>${paymentWithThisSesi.status}</strong></div>
-            </div>
+            <div>👤 <strong>${paymentWithThisSesi.namaSiswa || 'N/A'}</strong></div>
+            <div>📅 ${tglFmt(paymentWithThisSesi.tanggal)}</div>
+            <div>💰 ${fmt(paymentWithThisSesi.jumlah)} (${paymentWithThisSesi.status})</div>
           </div>
           
-          <p>✅ <strong>Solusi:</strong></p>
+          <p style="margin-top: 16px">✅ <strong>Solusi:</strong></p>
           <ol style="margin: 8px 0 8px 20px">
             <li>Buka halaman <strong>Payment</strong></li>
-            <li>Cari pembayaran di atas</li>
-            <li>Klik tombol 🗑️ untuk <strong>hapus pembayaran</strong></li>
-            <li>Kembali ke attendance dan ubah status</li>
+            <li>Hapus pembayaran untuk sesi ini</li>
+            <li>Kembali ke sini dan coba ubah status lagi</li>
           </ol>
         </div>`,
         null,
         { okText: 'Mengerti', showCancel: false }
       );
-      return;
+      return;  // ← BLOCK
     }
   }
   
-  // ✅ AMAN: Tidak ada payment, bisa ubah status
+  // ✅ AMAN: Tidak ada payment, bisa ubah
   absensiList[idx] = {
     ...absensiList[idx],
     status:     newStatus,
@@ -3456,7 +3438,6 @@ function saveAttEdit(){
   closeModal('modal-att-edit');
   renderAttendance();
   renderPayment();
-  
   showToast(`✅ Status diubah ke ${newStatus}`, 'success');
 }
 
@@ -6527,9 +6508,33 @@ function validatePaymentIntegrity(){
   };
 }
 
-// ❌ DISABLED: repairPaymentSessions()
-// Tidak digunakan lagi - semua payment protection via saveAttEdit validation
-// function repairPaymentSessions(){ ... }
+function repairPaymentSessions(){
+  // Remove sesiIds yang attendance-nya tidak 'Hadir' atau tidak ada
+  let repaired = 0;
+  
+  bayarList.forEach(payment => {
+    if(payment.sesiIds && payment.sesiIds.length){
+      const originalLength = payment.sesiIds.length;
+      payment.sesiIds = payment.sesiIds.filter(sesiId => {
+        const att = absensiList.find(a => a.id === sesiId);
+        return att && att.status === 'Hadir';
+      });
+      
+      if(payment.sesiIds.length < originalLength){
+        repaired++;
+        console.log(`🔧 Repaired payment ${payment.id}: removed ${originalLength - payment.sesiIds.length} invalid session(s)`);
+      }
+    }
+  });
+  
+  if(repaired > 0){
+    DB.set('bayar', bayarList);
+    renderPayment();
+    showToast(`✅ Repaired ${repaired} payment record(s)`, 'success');
+  } else {
+    showToast('ℹ️ No repairs needed', 'info');
+  }
+}
 
 </script>
 
