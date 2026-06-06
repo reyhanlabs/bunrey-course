@@ -3212,6 +3212,7 @@ function loadAbsensi(){
   }).join('');
 }
 function saveAbsensi(){
+  console.log("==== SAVE ABSENSI DEBUG ==== ");
   const d=document.getElementById('absen-date').value;
   if(!d){ alert('Select a date!'); return; }
   if(!siswaList.length){ alert('No students found!'); return; }
@@ -3226,10 +3227,12 @@ function saveAbsensi(){
     const oldAtt = absensiList.find(a => a.tanggal === d && a.siswaId === s.id);
     
     // ✅ PENTING: Hanya validasi jika attendance SUDAH ADA (bukan baru!)
-    if(oldAtt) {
+  if(oldAtt) {
+    console.log("  oldAtt FOUND for", s.nama, "oldStatus=", oldAtt.status);
       const oldStatus = oldAtt.status;
       
       // Jika UBAH dari Hadir ke bukan-Hadir
+      console.log("    Checking if change from Hadir to", newStatus);
       if(oldStatus === 'Hadir' && newStatus !== 'Hadir') {
         // Check apakah ada payment untuk sesi ini
         const paymentWithThisSesi = bayarList.find(b => 
@@ -3251,6 +3254,7 @@ function saveAbsensi(){
   });
   
   // ❌ Ada conflicts - BLOCK dan tampilkan SEMUA yang bermasalah
+  console.log("Total conflicts found:", conflicts.length);
   if(conflicts.length > 0) {
     const conflictHtml = conflicts.map((c, idx) => `
       <div style="background: var(--bg3); padding: 12px; border-radius: 8px; margin: 8px 0; border-left: 4px solid var(--yellow)">
@@ -3396,6 +3400,7 @@ function saveAttEdit(){
   const newStatus = document.getElementById('att-edit-status').value;
   
   // ✅ VALIDASI: Check apakah ada payment untuk sesi ini
+      console.log("    Checking if change from Hadir to", newStatus);
   if(oldStatus === 'Hadir' && newStatus !== 'Hadir') {
     const paymentWithThisSesi = bayarList.find(b => 
       b.sesiIds && b.sesiIds.includes(id)
