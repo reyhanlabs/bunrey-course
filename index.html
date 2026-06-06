@@ -3314,7 +3314,7 @@ function saveAttEdit(){
   const oldStatus = absensiList[idx].status;
   const newStatus = document.getElementById('att-edit-status').value;
   
-  // ✅ VALIDASI: Check apakah ada payment untuk sesi ini
+  // ✅ VALIDATION: Check if payment exists for this session
   if(oldStatus === 'Hadir' && newStatus !== 'Hadir') {
     const paymentWithThisSesi = bayarList.find(b => 
       b.sesiIds && b.sesiIds.includes(id)
@@ -3322,31 +3322,25 @@ function saveAttEdit(){
     
     if(paymentWithThisSesi) {
       dangerModal(
-        '⚠️ Pembayaran Masih Ada',
+        '⚠️ Payment Record Exists',
         `<div style="text-align: left; line-height: 1.8">
-          <p>❌ <strong>Tidak bisa mengubah status.</strong></p>
-          <p>Ada pembayaran untuk sesi ini:</p>
+          <p>❌ Cannot change status.</p>
+          <p>Payment record exists for this session:</p>
           <div style="background: var(--bg3); padding: 12px; border-radius: 8px; margin: 12px 0; border-left: 4px solid var(--yellow)">
             <div>👤 <strong>${paymentWithThisSesi.namaSiswa || 'N/A'}</strong></div>
             <div>📅 ${tglFmt(paymentWithThisSesi.tanggal)}</div>
             <div>💰 ${fmt(paymentWithThisSesi.jumlah)} (${paymentWithThisSesi.status})</div>
           </div>
-          
-          <p style="margin-top: 16px">✅ <strong>Solusi:</strong></p>
-          <ol style="margin: 8px 0 8px 20px">
-            <li>Buka halaman <strong>Payment</strong></li>
-            <li>Hapus pembayaran untuk sesi ini</li>
-            <li>Kembali ke sini dan coba ubah status lagi</li>
-          </ol>
+          <p>💡 Delete the payment first, then try again.</p>
         </div>`,
         null,
-        { okText: 'Mengerti', showCancel: false }
+        { okText: 'OK', showCancel: false }
       );
       return;  // ← BLOCK
     }
   }
   
-  // ✅ AMAN: Tidak ada payment, bisa ubah
+  // ✅ SAFE: No payment, can change
   absensiList[idx] = {
     ...absensiList[idx],
     status:     newStatus,
@@ -3357,7 +3351,7 @@ function saveAttEdit(){
   closeModal('modal-att-edit');
   renderAttendance();
   renderPayment();
-  showToast(`✅ Status diubah ke ${newStatus}`, 'success');
+  showToast(`✅ Status changed to ${newStatus}`, 'success');
 }
 
 function deleteAttendance(id){
@@ -5129,7 +5123,7 @@ window.saveAbsensi = function(){
     }
   });
   
-  // ❌ Ada conflicts - BLOCK dan tampilkan SEMUA yang bermasalah
+  // ❌ Conflicts found - BLOCK and show all
   if(conflicts.length > 0) {
     const conflictHtml = conflicts.map((c, idx) => `
       <div style="background: var(--bg3); padding: 12px; border-radius: 8px; margin: 8px 0; border-left: 4px solid var(--yellow)">
@@ -5138,41 +5132,28 @@ window.saveAbsensi = function(){
           👤 ${c.nama}
         </div>
         <div style="font-size: 0.9rem; color: var(--muted); margin-left: 32px">
-          <div>📅 Tanggal: <strong>${tglFmt(c.tanggal)}</strong></div>
+          <div>📅 Date: <strong>${tglFmt(c.tanggal)}</strong></div>
           <div>Status: <strong>${c.oldStatus}</strong> → <strong style="color: var(--red)">${c.newStatus}</strong></div>
-          <div>💰 Pembayaran: <strong>${fmt(c.payment.jumlah)}</strong> (${c.payment.status})</div>
-          <div style="font-size: 0.8rem; margin-top: 4px; color: var(--muted)">Payment ID: ${c.payment.id}</div>
+          <div>💰 Payment: <strong>${fmt(c.payment.jumlah)}</strong> (${c.payment.status})</div>
         </div>
       </div>
     `).join('');
     
     dangerModal(
-      `⚠️ Ada ${conflicts.length} siswa dengan Pembayaran`,
+      `⚠️ ${conflicts.length} Student(s) with Payment`,
       `<div style="text-align: left; line-height: 1.8">
-        <p>❌ <strong>Tidak bisa simpan attendance.</strong></p>
-        <p>Ada ${conflicts.length} siswa yang mau diubah status ke bukan-Hadir tapi MASIH ADA PEMBAYARAN:</p>
-        
+        <p>❌ <strong>Cannot save attendance.</strong></p>
+        <p>Payment records exist for these students:</p>
         ${conflictHtml}
-        
-        <p style="margin-top: 16px; padding: 12px; background: var(--bg2); border-radius: 6px; border-left: 4px solid var(--blue)">
-          💡 <strong>Catatan:</strong> Siswa yang tidak ada di list di atas bisa diubah status-nya.
-        </p>
-        
-        <p style="margin-top: 16px">✅ <strong>Langkah-langkah:</strong></p>
-        <ol style="margin: 8px 0 8px 20px">
-          <li>Buka halaman <strong>Payment</strong></li>
-          <li>Cari dan hapus pembayaran untuk ${conflicts.length} siswa di atas</li>
-          <li>Kembali ke <strong>Attendance</strong></li>
-          <li>Select date ${tglFmt(d)} dan coba simpan lagi</li>
-        </ol>
+        <p style="margin-top: 16px">💡 Delete the payment first, then try again.</p>
       </div>`,
       null,
-      { okText: 'Mengerti', showCancel: false }
+      { okText: 'OK', showCancel: false }
     );
     return;  // ← BLOCK
   }
   
-  // ✅ AMAN: Tidak ada conflicts, bisa save
+  // ✅ SAFE: No conflicts, save
   absensiList=absensiList.filter(a=>a.tanggal!==d);
   siswaList.forEach(s=>{
     absensiList.push({
