@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BunRey English Course</title>
+<title>LittleLume English Course</title>
 <link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico">
 <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="BunRey">
+<meta name="apple-mobile-web-app-title" content="LittleLume">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="BunRey English Course">
+<meta name="application-name" content="LittleLume English Course">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fredoka One:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1223,14 +1223,14 @@ td.nowrap { white-space:nowrap }
 <div id="loading-screen">
   <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:72px;height:72px;border-radius:20px;object-fit:cover;box-shadow:0 8px 30px rgba(108,99,255,0.4)">
   <div class="spin"></div>
-  <p>Loading BunRey English Course…</p>
+  <p>Loading LittleLume English Course…</p>
 </div>
 
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="login-screen">
   <div class="login-box">
     <div class="login-mark" style="background:none;padding:0;overflow:hidden"><img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:72px;height:72px;object-fit:cover;border-radius:20px"></div>
-    <div class="login-title">BunRey English Course</div>
+    <div class="login-title">LittleLume English Course</div>
     <div class="login-sub">Sign in with your Google account<br>to access your teaching dashboard</div>
     <button class="btn-google" onclick="signInGoogle()">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
@@ -1244,7 +1244,7 @@ td.nowrap { white-space:nowrap }
 <nav id="sidebar">
   <div class="sb-logo">
     <div class="mark" style="background:none;padding:0;overflow:hidden"><img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:38px;height:38px;object-fit:cover;border-radius:12px"></div>
-    <div class="brand">BunRey<span>English Course</span></div>
+    <div class="brand">LittleLume<span>English Course</span></div>
   </div>
   <div class="sb-nav">
     <div class="nav-section">Main</div>
@@ -4213,7 +4213,7 @@ function showReceipt(id){
   const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
   const html=`
     <div style="text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:2px dashed var(--border)">
-      <div style="font-family:'Fredoka One',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)">🎓 BunRey English Course</div>
+      <div style="font-family:'Fredoka One',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)">🎓 LittleLume English Course</div>
       <div style="font-size:0.82rem;color:var(--muted);margin-top:3px">Tuition Payment Receipt</div>
       <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">No: ${rno}</div>
     </div>
@@ -4221,11 +4221,11 @@ function showReceipt(id){
     <div style="display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid var(--accent);margin-top:8px;color:var(--accent)"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
     <div style="text-align:center;margin:10px 0;font-weight:800;color:${stc}">${stl}</div>
     ${b.catatan?`<div style="font-size:0.78rem;text-align:center;color:var(--muted)">Note: ${b.catatan}</div>`:''}
-    <div style="text-align:center;margin-top:16px;font-size:0.75rem;color:var(--muted)">Thank you for your trust! 🌟<br><strong style="color:var(--accent)">BunRey English Course</strong></div>`;
+    <div style="text-align:center;margin-top:16px;font-size:0.75rem;color:var(--muted)">Thank you for your trust! 🌟<br><strong style="color:var(--accent)">LittleLume English Course</strong></div>`;
   document.getElementById('receipt-content').innerHTML=html;
   document.getElementById('modal-receipt').dataset.receiptId=id;
   document.getElementById('modal-receipt').dataset.receiptText=
-    `🎓 BUN REY ENGLISH COURSE\nPayment Receipt — ${rno}\n\n${rows.map(([k,v])=>k.padEnd(14)+': '+v).join('\n')}\n\nAmount Paid    : ${fmt(b.jumlah)}\nStatus         : ${b.status}\n${b.catatan?'Note           : '+b.catatan+'\n':''}\nThank you for your trust! 🌟`;
+    `🎓 LITTLELUME ENGLISH COURSE\nPayment Receipt — ${rno}\n\n${rows.map(([k,v])=>k.padEnd(14)+': '+v).join('\n')}\n\nAmount Paid    : ${fmt(b.jumlah)}\nStatus         : ${b.status}\n${b.catatan?'Note           : '+b.catatan+'\n':''}\nThank you for your trust! 🌟`;
   document.getElementById('wa-status').style.display='none';
   openModal('modal-receipt');
 }
@@ -4233,22 +4233,22 @@ function _buildReceiptPrintHTML(b,siswa){
   const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${rno}</title>
   <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:32px;max-width:380px;margin:auto;color:#1a1f36;background:#fff}@page{size:A5 portrait;margin:12mm}.hdr{text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:3px dashed #ddd}.logo{font-size:1.4rem;font-weight:800;color:#6c63ff}.sub{font-size:0.78rem;color:#888;margin-top:3px}.no{font-size:0.7rem;color:#bbb;margin-top:2px}.row{display:flex;justify-content:space-between;padding:7px 0;font-size:0.87rem;border-bottom:1px solid #f0f0f0}.row span{color:#888}.row strong{text-align:right;padding-left:10px}.total{display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid #6c63ff;margin-top:8px;color:#6c63ff}.status{text-align:center;margin:12px 0;font-weight:800}.footer{text-align:center;margin-top:18px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa;line-height:1.8}.footer strong{color:#6c63ff}</style></head><body>
-  <div class="hdr"><div class="logo">🎓 BunRey English Course</div><div class="sub">Tuition Payment Receipt</div><div class="no">No: ${rno}</div></div>
+  <div class="hdr"><div class="logo">🎓 LittleLume English Course</div><div class="sub">Tuition Payment Receipt</div><div class="no">No: ${rno}</div></div>
   ${rows.map(([k,v])=>`<div class="row"><span>${k}</span><strong>${v}</strong></div>`).join('')}
   <div class="total"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
   <div class="status" style="color:${stc}">${stl}</div>
   ${b.catatan?`<div style="font-size:0.75rem;color:#888;text-align:center">Note: ${b.catatan}</div>`:''}
-  <div class="footer">Thank you for your trust! 🌟<br><strong>BunRey English Course</strong></div>
+  <div class="footer">Thank you for your trust! 🌟<br><strong>LittleLume English Course</strong></div>
   </body></html>`;
 }
 function _buildReceiptRenderHTML(b,siswa){
   const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
-  return `<div style="text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:3px dashed #ddd"><div style="font-size:1.45rem;font-weight:800;color:#6c63ff">🎓 BunRey English Course</div><div style="font-size:0.8rem;color:#888;margin-top:3px">Tuition Payment Receipt</div><div style="font-size:0.7rem;color:#bbb;margin-top:2px">No: ${rno}</div></div>
+  return `<div style="text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:3px dashed #ddd"><div style="font-size:1.45rem;font-weight:800;color:#6c63ff">🎓 LittleLume English Course</div><div style="font-size:0.8rem;color:#888;margin-top:3px">Tuition Payment Receipt</div><div style="font-size:0.7rem;color:#bbb;margin-top:2px">No: ${rno}</div></div>
   ${rows.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:0.87rem;border-bottom:1px solid #f0f0f0"><span style="color:#888">${k}</span><strong>${v}</strong></div>`).join('')}
   <div style="display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid #6c63ff;margin-top:8px;color:#6c63ff"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
   <div style="text-align:center;margin:12px 0;font-weight:800;color:${stc}">${stl}</div>
   ${b.catatan?`<div style="font-size:0.75rem;color:#888;text-align:center">Note: ${b.catatan}</div>`:''}
-  <div style="text-align:center;margin-top:18px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa;line-height:1.8">Thank you for your trust! 🌟<br><strong style="color:#6c63ff">BunRey English Course</strong></div>`;
+  <div style="text-align:center;margin-top:18px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa;line-height:1.8">Thank you for your trust! 🌟<br><strong style="color:#6c63ff">LittleLume English Course</strong></div>`;
 }
 async function _renderToCanvas(b,siswa){
   const panel=document.getElementById('receipt-render-panel');
@@ -4344,7 +4344,7 @@ function renderReports(){
     const sc=avgScore>=80?'var(--green)':avgScore>=60?'var(--yellow)':'var(--red)';
     const key='rpt_'+siswa.id;
     const now=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
-    let txt=`🎓 *BUN REY ENGLISH COURSE*\n📋 *Student Progress Report*\n📅 ${now}\n${'━'.repeat(28)}\n\n`;
+    let txt=`🎓 *LITTLELUME ENGLISH COURSE*\n📋 *Student Progress Report*\n📅 ${now}\n${'━'.repeat(28)}\n\n`;
     txt+=`👤 *Student:* ${siswa.nama}${siswa.nick?' ('+siswa.nick+')':''}\n`;
     if(siswa.kelas) txt+=`🏫 *School:* ${siswa.kelas}\n`;
     txt+=`📊 *Level:* ${siswa.level}\n\n`;
@@ -4352,7 +4352,7 @@ function renderReports(){
     if(attPct!==null) txt+=`📋 *Attendance:* ${attPct}% (${present}/${att.length})\n`;
     if(latEval){ txt+=`\n⭐ *Latest Eval (${tglFmt(latEval.tanggal)})*\nScore: ${latEval.nilai}/100  Participation: ${stars(latEval.rating)}\n`; if(latEval.progress) txt+=`Progress: ${latEval.progress}\n`; if(latEval.catatan) txt+=`Notes: ${latEval.catatan}\n`; }
     if(latPay){ txt+=`\n💰 *Payment — ${latPay.periode||'-'}*\nInvoice: ${fmt(latPay.tagihan)}\nPaid: ${fmt(latPay.jumlah)}\nStatus: ${latPay.status}\n`; }
-    txt+=`\n${'━'.repeat(28)}\nThank you for your trust & support! 🌟\n— BunRey English Course 🎓`;
+    txt+=`\n${'━'.repeat(28)}\nThank you for your trust & support! 🌟\n— LittleLume English Course 🎓`;
     _reportTexts[key]=txt;
     html+=`<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">
       <div style="background:linear-gradient(135deg,var(--accent),var(--accent2));padding:20px 24px">
@@ -4422,7 +4422,7 @@ function exportBackup(){
   const a=document.createElement('a');
   const safeName = (currentClassName||'class').replace(/\s+/g,'-');
   a.href=URL.createObjectURL(blob);
-  a.download='BunRey-'+safeName+'-Backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.download='LittleLume-'+safeName+'-Backup-'+new Date().toISOString().slice(0,10)+'.json';
   a.click();
 }
 function importBackup(e){
@@ -4467,7 +4467,7 @@ function exportCSV(key){
   else if(key==='evaluasi'){ headers=['Date','Student','Score','Rating','Progress','Notes']; rows=evaluasiList.map(e=>[tglFmt(e.tanggal),e.namaSiswa,e.nilai,e.rating,e.progress||'',e.catatan||'']); }
   const csv=[headers,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='BunRey-'+key+'-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='LittleLume-'+key+'-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
 }
 function clearAllData(){
   if(!confirm('⚠️ This will delete ALL data permanently. Are you sure?')) return;
@@ -4546,7 +4546,7 @@ function _docPrintHTML(bodyHTML, title){
     .stars{font-size:1.1rem}
   </style></head><body>
   ${bodyHTML}
-  <div class="footer">BunRey English Course 🎓</div>
+  <div class="footer">LittleLume English Course 🎓</div>
   </body></html>`;
 }
 
@@ -4559,7 +4559,7 @@ function showEvalPrint(id){
   const ratingLabels=['','Passive','Below Average','Average','Good','Excellent'];
   const bodyHTML=`
     <h1>⭐ Evaluation Report</h1>
-    <div class="sub">BunRey English Course · ${tglFmt(e.tanggal)}</div>
+    <div class="sub">LittleLume English Course · ${tglFmt(e.tanggal)}</div>
     <div class="row"><span>Student</span><strong>${e.namaSiswa}</strong></div>
     ${s?.nick?`<div class="row"><span>Nickname</span><strong>${s.nick}</strong></div>`:''}
     ${s?.kelas?`<div class="row"><span>School / Class</span><strong>${s.kelas}</strong></div>`:''}
@@ -4574,7 +4574,7 @@ function showEvalPrint(id){
     ${e.progress?`<div class="section">Progress / Achievement</div><div class="block">${e.progress}</div>`:''}
     ${e.catatan?`<div class="section">Notes & Recommendations</div><div class="block">${e.catatan}</div>`:''}
   `;
-  const txt=`⭐ EVALUATION REPORT — BUNREY ENGLISH COURSE\n${'─'.repeat(36)}\nStudent  : ${e.namaSiswa}${s?.nick?' ('+s.nick+')':''}\n${s?.kelas?'School   : '+s.kelas+'\n':''}${s?.namaOrtu?'Parent   : '+s.namaOrtu+'\n':''}Date     : ${tglFmt(e.tanggal)}\nLevel    : ${s?.level||'-'}\nScore    : ${e.nilai||'-'}/100\nRating   : ${stars(e.rating)} ${ratingLabels[e.rating]||''}\n${e.progress?'\n📈 Progress:\n'+e.progress+'\n':''}${e.catatan?'\n📝 Notes:\n'+e.catatan+'\n':''}\n${'─'.repeat(36)}\nBunRey English Course 🎓`;
+  const txt=`⭐ EVALUATION REPORT — LITTLELUME ENGLISH COURSE\n${'─'.repeat(36)}\nStudent  : ${e.namaSiswa}${s?.nick?' ('+s.nick+')':''}\n${s?.kelas?'School   : '+s.kelas+'\n':''}${s?.namaOrtu?'Parent   : '+s.namaOrtu+'\n':''}Date     : ${tglFmt(e.tanggal)}\nLevel    : ${s?.level||'-'}\nScore    : ${e.nilai||'-'}/100\nRating   : ${stars(e.rating)} ${ratingLabels[e.rating]||''}\n${e.progress?'\n📈 Progress:\n'+e.progress+'\n':''}${e.catatan?'\n📝 Notes:\n'+e.catatan+'\n':''}\n${'─'.repeat(36)}\nLittleLume English Course 🎓`;
   _docStore.eval = { html:bodyHTML, text:txt, title:'Evaluation-'+e.namaSiswa+'-'+e.tanggal };
   document.getElementById('eval-print-content').innerHTML = `<div style="font-size:0.87rem;line-height:1.7;color:var(--text)">${bodyHTML}</div>`;
   document.getElementById('doc-status-eval').style.display='none';
@@ -4587,7 +4587,7 @@ function showLessonPrint(id){
   const statusLabel = m.status==='Selesai'?'✅ Completed':'🗓️ Planned';
   const bodyHTML=`
     <h1>📚 Lesson Plan</h1>
-    <div class="sub">BunRey English Course · ${tglFmt(m.tanggal)}</div>
+    <div class="sub">LittleLume English Course · ${tglFmt(m.tanggal)}</div>
     <div class="row"><span>Topic</span><strong>${m.topik}</strong></div>
     <div class="row"><span>Date</span><strong>${tglFmt(m.tanggal)}</strong></div>
     <div class="row"><span>Status</span><strong>${statusLabel}</strong></div>
@@ -4595,7 +4595,7 @@ function showLessonPrint(id){
     ${m.sumber?`<div class="row"><span>Reference</span><strong>${m.sumber}</strong></div>`:''}
     ${m.deskripsi?`<div class="section">Description & Activities</div><div class="block">${m.deskripsi}</div>`:''}
   `;
-  const txt=`📚 LESSON PLAN — BUNREY ENGLISH COURSE\n${'─'.repeat(36)}\nTopic    : ${m.topik}\nDate     : ${tglFmt(m.tanggal)}\nStatus   : ${m.status}\nTarget   : ${m.target==='Semua'?'All Students':m.target||'All Students'}\n${m.sumber?'Ref      : '+m.sumber+'\n':''}${m.deskripsi?'\n📝 Description:\n'+m.deskripsi+'\n':''}\n${'─'.repeat(36)}\nBunRey English Course 🎓`;
+  const txt=`📚 LESSON PLAN — LITTLELUME ENGLISH COURSE\n${'─'.repeat(36)}\nTopic    : ${m.topik}\nDate     : ${tglFmt(m.tanggal)}\nStatus   : ${m.status}\nTarget   : ${m.target==='Semua'?'All Students':m.target||'All Students'}\n${m.sumber?'Ref      : '+m.sumber+'\n':''}${m.deskripsi?'\n📝 Description:\n'+m.deskripsi+'\n':''}\n${'─'.repeat(36)}\nLittleLume English Course 🎓`;
   _docStore.lesson = { html:bodyHTML, text:txt, title:'Lesson-'+m.topik.replace(/\s+/g,'-').slice(0,30) };
   document.getElementById('lesson-print-content').innerHTML = `<div style="font-size:0.87rem;line-height:1.7;color:var(--text)">${bodyHTML}</div>`;
   document.getElementById('doc-status-lesson').style.display='none';
@@ -4619,7 +4619,7 @@ function showReportPrint(siswaId){
 
   const bodyHTML=`
     <h1>📤 Student Progress Report</h1>
-    <div class="sub">BunRey English Course · ${now}</div>
+    <div class="sub">LittleLume English Course · ${now}</div>
     <div class="row"><span>Student</span><strong>${siswa.nama}${siswa.nick?' ('+siswa.nick+')':''}</strong></div>
     ${siswa.kelas?`<div class="row"><span>School / Class</span><strong>${siswa.kelas}</strong></div>`:''}
     ${siswa.namaOrtu?`<div class="row"><span>Parent</span><strong>${siswa.namaOrtu}</strong></div>`:''}
@@ -4642,7 +4642,7 @@ function showReportPrint(siswaId){
     </div>`:''}
   `;
   const key='rpt_'+siswa.id;
-  const txt = _reportTexts[key] || `📤 PARENT REPORT — ${siswa.nama}\nBunRey English Course\n${now}`;
+  const txt = _reportTexts[key] || `📤 PARENT REPORT — ${siswa.nama}\nLittleLume English Course\n${now}`;
   _docStore.report = { html:bodyHTML, text:txt, title:'Report-'+siswa.nama.replace(/\s+/g,'-') };
   document.getElementById('report-print-content').innerHTML = `<div style="font-size:0.87rem;line-height:1.7;color:var(--text)">${bodyHTML}</div>`;
   document.getElementById('doc-status-report').style.display='none';
@@ -4671,7 +4671,7 @@ async function docDownloadJPG(type){
   const statusEl = document.getElementById('doc-status-'+type);
   statusEl.style.display='block'; statusEl.textContent='⏳ Generating image…';
   const panel = document.getElementById('doc-render-panel');
-  panel.innerHTML = `<div style="font-family:Arial,sans-serif;color:#1a1f36">${d.html}<div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa">BunRey English Course 🎓</div></div>`;
+  panel.innerHTML = `<div style="font-family:Arial,sans-serif;color:#1a1f36">${d.html}<div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa">LittleLume English Course 🎓</div></div>`;
   await new Promise(r=>setTimeout(r,150));
   try{
     const canvas = await html2canvas(panel,{scale:2.5,useCORS:true,backgroundColor:'#ffffff',width:560,windowWidth:560});
@@ -4697,7 +4697,7 @@ async function docWaImage(type){
   const statusEl = document.getElementById('doc-status-'+type);
   statusEl.style.display='block'; statusEl.textContent='⏳ Generating image…';
   const panel = document.getElementById('doc-render-panel');
-  panel.innerHTML = `<div style="font-family:Arial,sans-serif;color:#1a1f36">${d.html}<div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa">BunRey English Course 🎓</div></div>`;
+  panel.innerHTML = `<div style="font-family:Arial,sans-serif;color:#1a1f36">${d.html}<div style="text-align:center;margin-top:20px;padding-top:10px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa">LittleLume English Course 🎓</div></div>`;
   await new Promise(r=>setTimeout(r,150));
   try{
     const canvas = await html2canvas(panel,{scale:2.5,useCORS:true,backgroundColor:'#ffffff',width:560,windowWidth:560});
@@ -4705,7 +4705,7 @@ async function docWaImage(type){
     const a=document.createElement('a');
     a.download=d.title+'.jpg'; a.href=canvas.toDataURL('image/jpeg',0.92); a.click();
     await new Promise(r=>setTimeout(r,600));
-    window.open('https://wa.me/?text='+encodeURIComponent('📎 Please see attached image from BunRey English Course'),'_blank');
+    window.open('https://wa.me/?text='+encodeURIComponent('📎 Please see attached image from LittleLume English Course'),'_blank');
     statusEl.innerHTML='✅ Image saved → WhatsApp opened → tap 📎 → Gallery to attach & send.';
     setTimeout(()=>statusEl.style.display='none',7000);
   }catch(e){
@@ -5468,7 +5468,7 @@ function buildPaymentReminderWA(siswa){
 
 Please confirm at your earliest convenience. Thank you 🙏
 
-— BunRey English Course`;
+— LittleLume English Course`;
 }
 
 // ════════════════════════════════════════════════
@@ -5850,7 +5850,7 @@ function buildSPRenderHTML(id){
 
     <!-- FOOTER -->
     <div style="text-align:center;padding-top:16px;border-top:2px dashed #d8d8d8;margin-top:8px;font-size:11px;color:#bbb;line-height:1.8">
-      Generated on ${now} &nbsp;&middot;&nbsp; <span style="color:#6c63ff;font-weight:700">BunRey English Course</span>
+      Generated on ${now} &nbsp;&middot;&nbsp; <span style="color:#6c63ff;font-weight:700">LittleLume English Course</span>
     </div>
 
   </div>`;
@@ -5926,7 +5926,7 @@ async function exportSP(type){
     const hp=(s.hp||'').replace(/\D/g,'');
     const now=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
     const text=
-`📋 *Student Report — BunRey English Course*
+`📋 *Student Report — LittleLume English Course*
 📅 ${now}
 
 👤 *${s.nama}*${s.nick?' ('+s.nick+')':''}
@@ -5951,7 +5951,7 @@ Avg Score : ${avgScore!==null?avgScore+'/100':'—'}
 ${lastEval?'Latest   : '+tglFmt(lastEval.tanggal)+' · '+lastEval.nilai+'/100':'No evaluations yet'}
 
 ━━━━━━━━━━━━━━━━━
-_BunRey English Course_`;
+_LittleLume English Course_`;
 
     const url = hp
       ? `https://wa.me/62${hp.replace(/^0/,'')}?text=${encodeURIComponent(text)}`
@@ -6262,7 +6262,7 @@ ${ctx.unpaidSessions>0?`Unpaid sessions: ${ctx.unpaidSessions}`:''}
 
 Write a friendly, SHORT (max 80 words) WhatsApp message in English to the parent.
 Start with "Hello" and use *bold* formatting for important parts.
-Be warm and encouraging. Sign off as "BunRey English Course".`;
+Be warm and encouraging. Sign off as "LittleLume English Course".`;
 
   try{
     const result = await callClaudeAPI(prompt);
@@ -6299,7 +6299,7 @@ async function aiGenerateAllReports(){
 Student: ${siswa.nama}, Level: ${siswa.level}
 Score avg: ${ctx.avgScore||'N/A'}/100, Attendance: ${ctx.attRate||'N/A'}%
 Latest note: ${ctx.latEval?.progress||'Good progress'}
-Use *bold* for WhatsApp. Sign as BunRey English Course.`;
+Use *bold* for WhatsApp. Sign as LittleLume English Course.`;
       const r = await callClaudeAPI(prompt);
       results += `━━ ${siswa.nama} ━━\n${r}\n\n`;
     } catch(e){ results += `━━ ${siswa.nama} ━━\n[Error: ${e.message}]\n\n`; }
@@ -6354,11 +6354,11 @@ function buildWaTemplate(){
   const ortu = siswa.namaOrtu || 'Parent';
 
   const templates = {
-    progress: `Hello, ${ortu} 🙏\n\nHere is an update on *${siswa.nama}*'s learning progress at BunRey English Course:\n\n📚 Level: *${siswa.level}*\n✏️ Average Score: *${ctx.avgScore||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}% (${ctx.present}/${ctx.att.length} sessions)*\n${ctx.latEval?.progress?`\n📈 Progress: ${ctx.latEval.progress}\n`:''}\n${ctx.latEval?.catatan?`📝 Notes: ${ctx.latEval.catatan}\n`:''}\nOverall progress is going well! 🌟\n\n— BunRey English Course`,
-    payment: `Hello, ${ortu} 🙏\n\nWe would like to remind you that *${siswa.nama}* has *${ctx.unpaidSessions} session(s)* that have not been paid yet.\n\nPlease make the payment at your earliest convenience. Thank you! 🙏\n\nFeel free to reply to this message if you have any questions.\n\n— BunRey English Course`,
-    absent: `Hello, ${ortu} 🙏\n\nWe would like to confirm that *${siswa.nama}* was absent from today's lesson session.\n\nCould you let us know the reason for the absence so we can record it properly? Thank you 🙏\n\n— BunRey English Course`,
-    schedule: `Hello, ${ortu} 🙏\n\nA reminder that *${siswa.nama}*'s class schedule is:\n\n📅 *${siswa.hari||'As agreed'}*\n\nPlease ensure your child arrives on time. If there are any changes, please inform us in advance.\n\nThank you 🙏\n\n— BunRey English Course`,
-    congrats: `Hello, ${ortu} 🌟\n\nCongratulations! *${siswa.nama}* has shown outstanding progress! 🎉\n\n✨ Latest Score: *${ctx.latEval?.nilai||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}%*\n\nKeep up the great work! We are very proud of the achievement 💪\n\n— BunRey English Course`
+    progress: `Hello, ${ortu} 🙏\n\nHere is an update on *${siswa.nama}*'s learning progress at LittleLume English Course:\n\n📚 Level: *${siswa.level}*\n✏️ Average Score: *${ctx.avgScore||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}% (${ctx.present}/${ctx.att.length} sessions)*\n${ctx.latEval?.progress?`\n📈 Progress: ${ctx.latEval.progress}\n`:''}\n${ctx.latEval?.catatan?`📝 Notes: ${ctx.latEval.catatan}\n`:''}\nOverall progress is going well! 🌟\n\n— LittleLume English Course`,
+    payment: `Hello, ${ortu} 🙏\n\nWe would like to remind you that *${siswa.nama}* has *${ctx.unpaidSessions} session(s)* that have not been paid yet.\n\nPlease make the payment at your earliest convenience. Thank you! 🙏\n\nFeel free to reply to this message if you have any questions.\n\n— LittleLume English Course`,
+    absent: `Hello, ${ortu} 🙏\n\nWe would like to confirm that *${siswa.nama}* was absent from today's lesson session.\n\nCould you let us know the reason for the absence so we can record it properly? Thank you 🙏\n\n— LittleLume English Course`,
+    schedule: `Hello, ${ortu} 🙏\n\nA reminder that *${siswa.nama}*'s class schedule is:\n\n📅 *${siswa.hari||'As agreed'}*\n\nPlease ensure your child arrives on time. If there are any changes, please inform us in advance.\n\nThank you 🙏\n\n— LittleLume English Course`,
+    congrats: `Hello, ${ortu} 🌟\n\nCongratulations! *${siswa.nama}* has shown outstanding progress! 🎉\n\n✨ Latest Score: *${ctx.latEval?.nilai||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}%*\n\nKeep up the great work! We are very proud of the achievement 💪\n\n— LittleLume English Course`
   };
 
   preview.textContent = templates[_currentWaTemplate] || '';
