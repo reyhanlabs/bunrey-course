@@ -2280,6 +2280,7 @@ auth.onAuthStateChanged(async user => {
     await loadClasses();
     console.log('✅ Logged in:', user.email);
   } else {
+    if(_unsubscribeSnapshot){ _unsubscribeSnapshot(); _unsubscribeSnapshot=null; }
     currentUser = null; userDocRef = null; currentClassId = null;
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('user-chip').style.display = 'none';
@@ -2381,6 +2382,7 @@ async function switchClass(classId){
   siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
   renderAll(); setCurrentMonthDashFilter();
   await loadFromFirestore();
+  subscribeToClassUpdates();
   closeModal('modal-classes');
 }
 
@@ -2539,8 +2541,10 @@ async function loadFromFirestore(){
       evaluasiList = d.evaluasi || [];
       bayarList    = d.bayar    || [];
       scheduleList = d.schedules|| [];
+      _lastKnownUpdatedAt = d.updatedAt || null;
     } else {
       siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+      _lastKnownUpdatedAt = null;
     }
     setSynced();
     renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
@@ -2550,6 +2554,56 @@ async function loadFromFirestore(){
     siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
     renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
   }
+}
+
+// ════════════════════════════════════════════════
+//  REALTIME CROSS-DEVICE SYNC (mitigasi race condition)
+// ════════════════════════════════════════════════
+let _unsubscribeSnapshot = null;
+let _lastKnownUpdatedAt  = null;  // timestamp Firestore terakhir yang kita tahu — dipakai buat deteksi konflik
+
+function _isEditFormOpen(){
+  // Cek apakah ada form/modal yang sedang dibuka (biar update remote gak nimpa input yang lagi diketik)
+  return !!document.querySelector('.form-panel.open, .overlay.open');
+}
+
+function _tsMillis(ts){ return ts?.toMillis ? ts.toMillis() : null; }
+
+function subscribeToClassUpdates(){
+  if(_unsubscribeSnapshot){ _unsubscribeSnapshot(); _unsubscribeSnapshot=null; }
+  if(!userDocRef) return;
+  _unsubscribeSnapshot = userDocRef.onSnapshot(snap => {
+    // Abaikan echo dari write milik device ini sendiri (biar gak infinite loop / re-render sia-sia)
+    if(snap.metadata.hasPendingWrites) return;
+    if(!snap.exists) return;
+    const d = snap.data();
+
+    // Kalau updatedAt-nya sama persis dengan yang terakhir kita catat, ini cuma konfirmasi
+    // dari write kita sendiri yang barusan sukses — bukan perubahan baru dari device lain.
+    const newMs   = _tsMillis(d.updatedAt);
+    const knownMs = _tsMillis(_lastKnownUpdatedAt);
+    if(newMs && knownMs && newMs === knownMs) return;
+
+    if(_isEditFormOpen()){
+      // Ada form yang lagi diisi — jangan timpa diam-diam, cuma kasih peringatan.
+      // Sengaja TIDAK update _lastKnownUpdatedAt di sini, supaya nanti saat form ini
+      // di-save, pengecekan stale-write di _flushToFirestore() akan menangkap konfliknya.
+      showToast('⚠️ Data diperbarui dari device lain. Selesaikan/tutup form ini lalu refresh halaman untuk melihat data terbaru.', 'warn', 8000);
+      return;
+    }
+
+    siswaList    = d.siswa    || [];
+    absensiList  = d.absensi  || [];
+    materiList   = d.materi   || [];
+    evaluasiList = d.evaluasi || [];
+    bayarList    = d.bayar    || [];
+    scheduleList = d.schedules|| [];
+    _lastKnownUpdatedAt = d.updatedAt || null;
+    renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
+    showToast('🔄 Data diperbarui otomatis dari device lain', 'info', 3500);
+  }, err => {
+    console.error('[Snapshot listener error]', err);
+  });
 }
 
 let _saveTimer = null;
@@ -2564,14 +2618,35 @@ async function _flushToFirestore(){
   clearTimeout(_saveTimer);
   setSyncing();
   try{
-    await userDocRef.set({
-      siswa:siswaList, absensi:absensiList, materi:materiList,
-      evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    },{merge:true});
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(userDocRef);
+      const serverUpdatedAt = snap.exists ? snap.data().updatedAt : null;
+      const serverMs = _tsMillis(serverUpdatedAt);
+      const knownMs  = _tsMillis(_lastKnownUpdatedAt);
+      // Kalau versi di server lebih baru dari versi terakhir yang kita tahu,
+      // berarti ada device lain yang sudah nulis duluan — jangan ditimpa!
+      if(serverMs && knownMs && serverMs > knownMs){
+        const err = new Error('Data sudah diubah oleh device lain sebelum tersimpan.');
+        err.code = 'stale-write';
+        throw err;
+      }
+      tx.set(userDocRef, {
+        siswa:siswaList, absensi:absensiList, materi:materiList,
+        evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },{merge:true});
+    });
+    // Ambil ulang updatedAt yang baru saja ke-resolve di server, buat pembanding berikutnya
+    const freshSnap = await userDocRef.get();
+    _lastKnownUpdatedAt = freshSnap.data()?.updatedAt || null;
     setSynced();
     console.log('✅ Saved → '+currentClassName+' | students:'+siswaList.length);
   } catch(e){
+    if(e.code === 'stale-write'){
+      setSyncErr('stale');
+      showToast('⚠️ Gagal simpan: data sudah berubah di device lain sebelum tersimpan. Perubahanmu belum tersimpan. <span style="text-decoration:underline;cursor:pointer;font-weight:800" onclick="location.reload()">Muat ulang halaman</span> lalu ulangi perubahannya.', 'warn', 15000);
+      return;
+    }
     setSyncErr(e.code || e.message);
     console.error('❌ Save failed:', e.code, e.message);
     throw e;
