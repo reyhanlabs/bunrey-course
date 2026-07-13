@@ -1,7 +1,7 @@
 {
-  "name": "BunRey English Course",
-  "short_name": "BunRey",
-  "description": "Teacher management app for BunRey English Course",
+  "name": "LittleLume English Course",
+  "short_name": "LittleLume",
+  "description": "Teacher management app for LittleLume English Course",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
