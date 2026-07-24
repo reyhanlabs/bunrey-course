@@ -4141,9 +4141,24 @@ function renderPayment(){
 function updateUnpaidBadge(){
   const paidSesiIds = new Set();
   bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
-  const n = siswaList.filter(s=>{
-    return absensiList.some(a=>a.siswaId===s.id && a.status==='Hadir' && !paidSesiIds.has(a.id));
-  }).length;
+  let n = 0;
+  siswaList.forEach(s=>{
+    if(s.billingType==='monthly'){
+      const sessionMonths = new Set();
+      absensiList.filter(a=>a.siswaId===s.id&&a.status==='Hadir').forEach(a=>{
+        const d=new Date(a.tanggal);
+        sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0'));
+      });
+      const paidMonths = new Set();
+      bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{
+        const p=parsePeriodeToYearMonth(b.periode||'');
+        if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0'));
+      });
+      if([...sessionMonths].some(ym=>!paidMonths.has(ym))) n++;
+    } else {
+      if(absensiList.some(a=>a.siswaId===s.id&&a.status==='Hadir'&&!paidSesiIds.has(a.id))) n++;
+    }
+  });
   const el=document.getElementById('unpaid-badge');
   if(el){ el.style.display=n>0?'inline':'none'; if(n>0) el.textContent=n; }
 }
@@ -6266,10 +6281,28 @@ function getStudentContext(siswaId){
   const avgScore = evals.length ? Math.round(evals.reduce((s,e)=>s+Number(e.nilai||0),0)/evals.length) : null;
   const latEval = evals[0];
   const latPay = pays.sort((a,b)=>b.tanggal.localeCompare(a.tanggal))[0];
-  const paidSesiIds = new Set(); bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
-  const unpaidSessions = att.filter(a=>a.status==='Hadir' && !paidSesiIds.has(a.id)).length;
 
-  return { siswa, evals, att, avgScore, attRate, latEval, latPay, present, unpaidSessions };
+  let unpaidSessions = 0;
+  let unpaidMonths = 0;
+  if(siswa.billingType==='monthly'){
+    // Monthly: hitung bulan yang belum Lunas
+    const sessionMonths = new Set();
+    att.filter(a=>a.status==='Hadir').forEach(a=>{
+      const d=new Date(a.tanggal);
+      sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0'));
+    });
+    const paidMonths = new Set();
+    pays.filter(b=>b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{
+      const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0'));
+    });
+    unpaidMonths = [...sessionMonths].filter(ym=>!paidMonths.has(ym)).length;
+    unpaidSessions = unpaidMonths; // alias agar template WA tetap bisa pakai ctx.unpaidSessions
+  } else {
+    const paidSesiIds = new Set(); bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
+    unpaidSessions = att.filter(a=>a.status==='Hadir' && !paidSesiIds.has(a.id)).length;
+  }
+
+  return { siswa, evals, att, avgScore, attRate, latEval, latPay, present, unpaidSessions, unpaidMonths };
 }
 
 async function callClaudeAPI(prompt){
@@ -6457,7 +6490,9 @@ function buildWaTemplate(){
 
   const templates = {
     progress: `Hello, ${ortu} 🙏\n\nHere is an update on *${siswa.nama}*'s learning progress at LittleLume English Course:\n\n📚 Level: *${siswa.level}*\n✏️ Average Score: *${ctx.avgScore||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}% (${ctx.present}/${ctx.att.length} sessions)*\n${ctx.latEval?.progress?`\n📈 Progress: ${ctx.latEval.progress}\n`:''}\n${ctx.latEval?.catatan?`📝 Notes: ${ctx.latEval.catatan}\n`:''}\nOverall progress is going well! 🌟\n\n— LittleLume English Course`,
-    payment: `Hello, ${ortu} 🙏\n\nWe would like to remind you that *${siswa.nama}* has *${ctx.unpaidSessions} session(s)* that have not been paid yet.\n\nPlease make the payment at your earliest convenience. Thank you! 🙏\n\nFeel free to reply to this message if you have any questions.\n\n— LittleLume English Course`,
+    payment: siswa.billingType==='monthly'
+      ? `Hello, ${ortu} 🙏\n\nWe would like to remind you that *${siswa.nama}* has *${ctx.unpaidSessions} unpaid month(s)* of tuition.\n\nPlease make the payment at your earliest convenience. Thank you! 🙏\n\nFeel free to reply to this message if you have any questions.\n\n— LittleLume English Course`
+      : `Hello, ${ortu} 🙏\n\nWe would like to remind you that *${siswa.nama}* has *${ctx.unpaidSessions} unpaid session(s)*.\n\nPlease make the payment at your earliest convenience. Thank you! 🙏\n\nFeel free to reply to this message if you have any questions.\n\n— LittleLume English Course`,
     absent: `Hello, ${ortu} 🙏\n\nWe would like to confirm that *${siswa.nama}* was absent from today's lesson session.\n\nCould you let us know the reason for the absence so we can record it properly? Thank you 🙏\n\n— LittleLume English Course`,
     schedule: `Hello, ${ortu} 🙏\n\nA reminder that *${siswa.nama}*'s class schedule is:\n\n📅 *${siswa.hari||'As agreed'}*\n\nPlease ensure your child arrives on time. If there are any changes, please inform us in advance.\n\nThank you 🙏\n\n— LittleLume English Course`,
     congrats: `Hello, ${ortu} 🌟\n\nCongratulations! *${siswa.nama}* has shown outstanding progress! 🎉\n\n✨ Latest Score: *${ctx.latEval?.nilai||'—'}/100*\n📋 Attendance: *${ctx.attRate||'—'}%*\n\nKeep up the great work! We are very proud of the achievement 💪\n\n— LittleLume English Course`
@@ -6557,8 +6592,27 @@ DB.set = function(k,v){
 };
 
 function updateMbnBadge(){
-  const paidSesiIds = new Set(); bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
-  const n = siswaList.filter(s=>absensiList.some(a=>a.siswaId===s.id&&a.status==='Hadir'&&!paidSesiIds.has(a.id))).length;
+  // Gunakan logika yang sama dengan updateUnpaidBadge agar konsisten (handle monthly + per-session)
+  const paidSesiIds = new Set();
+  bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
+  let n = 0;
+  siswaList.forEach(s=>{
+    if(s.billingType==='monthly'){
+      const sessionMonths = new Set();
+      absensiList.filter(a=>a.siswaId===s.id&&a.status==='Hadir').forEach(a=>{
+        const d=new Date(a.tanggal);
+        sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0'));
+      });
+      const paidMonths = new Set();
+      bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{
+        const p=parsePeriodeToYearMonth(b.periode||'');
+        if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0'));
+      });
+      if([...sessionMonths].some(ym=>!paidMonths.has(ym))) n++;
+    } else {
+      if(absensiList.some(a=>a.siswaId===s.id&&a.status==='Hadir'&&!paidSesiIds.has(a.id))) n++;
+    }
+  });
   const badge = document.getElementById('mbn-badge-payment');
   if(badge){ badge.className='mbn-badge'+(n>0?' show':''); }
 }
