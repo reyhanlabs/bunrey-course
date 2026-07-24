@@ -3744,41 +3744,48 @@ function toggleSesiCheck(sesiId){
   updateSesiCount();
 }
 
+// Flag: user sudah edit nominal secara manual?
+// Di-reset setiap kali form dibuka baru atau siswa diganti
+let _paymentAmountManuallyEdited = false;
+
 function updateSesiCount(){
   const checked = document.querySelectorAll('#sesi-picker-wrap .sesi-check.checked:not(.disabled)').length;
   const countEl = document.getElementById('sesi-selected-count');
-  if(countEl) countEl.textContent = checked > 0 ? `${checked} session(s) selected` : '';
 
-  // Auto-kalkulasi nominal — HANYA jika field masih kosong/nol
-  // Jika user sudah mengisi manual, jangan timpa
   const siswaId = document.getElementById('b-siswa').value;
   const siswa = siswaId ? siswaList.find(x => x.id === siswaId) : null;
 
   if(siswa && checked > 0){
     const feePerSesi = siswa.feePerSesi || 0;
-    if(feePerSesi <= 0) return;  // tidak ada fee terdaftar, skip kalkulasi
+    if(feePerSesi <= 0){
+      if(countEl) countEl.textContent = `${checked} session(s) selected`;
+      return;
+    }
 
     const totalAmount = checked * feePerSesi;
-    const currentTagihan = getNumberValue('b-tagihan');
-    const currentJumlah  = getNumberValue('b-jumlah');
+    const formatted   = 'Rp ' + Number(totalAmount).toLocaleString('id-ID');
 
-    // Hanya auto-fill jika field masih kosong atau nol (belum diisi manual)
-    // Gunakan prefix 'Rp ' agar konsisten dengan formatNumberInput
-    const tagihanEl = document.getElementById('b-tagihan');
-    const jumlahEl  = document.getElementById('b-jumlah');
-    const formatted = 'Rp ' + Number(totalAmount).toLocaleString('id-ID');
+    if(!_paymentAmountManuallyEdited){
+      // Selalu update mengikuti jumlah sesi yang aktif dicentang
+      document.getElementById('b-tagihan').value = formatted;
+      document.getElementById('b-jumlah').value  = formatted;
+    }
 
-    if(currentTagihan === 0) tagihanEl.value = formatted;
-    if(currentJumlah === 0)  jumlahEl.value  = formatted;
-
-    // Selalu tampilkan info kalkulasi di counter
     if(countEl) countEl.textContent =
       `${checked} session(s) × ${fmt(feePerSesi)} = ${fmt(totalAmount)}` +
-      (currentTagihan > 0 || currentJumlah > 0 ? ' (nominal diisi manual)' : '');
+      (_paymentAmountManuallyEdited ? ' (nominal diisi manual)' : '');
+
+  } else if(checked === 0){
+    if(!_paymentAmountManuallyEdited){
+      document.getElementById('b-tagihan').value = '';
+      document.getElementById('b-jumlah').value  = '';
+    }
+    if(countEl) countEl.textContent = '';
 
   } else if(!siswa){
     document.getElementById('b-tagihan').value = '';
-    document.getElementById('b-jumlah').value = '';
+    document.getElementById('b-jumlah').value  = '';
+    if(countEl) countEl.textContent = '';
   }
 }
 
@@ -3812,6 +3819,8 @@ function renderSesiChecksForEdit(sesiIds){
 // ════════════════════════════════════════════════
 function openPaymentForm(id){
   const b=id?bayarList.find(x=>x.id===id):null;
+  // Reset flag: edit = sudah ada nilai (anggap manual), baru = belum ada
+  _paymentAmountManuallyEdited = !!b;
   document.getElementById('b-id').value=b?.id||'';
   document.getElementById('b-periode').value=b?.periode||'';
   document.getElementById('b-tanggal').value=b?.tanggal||new Date().toISOString().slice(0,10);
@@ -3820,9 +3829,17 @@ function openPaymentForm(id){
   document.getElementById('b-status').value=b?.status||'Lunas';
   document.getElementById('b-catatan').value=b?.catatan||'';
   
-  // ✨ Format number inputs
+  // ✨ Format number inputs + track manual edit
   formatNumberInput('b-jumlah');
   formatNumberInput('b-tagihan');
+  // Set flag saat user mengetik langsung di field nominal
+  ['b-jumlah','b-tagihan'].forEach(fid=>{
+    const el=document.getElementById(fid);
+    if(!el) return;
+    if(el._manualEditHandler) el.removeEventListener('input',el._manualEditHandler);
+    el._manualEditHandler = ()=>{ _paymentAmountManuallyEdited = true; };
+    el.addEventListener('input', el._manualEditHandler);
+  });
   
   if(b){
     const opts=siswaList.map(s=>`<option value="${s.id}"${s.id===b.siswaId?' selected':''}>${s.nama}</option>`).join('');
@@ -3920,6 +3937,9 @@ function parsePeriodeToYearMonth(text){
 }
 
 function onPaymentStudentChange(){
+  // Ganti siswa = reset flag manual edit agar auto-kalkulasi aktif kembali
+  // (kecuali sedang mode edit payment yang sudah ada)
+  if(!document.getElementById('b-id').value) _paymentAmountManuallyEdited = false;
   const siswaId=document.getElementById('b-siswa').value;
   const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
   const isMonthly=(s?.billingType||'per_session')==='monthly';
@@ -4267,6 +4287,7 @@ function renderHutangSesi(){
 
 function openPaymentFormForStudent(siswaId){
   switchPayTab('rekap');
+  _paymentAmountManuallyEdited = false;  // payment baru, auto-kalkulasi aktif
   document.getElementById('b-id').value='';
   document.getElementById('b-periode').value='';
   document.getElementById('b-tanggal').value=new Date().toISOString().slice(0,10);
