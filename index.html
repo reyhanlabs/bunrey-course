@@ -1955,7 +1955,7 @@ td.nowrap { white-space:nowrap }
         </div>
         <div class="card">
           <div style="font-family:'Fredoka One',sans-serif;font-weight:800;margin-bottom:6px">⬆️ Restore Backup</div>
-          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:18px">Import a previously exported JSON backup. This will <strong style="color:var(--red)">merge</strong> with existing data.</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-bottom:18px">Import a previously exported JSON backup. This will <strong style="color:var(--red)">replace</strong> all existing data in this class.</div>
           <label for="restore-file" class="btn" style="cursor:pointer">📂 Choose Backup File</label>
           <input type="file" id="restore-file" accept=".json" style="display:none" onchange="importBackup(event)">
           <div id="restore-status" style="margin-top:12px;font-size:0.85rem;color:var(--muted)"></div>
@@ -2718,20 +2718,18 @@ const levelChip = l => {
 function formatNumberInput(inputId){
   const input = document.getElementById(inputId);
   if(!input) return;
-  
-  input.addEventListener('input', function(){
-    // Remove semua non-digit characters
+
+  // Hapus listener lama sebelum tambah baru — cegah duplikasi listener setiap form dibuka
+  if(input._fmtHandler){
+    input.removeEventListener('input', input._fmtHandler);
+  }
+  input._fmtHandler = function(){
     let value = this.value.replace(/\D/g, '');
-    
-    // Add separator ribuan + Rp prefix
-    if(value){
-      value = 'Rp ' + Number(value).toLocaleString('id-ID');
-    }
-    
-    this.value = value;
-  });
-  
-  // Format existing value on load dengan Rp prefix
+    this.value = value ? 'Rp ' + Number(value).toLocaleString('id-ID') : '';
+  };
+  input.addEventListener('input', input._fmtHandler);
+
+  // Format nilai yang sudah ada saat form dibuka
   if(input.value){
     const rawNum = Number(input.value.replace(/\D/g, ''));
     if(rawNum > 0){
@@ -2881,7 +2879,7 @@ function renderDashboard(){
         sessionMonths.add(ym);
       });
       const paidMonths = new Set();
-      bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{
+      bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{
         const parsed=parsePeriodeToYearMonth(b.periode||'');
         if(parsed) paidMonths.add(parsed.y+'-'+parsed.m.toString().padStart(2,'0'));
       });
@@ -3277,7 +3275,7 @@ function loadAbsensi(){
     const isScheduled = scheduledIds.has(s.id);
     const sc = scheduleList.find(x=>x.siswaId===s.id && x.days.includes(dayName));
     return `
-    <div class="absen-card${isScheduled?'':' style="opacity:0.65"'}">
+    <div class="absen-card" ${isScheduled?'':'style="opacity:0.65"'}>
       <div class="a-name">👤 ${s.nama}${isScheduled?` <span style="font-size:0.65rem;background:rgba(108,99,255,0.15);color:var(--accent);border-radius:4px;padding:1px 5px;font-weight:700">📅 ${sc?.jam||'Scheduled'}</span>`:''}</div>
       ${s.nick?`<div class="a-nick">${s.nick}</div>`:''}
       <select id="att-${s.id}">
@@ -3293,10 +3291,16 @@ function saveAbsensi(){
   const d=document.getElementById('absen-date').value;
   if(!d){ alert('Select a date!'); return; }
   if(!siswaList.length){ alert('No students found!'); return; }
+  // ── Simpan snapshot record lama sebelum dihapus ──
+  // ID lama HARUS dipertahankan agar sesiIds di payment tidak putus
+  const oldRecords={};
+  absensiList.filter(a=>a.tanggal===d).forEach(a=>{ oldRecords[a.siswaId]=a; });
   absensiList=absensiList.filter(a=>a.tanggal!==d);
   siswaList.forEach(s=>{
+    const old=oldRecords[s.id];
     absensiList.push({
-      id:uid(),tanggal:d,siswaId:s.id,namaSiswa:s.nama,
+      id: old ? old.id : uid(),   // ← PAKAI ID LAMA jika sudah pernah ada
+      tanggal:d,siswaId:s.id,namaSiswa:s.nama,
       status:document.getElementById(`att-${s.id}`)?.value||'Hadir',
       keterangan:document.getElementById(`att-ket-${s.id}`)?.value||'',
     });
@@ -3412,7 +3416,7 @@ function saveAttEdit(){
           <p>💡 Delete the payment first, then try again.</p>
         </div>`,
         null,
-        { okText: 'OK', showCancel: false }
+        { okText: 'OK', cancelText: null }
       );
       return;  // ← BLOCK
     }
@@ -3739,26 +3743,34 @@ function updateSesiCount(){
   const checked = document.querySelectorAll('#sesi-picker-wrap .sesi-check.checked:not(.disabled)').length;
   const countEl = document.getElementById('sesi-selected-count');
   if(countEl) countEl.textContent = checked > 0 ? `${checked} session(s) selected` : '';
-  
-  // ✅ NEW: Auto-calculate Total Invoice and Amount Paid
+
+  // Auto-kalkulasi nominal — HANYA jika field masih kosong/nol
+  // Jika user sudah mengisi manual, jangan timpa
   const siswaId = document.getElementById('b-siswa').value;
   const siswa = siswaId ? siswaList.find(x => x.id === siswaId) : null;
-  
+
   if(siswa && checked > 0){
     const feePerSesi = siswa.feePerSesi || 0;
+    if(feePerSesi <= 0) return;  // tidak ada fee terdaftar, skip kalkulasi
+
     const totalAmount = checked * feePerSesi;
-    
-    // Auto-fill invoice dan amount dengan formatting
-    const formattedAmount = totalAmount > 0 ? Number(totalAmount).toLocaleString('id-ID') : '';
-    document.getElementById('b-tagihan').value = formattedAmount;
-    document.getElementById('b-jumlah').value = formattedAmount;
-    
-    // Show feedback
-    if(totalAmount > 0){
-      showToast(`✅ Auto-calculated: ${checked} session(s) × ${fmt(feePerSesi)} = ${fmt(totalAmount)}`, 'success');
-    }
+    const currentTagihan = getNumberValue('b-tagihan');
+    const currentJumlah  = getNumberValue('b-jumlah');
+
+    // Hanya auto-fill jika field masih kosong atau nol (belum diisi manual)
+    const tagihanEl = document.getElementById('b-tagihan');
+    const jumlahEl  = document.getElementById('b-jumlah');
+    const formatted = Number(totalAmount).toLocaleString('id-ID');
+
+    if(currentTagihan === 0) tagihanEl.value = formatted;
+    if(currentJumlah === 0)  jumlahEl.value  = formatted;
+
+    // Selalu tampilkan info kalkulasi di counter
+    if(countEl) countEl.textContent =
+      `${checked} session(s) × ${fmt(feePerSesi)} = ${fmt(totalAmount)}` +
+      (currentTagihan > 0 || currentJumlah > 0 ? ' (nominal diisi manual)' : '');
+
   } else if(!siswa){
-    // If no student, clear amounts
     document.getElementById('b-tagihan').value = '';
     document.getElementById('b-jumlah').value = '';
   }
@@ -3821,24 +3833,44 @@ function closePaymentForm(){ closePanel('form-payment') }
 function openEditBayar(id){ openPaymentForm(id) }
 function savePayment(){
   const siswaId=document.getElementById('b-siswa').value;
-  if(!siswaId){ alert('Select a student!'); return; }
+  if(!siswaId){ showToast('Select a student!','warn'); return; }
   const s=siswaList.find(x=>x.id===siswaId);
   const id=document.getElementById('b-id').value;
   const isMonthly = (s?.billingType||'per_session')==='monthly';
+  const tanggal = document.getElementById('b-tanggal').value;
+  const jumlah  = getNumberValue('b-jumlah');
+  const tagihan = getNumberValue('b-tagihan');
+  const periode = document.getElementById('b-periode').value.trim();
+
+  // ── Validasi wajib ──
+  if(!tanggal){ showToast('Payment date is required!','warn'); return; }
+  if(jumlah <= 0){ showToast('Amount paid (Jumlah) cannot be zero!','warn'); return; }
+  if(tagihan <= 0){ showToast('Invoice amount (Tagihan) cannot be zero!','warn'); return; }
+
   let sesiIds;
   if(isMonthly){
-    // auto-link ALL sessions for this student in the selected month
-    const periode=document.getElementById('b-periode').value.trim();
+    if(!periode){
+      showToast('Period is required for monthly billing! (e.g. July 2026)','warn'); return;
+    }
     sesiIds = getMonthlySessionIds(siswaId, periode);
+    if(sesiIds === null){
+      // Periode tidak bisa di-parse — tolak simpan agar tidak terjadi link salah bulan
+      showToast('Period format not recognized. Use format: "July 2026" or "Juli 2026"','warn'); return;
+    }
+    if(sesiIds.length === 0){
+      // Parse OK tapi tidak ada sesi hadir di bulan itu — izinkan simpan dengan warning
+      showToast('No attendance (Hadir) found for this period. Payment saved without session links.','warn');
+    }
   } else {
     sesiIds = getSelectedSesiIds();
   }
+
   const data={
     siswaId, namaSiswa:s?.nama||'-',
-    periode:document.getElementById('b-periode').value.trim(),
-    tanggal:document.getElementById('b-tanggal').value,
-    jumlah:getNumberValue('b-jumlah'),
-    tagihan:getNumberValue('b-tagihan'),
+    periode,
+    tanggal,
+    jumlah,
+    tagihan,
     status:document.getElementById('b-status').value,
     catatan:document.getElementById('b-catatan').value.trim(),
     sesiIds,
@@ -3848,14 +3880,16 @@ function savePayment(){
   else bayarList.push({id:uid(),...data});
   DB.set('bayar',bayarList);
   closePaymentForm(); renderPayment(); updateUnpaidBadge();
+  showToast('✅ Payment saved!','success');
 }
 
 // ── Monthly billing helpers ──
 function getMonthlySessionIds(siswaId, periodeText){
-  // Parse "June 2026" or "Juni 2025" → year+month range
-  // Fall back to ALL unpaid if we can't parse
+  // Parse "June 2026" / "Juni 2025" / "2026-06" → year+month range
+  // TIDAK ada fallback ke semua sesi — jika periode tidak bisa di-parse, return array kosong
+  // agar savePayment() bisa mendeteksi dan memblokir penyimpanan
   const parsed = parsePeriodeToYearMonth(periodeText);
-  if(!parsed) return absensiList.filter(a=>a.siswaId===siswaId&&a.status==='Hadir').map(a=>a.id);
+  if(!parsed) return null;  // ← null = sinyal periode tidak valid (bukan array kosong)
   const {y,m}=parsed;
   return absensiList.filter(a=>{
     if(a.siswaId!==siswaId || a.status!=='Hadir') return false;
@@ -3927,17 +3961,18 @@ function refreshMonthlyPanel(){
 function applyMonthlyBilling(){
   const siswaId=document.getElementById('b-siswa').value;
   const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
-  if(!s||!s.feeMonthly){ alert('Set Monthly Fee di profil siswa terlebih dahulu.'); return; }
-  document.getElementById('b-tagihan').value=s.feeMonthly;
-  document.getElementById('b-jumlah').value=s.feeMonthly;
-  document.getElementById('b-status').value='Lunas';
-  // Auto-fill periode with current month if empty
+  if(!s||!s.feeMonthly){ showToast('Set Monthly Fee in student profile first!','warn'); return; }
+  const formatted = Number(s.feeMonthly).toLocaleString('id-ID');
+  document.getElementById('b-tagihan').value = formatted;
+  document.getElementById('b-jumlah').value  = formatted;
+  document.getElementById('b-status').value  = 'Lunas';
+  // Auto-fill periode dengan bulan berjalan jika masih kosong
   if(!document.getElementById('b-periode').value.trim()){
     const now=new Date();
     document.getElementById('b-periode').value=now.toLocaleString('en',{month:'long'})+' '+now.getFullYear();
     refreshMonthlyPanel();
   }
-  alert('✅ Invoice & Amount terisi otomatis! Periksa lalu klik Save.');
+  showToast(`✅ Invoice & Amount auto-filled: ${fmt(s.feeMonthly)}. Review then click Save.`,'success');
 }
 function deletePayment(id){
   const payment = bayarList.find(b => b.id === id);
@@ -4010,7 +4045,7 @@ function renderPayment(){
           sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0'));
         });
         const paidMonths = new Set();
-        bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{
+        bayarList.filter(b=>b.siswaId===s.id&&b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{
           const parsed=parsePeriodeToYearMonth(b.periode||'');
           if(parsed) paidMonths.add(parsed.y+'-'+parsed.m.toString().padStart(2,'0'));
         });
@@ -4142,7 +4177,7 @@ function renderHutangSesi(){
           sessionMonths[ym].push(a);
         });
         const paidMonths = new Set();
-        bayarList.filter(b=>b.siswaId===siswa.id&&b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{
+        bayarList.filter(b=>b.siswaId===siswa.id&&b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{
           const parsed=parsePeriodeToYearMonth(b.periode||'');
           if(parsed) paidMonths.add(parsed.y+'-'+parsed.m.toString().padStart(2,'0'));
         });
@@ -4493,7 +4528,7 @@ function exportBackup(){
     className: currentClassName,
     classId:   currentClassId,
     siswa:siswaList, absensi:absensiList, materi:materiList,
-    evaluasi:evaluasiList, bayar:bayarList,
+    evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
     exportedAt:new Date().toISOString()
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -4513,11 +4548,12 @@ function importBackup(e){
     try{
       const data=JSON.parse(ev.target.result);
       // Merge data
-      if(data.siswa)    { siswaList   =data.siswa.map(n=>({...n})); }
-      if(data.absensi)  { absensiList =data.absensi.map(n=>({...n})); }
-      if(data.materi)   { materiList  =data.materi.map(n=>({...n})); }
-      if(data.evaluasi) { evaluasiList=data.evaluasi.map(n=>({...n})); }
-      if(data.bayar)    { bayarList   =data.bayar.map(n=>({...n})); }
+      if(data.siswa)     { siswaList    = data.siswa.map(n=>({...n})); }
+      if(data.absensi)   { absensiList  = data.absensi.map(n=>({...n})); }
+      if(data.materi)    { materiList   = data.materi.map(n=>({...n})); }
+      if(data.evaluasi)  { evaluasiList = data.evaluasi.map(n=>({...n})); }
+      if(data.bayar)     { bayarList    = data.bayar.map(n=>({...n})); }
+      if(data.schedules) { scheduleList = data.schedules.map(n=>({...n})); }
 
       statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Saving to cloud… <strong>do not refresh!</strong></span>';
 
@@ -4550,9 +4586,9 @@ function exportCSV(key){
 function clearAllData(){
   if(!confirm('⚠️ This will delete ALL data permanently. Are you sure?')) return;
   if(!confirm('Last chance! Click OK to permanently erase all data.')) return;
-  siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+  siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
   saveToFirestore();
-  renderAll(); renderBackupSummary(); alert('✅ All data cleared.');
+  renderAll(); renderBackupSummary(); showToast('✅ All data cleared.','success');
 }
 function renderBackupSummary(){
   document.getElementById('backup-summary').innerHTML=`
@@ -5172,89 +5208,77 @@ function confirmModalDialog(modalId) {
 }
 
 
-// Patch saveAbsensi to use toast instead of alert + refresh calendar
-const _origSaveAbsensi = window.saveAbsensi;
-window.saveAbsensi = function(){
+// ════════════════════════════════════════════════
+//  PATCH saveAbsensi — upgrade ke toast + validasi payment-conflict
+//  PENTING: Preserve ID lama agar sesiIds di payment tidak putus
+// ════════════════════════════════════════════════
+saveAbsensi = function(){
   const d=document.getElementById('absen-date').value;
   if(!d){ showToast('Select a date first!','warn'); return; }
   if(!siswaList.length){ showToast('No students found!','warn'); return; }
-  
-  // ✅ VALIDASI: Check apakah ada yang UBAH dari Hadir ke bukan-Hadir dengan payment
+
+  // ── VALIDASI: Blokir jika ada perubahan Hadir→non-Hadir yang sudah punya payment ──
   const conflicts = [];
   siswaList.forEach(s => {
     const newStatus = document.getElementById(`att-${s.id}`)?.value || 'Hadir';
     const oldAtt = absensiList.find(a => a.tanggal === d && a.siswaId === s.id);
-    
-    // ✅ PENTING: Hanya validasi jika attendance SUDAH ADA (bukan baru!)
-    if(oldAtt) {
-      const oldStatus = oldAtt.status;
-      
-      // Jika UBAH dari Hadir ke bukan-Hadir
-      if(oldStatus === 'Hadir' && newStatus !== 'Hadir') {
-        // Check apakah ada payment untuk sesi ini
-        const paymentWithThisSesi = bayarList.find(b => 
-          b.sesiIds && b.sesiIds.includes(oldAtt.id)
-        );
-        
-        if(paymentWithThisSesi) {
-          conflicts.push({
-            siswaId: s.id,
-            nama: s.nama,
-            tanggal: d,
-            oldStatus: oldStatus,
-            newStatus: newStatus,
-            payment: paymentWithThisSesi
-          });
-        }
+    if(oldAtt && oldAtt.status === 'Hadir' && newStatus !== 'Hadir') {
+      const paymentWithThisSesi = bayarList.find(b =>
+        b.sesiIds && b.sesiIds.includes(oldAtt.id)
+      );
+      if(paymentWithThisSesi) {
+        conflicts.push({
+          nama: s.nama, tanggal: d,
+          oldStatus: oldAtt.status, newStatus,
+          payment: paymentWithThisSesi
+        });
       }
     }
   });
-  
-  // ❌ Conflicts found - BLOCK and show all
+
   if(conflicts.length > 0) {
     const conflictHtml = conflicts.map((c, idx) => `
-      <div style="background: var(--bg3); padding: 12px; border-radius: 8px; margin: 8px 0; border-left: 4px solid var(--yellow)">
-        <div style="font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px">
-          <span style="background: var(--accent); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem">${idx + 1}</span>
+      <div style="background:var(--bg3);padding:12px;border-radius:8px;margin:8px 0;border-left:4px solid var(--yellow)">
+        <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+          <span style="background:var(--accent);color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem">${idx+1}</span>
           👤 ${c.nama}
         </div>
-        <div style="font-size: 0.9rem; color: var(--muted); margin-left: 32px">
+        <div style="font-size:0.9rem;color:var(--muted);margin-left:32px">
           <div>📅 Date: <strong>${tglFmt(c.tanggal)}</strong></div>
-          <div>Status: <strong>${c.oldStatus}</strong> → <strong style="color: var(--red)">${c.newStatus}</strong></div>
+          <div>Status: <strong>${c.oldStatus}</strong> → <strong style="color:var(--red)">${c.newStatus}</strong></div>
           <div>💰 Payment: <strong>${fmt(c.payment.jumlah)}</strong> (${c.payment.status})</div>
         </div>
-      </div>
-    `).join('');
-    
+      </div>`).join('');
     dangerModal(
       `⚠️ ${conflicts.length} Student(s) with Payment`,
-      `<div style="text-align: left; line-height: 1.8">
+      `<div style="text-align:left;line-height:1.8">
         <p>❌ <strong>Cannot save attendance.</strong></p>
         <p>Payment records exist for these students:</p>
         ${conflictHtml}
-        <p style="margin-top: 16px">💡 Delete the payment first, then try again.</p>
+        <p style="margin-top:16px">💡 Delete the payment first, then try again.</p>
       </div>`,
-      null,
-      { okText: 'OK', showCancel: false }
+      null, { okText: 'OK', cancelText: null }
     );
-    return;  // ← BLOCK
+    return;
   }
-  
-  // ✅ SAFE: No conflicts, save
-  absensiList=absensiList.filter(a=>a.tanggal!==d);
-  siswaList.forEach(s=>{
+
+  // ── SIMPAN: Pertahankan ID lama agar link payment tidak putus ──
+  const oldRecords = {};
+  absensiList.filter(a => a.tanggal === d).forEach(a => { oldRecords[a.siswaId] = a; });
+  absensiList = absensiList.filter(a => a.tanggal !== d);
+  siswaList.forEach(s => {
+    const old = oldRecords[s.id];
     absensiList.push({
-      id:uid(),tanggal:d,siswaId:s.id,namaSiswa:s.nama,
-      status:document.getElementById(`att-${s.id}`)?.value||'Hadir',
-      keterangan:document.getElementById(`att-ket-${s.id}`)?.value||'',
+      id: old ? old.id : uid(),   // ← PAKAI ID LAMA jika sesi ini sudah pernah ada
+      tanggal: d, siswaId: s.id, namaSiswa: s.nama,
+      status:      document.getElementById(`att-${s.id}`)?.value || 'Hadir',
+      keterangan:  document.getElementById(`att-ket-${s.id}`)?.value || '',
     });
   });
-  DB.set('absensi',absensiList); 
+  DB.set('absensi', absensiList);
   renderAttendance();
-  showToast('✅ Attendance saved!','success');
+  showToast('✅ Attendance saved!', 'success');
 };
-// Override original (defined earlier in page)
-saveAbsensi = window.saveAbsensi;
 
 // ════════════════════════════════════════════════
 //  NOTIFICATION SYSTEM
@@ -5491,7 +5515,7 @@ function renderPaymentReminders(){
         sessionMonths[ym]=(sessionMonths[ym]||0)+1;
       });
       const paidMonths = new Set();
-      bayarList.filter(b=>b.siswaId===siswa.id&&b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{
+      bayarList.filter(b=>b.siswaId===siswa.id&&b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{
         const parsed=parsePeriodeToYearMonth(b.periode||'');
         if(parsed) paidMonths.add(parsed.y+'-'+parsed.m.toString().padStart(2,'0'));
       });
@@ -5609,7 +5633,7 @@ function openStudentProfile(id){
     const sessionMonths=new Set();
     attHadir.forEach(a=>{ const d=new Date(a.tanggal); sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')); });
     const paidMonths=new Set();
-    payStudent.filter(b=>b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{ const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0')); });
+    payStudent.filter(b=>b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{ const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0')); });
     sessionMonths.forEach(ym=>{ if(!paidMonths.has(ym)) outstanding+=(s.feeMonthly||0); });
   } else {
     const unpaidCount=attHadir.filter(a=>!paidSesiIds.has(a.id)).length;
@@ -5761,7 +5785,7 @@ function buildSPRenderHTML(id){
     const sessionMonths=new Set();
     attHadir.forEach(a=>{ const d=new Date(a.tanggal); sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')); });
     const paidMonths=new Set();
-    payStudent.filter(b=>b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{ const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0')); });
+    payStudent.filter(b=>b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{ const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0')); });
     sessionMonths.forEach(ym=>{ if(!paidMonths.has(ym)) outstanding+=(s.feeMonthly||0); });
   } else {
     outstanding = attHadir.filter(a=>!paidSesiIds.has(a.id)).length * (s.feePerSesi||0);
@@ -5992,7 +6016,7 @@ async function exportSP(type){
     let outstanding=0;
     if(s.billingType==='monthly'){
       const sessionMonths=new Set(); attHadir.forEach(a=>{ const d=new Date(a.tanggal); sessionMonths.add(d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')); });
-      const paidMonths=new Set(); payStudent.filter(b=>b.billingType==='monthly'&&b.status!=='Belum Bayar').forEach(b=>{ const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0')); });
+      const paidMonths=new Set(); payStudent.filter(b=>b.billingType==='monthly'&&b.status==='Lunas').forEach(b=>{ const p=parsePeriodeToYearMonth(b.periode||''); if(p) paidMonths.add(p.y+'-'+p.m.toString().padStart(2,'0')); });
       sessionMonths.forEach(ym=>{ if(!paidMonths.has(ym)) outstanding+=(s.feeMonthly||0); });
     } else {
       outstanding=attHadir.filter(a=>!paidSesiIds.has(a.id)).length*(s.feePerSesi||0);
