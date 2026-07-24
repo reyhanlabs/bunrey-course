@@ -2859,7 +2859,8 @@ function renderDashboard(){
   if(fPeriode) filteredPay = filteredPay.filter(b=>(b.periode||'').toLowerCase().includes(fPeriode));
 
   const totalStudents = siswaList.length;
-  const totalRevenue  = filteredPay.reduce((s,b)=>s+b.jumlah,0);
+  // Revenue: hanya Lunas dan Cicil — exclude Belum Bayar (dicatat tapi belum dibayar)
+  const totalRevenue  = filteredPay.filter(b=>b.status!=='Belum Bayar').reduce((s,b)=>s+b.jumlah,0);
 
   // FIX: Unpaid Bills = accurate outstanding count per student (same logic as Payment page)
   const paidSesiIds = new Set();
@@ -3433,6 +3434,8 @@ function saveAttEdit(){
   closeModal('modal-att-edit');
   renderAttendance();
   renderPayment();
+  updateUnpaidBadge(); updateMbnBadge();
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
   showToast(`✅ Status changed to ${newStatus}`, 'success');
 }
 
@@ -3465,6 +3468,8 @@ function deleteAttendance(id){
       absensiList = absensiList.filter(a=>a.id!==id);
       DB.set('absensi', absensiList);
       renderAttendance();
+      updateUnpaidBadge(); updateMbnBadge();
+      if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
       showToast('✅ Attendance deleted', 'success');
     },
     { okText: 'Delete', cancelText: 'Cancel' }
@@ -3758,9 +3763,10 @@ function updateSesiCount(){
     const currentJumlah  = getNumberValue('b-jumlah');
 
     // Hanya auto-fill jika field masih kosong atau nol (belum diisi manual)
+    // Gunakan prefix 'Rp ' agar konsisten dengan formatNumberInput
     const tagihanEl = document.getElementById('b-tagihan');
     const jumlahEl  = document.getElementById('b-jumlah');
-    const formatted = Number(totalAmount).toLocaleString('id-ID');
+    const formatted = 'Rp ' + Number(totalAmount).toLocaleString('id-ID');
 
     if(currentTagihan === 0) tagihanEl.value = formatted;
     if(currentJumlah === 0)  jumlahEl.value  = formatted;
@@ -3879,7 +3885,8 @@ function savePayment(){
   if(id){ const i=bayarList.findIndex(b=>b.id===id); if(i>-1) bayarList[i]={...bayarList[i],...data}; }
   else bayarList.push({id:uid(),...data});
   DB.set('bayar',bayarList);
-  closePaymentForm(); renderPayment(); updateUnpaidBadge();
+  closePaymentForm(); renderPayment(); updateUnpaidBadge(); updateMbnBadge();
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
   showToast('✅ Payment saved!','success');
 }
 
@@ -3962,7 +3969,7 @@ function applyMonthlyBilling(){
   const siswaId=document.getElementById('b-siswa').value;
   const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
   if(!s||!s.feeMonthly){ showToast('Set Monthly Fee in student profile first!','warn'); return; }
-  const formatted = Number(s.feeMonthly).toLocaleString('id-ID');
+  const formatted = 'Rp ' + Number(s.feeMonthly).toLocaleString('id-ID');
   document.getElementById('b-tagihan').value = formatted;
   document.getElementById('b-jumlah').value  = formatted;
   document.getElementById('b-status').value  = 'Lunas';
@@ -3989,7 +3996,8 @@ function deletePayment(id){
       bayarList = bayarList.filter(b => b.id !== id);
       DB.set('bayar', bayarList);
       renderPayment();
-      updateUnpaidBadge();
+      updateUnpaidBadge(); updateMbnBadge();
+      if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
       showToast('✅ Payment deleted', 'success');
     },
     { okText: 'Delete', cancelText: 'Cancel' }
@@ -4024,14 +4032,16 @@ function renderPayment(){
     const paidSesiIds = new Set();
     bayarList.forEach(b=>{ if(b.sesiIds) b.sesiIds.forEach(id=>paidSesiIds.add(id)); });
 
-    const totalSesiHadir     = absensiList.filter(a=>a.status==='Hadir').length;
-    // ✅ IMPROVED: Count paid sessions = sudah di dalam sesiIds (regardless of current status)
-    const totalSesiTerbayar  = Array.from(paidSesiIds).filter(id => {
-      const att = absensiList.find(a => a.id === id);
-      return att !== undefined;  // Count jika attendance masih exist (even if status changed)
+    // Sesi count hanya untuk siswa per-session (monthly punya kartu outstanding sendiri)
+    const perSesiSiswaIds   = new Set(siswaList.filter(s=>s.billingType!=='monthly').map(s=>s.id));
+    const totalSesiHadir    = absensiList.filter(a=>perSesiSiswaIds.has(a.siswaId)&&a.status==='Hadir').length;
+    const totalSesiTerbayar = Array.from(paidSesiIds).filter(id=>{
+      const att = absensiList.find(a=>a.id===id);
+      return att && perSesiSiswaIds.has(att.siswaId);
     }).length;
-    const sesiHutang         = totalSesiHadir - totalSesiTerbayar;
-    const totalRevenue       = bayarList.reduce((s,b)=>s+b.jumlah, 0);
+    const sesiHutang        = totalSesiHadir - totalSesiTerbayar;
+    // Revenue: hanya payment yang sudah dibayar (Lunas/Cicil), exclude Belum Bayar
+    const totalRevenue      = bayarList.filter(b=>b.status!=='Belum Bayar').reduce((s,b)=>s+b.jumlah, 0);
 
     // Outstanding = unpaid amount per student, aware of billing type
     let outstanding = 0;
@@ -5292,6 +5302,8 @@ saveAbsensi = function(){
   });
   DB.set('absensi', absensiList);
   renderAttendance();
+  updateUnpaidBadge(); updateMbnBadge();
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
   showToast('✅ Attendance saved!', 'success');
 };
 
