@@ -1722,6 +1722,7 @@ td.nowrap { white-space:nowrap }
         <div class="form-panel hidden" id="form-payment" style="max-height:0">
           <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-payment-title">Record Payment</div>
           <input type="hidden" id="b-id">
+          <input type="hidden" id="b-payment-mode" value="link">
           <div class="form-row">
             <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select --</option></select></div>
             <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2026" oninput="refreshMonthlyPanel()"></div>
@@ -3339,24 +3340,44 @@ function saveAbsensi(){
 
   // ── Auto-link sesi hadir ke credit payment yang masih ada sisa ──
   const linkedMessages = [];
+  let bayarDirty = false;
+
   siswaList.forEach(s=>{
     const newRecord = absensiList.find(a=>a.tanggal===d && a.siswaId===s.id && a.status==='Hadir');
     if(!newRecord) return;
-    // Cari credit payment yang masih ada sisa kredit untuk siswa ini
+
+    // Debug: log semua payment milik siswa ini untuk diagnosa
+    const siswaPayments = bayarList.filter(b=>b.siswaId===s.id);
+    console.log(`[AutoLink] ${s.nama} | attendance id: ${newRecord.id} | payments:`, siswaPayments.map(b=>({
+      id: b.id, creditMode: b.creditMode, paidSessions: b.paidSessions,
+      sesiIds: b.sesiIds, sesiLen: b.sesiIds?.length
+    })));
+
+    // Cari credit payment yang masih ada sisa — cek creditMode truthy (bukan strict ===true)
+    // karena Firestore kadang kembalikan boolean sebagai-is tapi perlu dipastikan
     const creditPayment = bayarList.find(b=>
       b.siswaId === s.id &&
-      b.creditMode === true &&
+      !!b.creditMode &&                           // truthy check, tidak strict
       (b.sesiIds?.length||0) < (b.paidSessions||0) &&
-      !b.sesiIds?.includes(newRecord.id)
+      !(b.sesiIds||[]).includes(newRecord.id)
     );
+
     if(creditPayment){
-      creditPayment.sesiIds = [...(creditPayment.sesiIds||[]), newRecord.id];
-      const used = creditPayment.sesiIds.length;
+      // Mutasi langsung di array (referensi langsung ke object dalam bayarList)
+      if(!Array.isArray(creditPayment.sesiIds)) creditPayment.sesiIds = [];
+      creditPayment.sesiIds.push(newRecord.id);
+      const used  = creditPayment.sesiIds.length;
       const total = creditPayment.paidSessions;
       linkedMessages.push(`${s.nama}: sesi dikaitkan ke kredit (${used}/${total})`);
+      bayarDirty = true;
+      console.log(`[AutoLink] ✅ Linked! payment ${creditPayment.id} → sesi ${newRecord.id} (${used}/${total})`);
+    } else {
+      console.log(`[AutoLink] ⚠️ Tidak ada credit payment tersedia untuk ${s.nama}`);
     }
   });
-  if(linkedMessages.length){
+
+  // Selalu simpan bayar jika ada perubahan
+  if(bayarDirty){
     DB.set('bayar', bayarList);
     renderPayment();
     updateUnpaidBadge(); updateMbnBadge();
@@ -3730,6 +3751,9 @@ let _currentPaymentMode = 'link'; // 'link' | 'credit'
 
 function setPaymentMode(mode){
   _currentPaymentMode = mode;
+  // Simpan ke hidden input agar tidak hilang saat form disubmit
+  const modeInput = document.getElementById('b-payment-mode');
+  if(modeInput) modeInput.value = mode;
   const isMonthly = (()=>{
     const siswaId = document.getElementById('b-siswa').value;
     const s = siswaId ? siswaList.find(x=>x.id===siswaId) : null;
@@ -3943,6 +3967,8 @@ function openPaymentForm(id){
 
   // Reset payment mode — default link, kecuali edit payment kredit
   _currentPaymentMode = (b?.creditMode === true) ? 'credit' : 'link';
+  const modeInput = document.getElementById('b-payment-mode');
+  if(modeInput) modeInput.value = _currentPaymentMode;
 
   document.getElementById('b-id').value=b?.id||'';
   document.getElementById('b-periode').value=b?.periode||'';
@@ -3999,6 +4025,9 @@ function savePayment(){
   if(jumlah <= 0){ showToast('Amount paid (Jumlah) cannot be zero!','warn'); return; }
   if(tagihan <= 0){ showToast('Invoice amount (Tagihan) cannot be zero!','warn'); return; }
 
+  // Baca mode dari hidden input (lebih reliable dari variabel global)
+  const paymentMode = document.getElementById('b-payment-mode')?.value || _currentPaymentMode || 'link';
+
   let sesiIds;
   let creditMode = false;
   let paidSessions = 0;
@@ -4014,7 +4043,7 @@ function savePayment(){
     if(sesiIds.length === 0){
       showToast('No attendance (Hadir) found for this period. Payment saved without session links.','warn');
     }
-  } else if(_currentPaymentMode === 'credit'){
+  } else if(paymentMode === 'credit'){
     // Credit mode: tidak perlu attendance dulu
     paidSessions = parseInt(document.getElementById('b-paid-sessions')?.value)||0;
     if(paidSessions <= 0){
@@ -4025,6 +4054,7 @@ function savePayment(){
     const existingBayar = editId ? bayarList.find(b=>b.id===editId) : null;
     sesiIds = existingBayar?.sesiIds || [];
     creditMode = true;
+    console.log(`[SavePayment] Credit mode: paidSessions=${paidSessions}, creditMode=${creditMode}`);
   } else {
     sesiIds = getSelectedSesiIds();
   }
