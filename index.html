@@ -3302,6 +3302,13 @@ function loadAbsensi(){
     hintEl.style.display='none';
   }
 
+  // Jika mode Single aktif, sync tanggal ke form single lalu stop
+  if(_attMode === 'single'){
+    const singleTgl = document.getElementById('single-att-tanggal');
+    if(singleTgl && !singleTgl.value) singleTgl.value = d;
+    return;
+  }
+
   const grid=document.getElementById('absen-grid');
   if(!siswaList.length){ grid.innerHTML='<div class="empty"><div class="ei">📋</div><p>Add students first.</p></div>'; return; }
   const existing={};
@@ -3363,13 +3370,15 @@ function setAttMode(mode){
   document.getElementById('att-mode-single').classList.toggle('primary', !isAll);
   document.getElementById('single-att-panel').style.display = isAll ? 'none' : 'block';
   document.getElementById('all-att-grid-card').style.display = isAll ? 'block' : 'none';
-  document.getElementById('form-payment-title') ; // no-op, just keeping structure
+  // Sembunyikan tombol Save Attendance (All) saat mode Single aktif
+  const saveBtn = document.querySelector('#page-attendance .sec-hd .btn.primary');
+  if(saveBtn) saveBtn.style.display = isAll ? '' : 'none';
 
   if(!isAll){
     // Isi dropdown siswa
     const sel = document.getElementById('single-att-siswa');
-    sel.innerHTML = '<option value="">-- Pilih Siswa --</option>' +
-      siswaList.map(s=>`<option value="${s.id}">${s.nama}${s.nick?' ('+s.nick+')':''}</option>`).join('');
+    const opts = siswaList.map(s=>`<option value="${s.id}">${s.nama}${s.nick?' ('+s.nick+')':''}</option>`).join('');
+    sel.innerHTML = '<option value="">-- Pilih Siswa --</option>' + opts;
     // Default tanggal = hari ini
     if(!document.getElementById('single-att-tanggal').value){
       document.getElementById('single-att-tanggal').value = new Date().toISOString().slice(0,10);
@@ -4809,6 +4818,13 @@ function updateSelects(){
   document.getElementById('r-siswa').innerHTML='<option value="">-- All Students --</option>'+opts;
   const filterEl=document.getElementById('eval-filter-siswa');
   if(filterEl) filterEl.innerHTML='<option value="">All Students</option>'+opts;
+  // Update single attendance dropdown jika panel sedang terbuka
+  const singleSel=document.getElementById('single-att-siswa');
+  if(singleSel && singleSel.options.length > 1){
+    const currentVal = singleSel.value;
+    singleSel.innerHTML='<option value="">-- Pilih Siswa --</option>'+opts;
+    singleSel.value = currentVal;
+  }
 }
 
 // ════════════════════════════════════════════════
