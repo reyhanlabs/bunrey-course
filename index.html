@@ -1739,7 +1739,16 @@ td.nowrap { white-space:nowrap }
             </div>
           </div>
 
-          <!-- SESSION PICKER -->
+          <!-- SESSION MODE TOGGLE -->
+          <div id="sesi-mode-group" style="margin-bottom:14px">
+            <label style="font-size:0.75rem;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase">Payment Mode</label>
+            <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+              <button id="pm-btn-link" class="btn sm primary" onclick="setPaymentMode('link')" style="flex:1;min-width:140px">📋 Link to Attendance</button>
+              <button id="pm-btn-credit" class="btn sm" onclick="setPaymentMode('credit')" style="flex:1;min-width:140px">💳 Pre-pay (Credit)</button>
+            </div>
+          </div>
+
+          <!-- SESSION PICKER (mode: link) -->
           <div class="form-group" id="sesi-picker-group">
             <label>📅 Sessions to Pay <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(select from attendance records)</span></label>
             <div id="sesi-picker-wrap" style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg3);max-height:220px;overflow-y:auto">
@@ -1749,6 +1758,26 @@ td.nowrap { white-space:nowrap }
               <button class="btn sm" onclick="selectAllSesi(true)">☑️ Select All</button>
               <button class="btn sm" onclick="selectAllSesi(false)">☐ Clear All</button>
               <span id="sesi-selected-count" style="font-size:0.8rem;color:var(--muted);align-self:center"></span>
+            </div>
+          </div>
+
+          <!-- CREDIT MODE PANEL (mode: credit) -->
+          <div id="credit-mode-panel" style="display:none;background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1.5px solid var(--teal);border-radius:14px;padding:16px 18px;margin-bottom:14px">
+            <div style="font-family:'Fredoka One',sans-serif;font-weight:800;color:var(--teal);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              💳 Pre-pay Credit Sesi
+              <span style="font-size:0.72rem;font-weight:700;background:var(--teal);color:#fff;border-radius:20px;padding:2px 10px">Credit</span>
+            </div>
+            <div style="font-size:0.83rem;color:var(--muted);margin-bottom:14px;line-height:1.6">
+              Orang tua membayar di muka untuk beberapa sesi ke depan. Sesi akan otomatis terhubung saat absensi dilakukan.
+            </div>
+            <div class="form-row" style="margin-bottom:0">
+              <div class="form-group" style="margin-bottom:0">
+                <label>Jumlah Sesi Dibayar *</label>
+                <input type="number" id="b-paid-sessions" min="1" max="50" placeholder="cth: 4" oninput="onCreditSessionCountChange()">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <div id="credit-calc-info" style="font-size:0.83rem;color:var(--muted);padding:10px 0;line-height:1.8"></div>
+              </div>
             </div>
           </div>
 
@@ -3306,7 +3335,38 @@ function saveAbsensi(){
       keterangan:document.getElementById(`att-ket-${s.id}`)?.value||'',
     });
   });
-  DB.set('absensi',absensiList); renderAttendance(); alert('✅ Attendance saved!');
+  DB.set('absensi',absensiList);
+
+  // ── Auto-link sesi hadir ke credit payment yang masih ada sisa ──
+  const linkedMessages = [];
+  siswaList.forEach(s=>{
+    const newRecord = absensiList.find(a=>a.tanggal===d && a.siswaId===s.id && a.status==='Hadir');
+    if(!newRecord) return;
+    // Cari credit payment yang masih ada sisa kredit untuk siswa ini
+    const creditPayment = bayarList.find(b=>
+      b.siswaId === s.id &&
+      b.creditMode === true &&
+      (b.sesiIds?.length||0) < (b.paidSessions||0) &&
+      !b.sesiIds?.includes(newRecord.id)
+    );
+    if(creditPayment){
+      creditPayment.sesiIds = [...(creditPayment.sesiIds||[]), newRecord.id];
+      const used = creditPayment.sesiIds.length;
+      const total = creditPayment.paidSessions;
+      linkedMessages.push(`${s.nama}: sesi dikaitkan ke kredit (${used}/${total})`);
+    }
+  });
+  if(linkedMessages.length){
+    DB.set('bayar', bayarList);
+    renderPayment();
+    updateUnpaidBadge(); updateMbnBadge();
+  }
+
+  renderAttendance();
+  const msg = linkedMessages.length
+    ? `✅ Attendance saved!\n\n💳 Auto-linked credit:\n${linkedMessages.join('\n')}`
+    : '✅ Attendance saved!';
+  alert(msg);
 }
 function setCurrentMonthAttFilter(){
   const now = new Date();
@@ -3664,6 +3724,65 @@ function switchPayTab(tab){
 }
 
 // ════════════════════════════════════════════════
+//  PAYMENT MODE (link vs credit)
+// ════════════════════════════════════════════════
+let _currentPaymentMode = 'link'; // 'link' | 'credit'
+
+function setPaymentMode(mode){
+  _currentPaymentMode = mode;
+  const isMonthly = (()=>{
+    const siswaId = document.getElementById('b-siswa').value;
+    const s = siswaId ? siswaList.find(x=>x.id===siswaId) : null;
+    return (s?.billingType||'per_session') === 'monthly';
+  })();
+  if(isMonthly) return; // monthly tidak pakai mode ini
+
+  const linkBtn   = document.getElementById('pm-btn-link');
+  const creditBtn = document.getElementById('pm-btn-credit');
+  const picker    = document.getElementById('sesi-picker-group');
+  const creditPanel = document.getElementById('credit-mode-panel');
+
+  if(mode === 'credit'){
+    linkBtn?.classList.remove('primary');
+    creditBtn?.classList.add('primary');
+    if(picker)      picker.style.display      = 'none';
+    if(creditPanel) creditPanel.style.display = 'block';
+    onCreditSessionCountChange();
+  } else {
+    linkBtn?.classList.add('primary');
+    creditBtn?.classList.remove('primary');
+    if(picker)      picker.style.display      = 'block';
+    if(creditPanel) creditPanel.style.display = 'none';
+    loadSesiForPayment();
+  }
+}
+
+function onCreditSessionCountChange(){
+  const siswaId = document.getElementById('b-siswa').value;
+  const s = siswaId ? siswaList.find(x=>x.id===siswaId) : null;
+  const count = parseInt(document.getElementById('b-paid-sessions')?.value)||0;
+  const infoEl = document.getElementById('credit-calc-info');
+  if(!infoEl) return;
+
+  if(!s){ infoEl.textContent='Pilih siswa terlebih dahulu.'; return; }
+  const fee = s.feePerSesi || 0;
+  if(!fee){ infoEl.innerHTML='⚠️ Belum ada fee/session di profil siswa.'; return; }
+  if(!count){ infoEl.textContent=''; return; }
+
+  const total = count * fee;
+  infoEl.innerHTML = `
+    <span style="color:var(--teal);font-weight:700">${count} sesi × ${fmt(fee)} = ${fmt(total)}</span><br>
+    <span style="color:var(--muted);font-size:0.78rem">Sesi akan otomatis terisi saat absensi dilakukan</span>
+  `;
+
+  if(!_paymentAmountManuallyEdited){
+    const formatted = 'Rp ' + Number(total).toLocaleString('id-ID');
+    document.getElementById('b-tagihan').value = formatted;
+    document.getElementById('b-jumlah').value  = formatted;
+  }
+}
+
+// ════════════════════════════════════════════════
 //  SESSION PICKER (for payment form)
 // ════════════════════════════════════════════════
 function loadSesiForPayment(){
@@ -3821,6 +3940,10 @@ function openPaymentForm(id){
   const b=id?bayarList.find(x=>x.id===id):null;
   // Reset flag: edit = sudah ada nilai (anggap manual), baru = belum ada
   _paymentAmountManuallyEdited = !!b;
+
+  // Reset payment mode — default link, kecuali edit payment kredit
+  _currentPaymentMode = (b?.creditMode === true) ? 'credit' : 'link';
+
   document.getElementById('b-id').value=b?.id||'';
   document.getElementById('b-periode').value=b?.periode||'';
   document.getElementById('b-tanggal').value=b?.tanggal||new Date().toISOString().slice(0,10);
@@ -3828,6 +3951,10 @@ function openPaymentForm(id){
   document.getElementById('b-tagihan').value=b?.tagihan||'';
   document.getElementById('b-status').value=b?.status||'Lunas';
   document.getElementById('b-catatan').value=b?.catatan||'';
+
+  // Restore jumlah sesi di credit mode jika edit
+  const paidSessEl = document.getElementById('b-paid-sessions');
+  if(paidSessEl) paidSessEl.value = b?.paidSessions||'';
   
   // ✨ Format number inputs + track manual edit
   formatNumberInput('b-jumlah');
@@ -3845,7 +3972,9 @@ function openPaymentForm(id){
     const opts=siswaList.map(s=>`<option value="${s.id}"${s.id===b.siswaId?' selected':''}>${s.nama}</option>`).join('');
     document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
     onPaymentStudentChange();
-    setTimeout(()=>renderSesiChecksForEdit(b.sesiIds||[]),50);
+    if(_currentPaymentMode === 'link'){
+      setTimeout(()=>renderSesiChecksForEdit(b.sesiIds||[]),50);
+    }
   } else {
     document.getElementById('b-siswa').value='';
     onPaymentStudentChange();
@@ -3871,19 +4000,31 @@ function savePayment(){
   if(tagihan <= 0){ showToast('Invoice amount (Tagihan) cannot be zero!','warn'); return; }
 
   let sesiIds;
+  let creditMode = false;
+  let paidSessions = 0;
+
   if(isMonthly){
     if(!periode){
       showToast('Period is required for monthly billing! (e.g. July 2026)','warn'); return;
     }
     sesiIds = getMonthlySessionIds(siswaId, periode);
     if(sesiIds === null){
-      // Periode tidak bisa di-parse — tolak simpan agar tidak terjadi link salah bulan
       showToast('Period format not recognized. Use format: "July 2026" or "Juli 2026"','warn'); return;
     }
     if(sesiIds.length === 0){
-      // Parse OK tapi tidak ada sesi hadir di bulan itu — izinkan simpan dengan warning
       showToast('No attendance (Hadir) found for this period. Payment saved without session links.','warn');
     }
+  } else if(_currentPaymentMode === 'credit'){
+    // Credit mode: tidak perlu attendance dulu
+    paidSessions = parseInt(document.getElementById('b-paid-sessions')?.value)||0;
+    if(paidSessions <= 0){
+      showToast('Masukkan jumlah sesi yang dibayar!','warn'); return;
+    }
+    // Pertahankan sesiIds yang sudah ada (jika edit payment kredit)
+    const editId = document.getElementById('b-id').value;
+    const existingBayar = editId ? bayarList.find(b=>b.id===editId) : null;
+    sesiIds = existingBayar?.sesiIds || [];
+    creditMode = true;
   } else {
     sesiIds = getSelectedSesiIds();
   }
@@ -3897,6 +4038,8 @@ function savePayment(){
     status:document.getElementById('b-status').value,
     catatan:document.getElementById('b-catatan').value.trim(),
     sesiIds,
+    creditMode,
+    paidSessions,
     billingType: isMonthly ? 'monthly' : 'per_session',
   };
   if(id){ const i=bayarList.findIndex(b=>b.id===id); if(i>-1) bayarList[i]={...bayarList[i],...data}; }
@@ -3943,13 +4086,20 @@ function onPaymentStudentChange(){
   const siswaId=document.getElementById('b-siswa').value;
   const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
   const isMonthly=(s?.billingType||'per_session')==='monthly';
+
   // show/hide panels
   document.getElementById('monthly-pay-panel').style.display=isMonthly?'block':'none';
-  document.getElementById('sesi-picker-group').style.display=isMonthly?'none':'block';
+  const modeGroup = document.getElementById('sesi-mode-group');
+  if(modeGroup) modeGroup.style.display = isMonthly ? 'none' : 'block';
+
   if(isMonthly){
+    document.getElementById('sesi-picker-group').style.display='none';
+    const cp = document.getElementById('credit-mode-panel');
+    if(cp) cp.style.display='none';
     refreshMonthlyPanel();
   } else {
-    loadSesiForPayment();
+    // Terapkan mode yang sedang aktif
+    setPaymentMode(_currentPaymentMode);
   }
 }
 
@@ -4127,27 +4277,41 @@ function renderPayment(){
     const sl=b.status==='Lunas'?'Paid':b.status==='Cicil'?'Partial':'Unpaid';
     // Build session chips — filtered by selected date range
     let sesiHtml = '-';
-    if(b.sesiIds && b.sesiIds.length){
-      const filteredSids = b.sesiIds.filter(sid=>{
+    const isCreditMode = b.creditMode === true;
+    const paidCount  = b.paidSessions || (b.sesiIds?.length||0);
+    const usedIds    = b.sesiIds || [];
+    const usedCount  = usedIds.length;
+    const remaining  = Math.max(0, paidCount - usedCount);
+
+    if(isCreditMode){
+      // Credit mode: tampilkan badge kredit
+      const creditBadge = `<span style="font-size:0.72rem;font-weight:700;background:rgba(0,201,167,0.15);color:var(--teal);border-radius:4px;padding:1px 6px;border:1px solid rgba(0,201,167,0.3)">💳 Credit</span>`;
+      const usedBadge   = usedCount > 0
+        ? usedIds.map(sid=>{ const a=absensiList.find(x=>x.id===sid); return a?`<span class="session-chip paid" title="${tglFmt(a.tanggal)}">${tglFmt(a.tanggal)}</span>`:''; }).filter(Boolean).join('')
+        : '';
+      const remBadge = remaining > 0
+        ? `<span style="font-size:0.72rem;color:var(--yellow)">⏳ ${remaining} sisa</span>`
+        : `<span style="font-size:0.72rem;color:var(--green)">✅ lunas</span>`;
+      sesiHtml = `<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">${creditBadge} <span style="font-size:0.75rem;color:var(--muted)">${usedCount}/${paidCount}</span> ${usedBadge} ${remBadge}</div>`;
+    } else if(usedIds.length){
+      const filteredSids = usedIds.filter(sid=>{
         const a = absensiList.find(x=>x.id===sid);
         if(!a) return false;
         if(fDari   && a.tanggal < fDari)   return false;
         if(fSampai && a.tanggal > fSampai) return false;
         return true;
       });
-      const allCount = b.sesiIds.length;
+      const allCount = usedIds.length;
       const chips = filteredSids.map(sid=>{
         const a = absensiList.find(x=>x.id===sid);
         return a ? `<span class="session-chip paid" title="${tglFmt(a.tanggal)}">${tglFmt(a.tanggal)}</span>` : '';
       }).filter(Boolean).join('');
       if(filteredSids.length > 0){
         sesiHtml = chips;
-        // Show note if some sessions are outside filter range
         if(filteredSids.length < allCount){
           sesiHtml += `<span style="color:var(--muted);font-size:0.72rem;display:block;margin-top:3px">+${allCount-filteredSids.length} more outside range</span>`;
         }
       } else {
-        // All sessions are outside filter range — still show count dimmed
         sesiHtml = `<span style="color:var(--muted);font-size:0.78rem">${allCount} session(s) — outside filter range</span>`;
       }
     }
@@ -4186,7 +4350,14 @@ function updateUnpaidBadge(){
       });
       if([...sessionMonths].some(ym=>!paidMonths.has(ym))) n++;
     } else {
-      if(absensiList.some(a=>a.siswaId===s.id&&a.status==='Hadir'&&!paidSesiIds.has(a.id))) n++;
+      const unpaidCount = absensiList.filter(a=>a.siswaId===s.id&&a.status==='Hadir'&&!paidSesiIds.has(a.id)).length;
+      if(unpaidCount > 0){
+        // Kurangi dengan kredit sisa
+        const creditLeft = bayarList
+          .filter(b=>b.siswaId===s.id && b.creditMode===true)
+          .reduce((sum,b)=>sum + Math.max(0,(b.paidSessions||0)-(b.sesiIds?.length||0)), 0);
+        if(unpaidCount - creditLeft > 0) n++;
+      }
     }
   });
   const el=document.getElementById('unpaid-badge');
@@ -4252,33 +4423,55 @@ function renderHutangSesi(){
             <div class="st-sessions">${monthChips}</div>
           </div>`;
       } else {
-        // ── Per-session mode: existing logic ──
+        // ── Per-session mode ──
+        // Hitung sesi yang sudah di-cover credit payment (meski belum linked ke attendance)
+        const creditCoveredCount = bayarList
+          .filter(b => b.siswaId === siswa.id && b.creditMode === true)
+          .reduce((sum, b) => {
+            const used  = b.sesiIds?.length || 0;
+            const total = b.paidSessions    || 0;
+            return sum + Math.max(0, total - used); // kredit sisa yang belum dipakai
+          }, 0);
+
         const sesiHadir = absensiList
           .filter(a => a.siswaId === siswa.id && a.status === 'Hadir')
           .sort((a,b) => a.tanggal.localeCompare(b.tanggal));
         const unpaidSesi = sesiHadir.filter(a => !paidSesiIds.has(a.id));
-        if(!unpaidSesi.length) return;
+
+        // Kurangi hutang dengan saldo kredit yang masih ada
+        const effectiveUnpaid = Math.max(0, unpaidSesi.length - creditCoveredCount);
+        if(!effectiveUnpaid && !unpaidSesi.length) return;
+        if(unpaidSesi.length === 0) return; // tidak ada hutang sama sekali
         anyUnpaid = true;
         const pctPaid = sesiHadir.length ? Math.round(((sesiHadir.length - unpaidSesi.length)/sesiHadir.length)*100) : 0;
         const fee = siswa.feePerSesi || 0;
-        const totalHutang = fee ? unpaidSesi.length * fee : null;
+        const effectiveDebt = Math.max(0, unpaidSesi.length - creditCoveredCount);
+        const totalHutang = fee ? effectiveDebt * fee : null;
+        const creditInfo = creditCoveredCount > 0
+          ? `<span style="color:var(--teal);font-size:0.78rem">💳 ${creditCoveredCount} sesi di-cover kredit</span>`
+          : '';
         const feeInfo = fee
-          ? `<span style="color:var(--red);font-weight:700">Total: ${fmt(totalHutang)}</span>`
+          ? `<span style="color:${effectiveDebt>0?'var(--red)':'var(--green)'};font-weight:700">${effectiveDebt>0?'Total hutang: '+fmt(totalHutang):'✅ Tertutup oleh kredit'}</span>`
           : `<span style="color:var(--muted);font-size:0.75rem">⚠️ Set fee/session in student profile</span>`;
+        // Chip sesi: tandai mana yang akan di-cover kredit
+        const unpaidChips = unpaidSesi.map((a,i)=>{
+          const coveredByCredit = i < creditCoveredCount;
+          return coveredByCredit
+            ? `<span class="session-chip" style="background:rgba(0,201,167,0.12);color:var(--teal);border:1px solid rgba(0,201,167,0.3)" title="Akan di-cover kredit">💳 ${tglFmt(a.tanggal)}</span>`
+            : `<span class="session-chip unpaid" title="${a.tanggal}">📅 ${tglFmt(a.tanggal)}</span>`;
+        }).join('');
         listEl.innerHTML += `
           <div class="sesi-tracker-card">
             <div class="st-header">
               <div>
                 <div class="st-name">👤 ${siswa.nama}${siswa.nick ? ` <span style="color:var(--muted);font-weight:500;font-size:0.8rem">(${siswa.nick})</span>` : ''}</div>
-                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidSesi.length} unpaid session(s) · ${sesiHadir.length} total present · ${pctPaid}% paid</div>
-                <div style="margin-top:4px;font-size:0.8rem">${feeInfo}</div>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px">${unpaidSesi.length} session(s) belum linked · ${sesiHadir.length} total hadir · ${pctPaid}% paid</div>
+                <div style="margin-top:4px;font-size:0.8rem;display:flex;gap:10px;flex-wrap:wrap">${feeInfo} ${creditInfo}</div>
               </div>
-              <button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Record Payment</button>
+              ${effectiveDebt > 0 ? `<button class="btn sm primary" onclick="openPaymentFormForStudent('${siswa.id}')">💰 Record Payment</button>` : ''}
             </div>
             <div class="pbar-wrap" style="margin-bottom:10px"><div class="pbar-fill" style="width:${pctPaid}%"></div></div>
-            <div class="st-sessions">
-              ${unpaidSesi.map(a=>`<span class="session-chip unpaid" title="${a.tanggal}">📅 ${tglFmt(a.tanggal)}</span>`).join('')}
-            </div>
+            <div class="st-sessions">${unpaidChips}</div>
           </div>`;
       }
     });
@@ -4355,13 +4548,37 @@ function _buildReceiptBodyHTML(b,siswa){
     if(siswa?.hari) rows.push(['Class Schedule', siswa.hari]);
     rows.push(['Coverage', 'All sessions in period covered']);
   } else {
-    // Per Session: show each session date that was paid
-    if(b.sesiIds && b.sesiIds.length){
-      const sesiLabels = b.sesiIds.map(id=>{
-        const a = absensiList.find(x=>x.id===id);
-        return a ? tglFmt(a.tanggal) : id;
-      }).join(', ');
-      rows.push(['Sessions Paid ('+b.sesiIds.length+'x)', sesiLabels]);
+    const isCreditMode = b.creditMode === true;
+    const paidCount = b.paidSessions || (b.sesiIds?.length||0);
+    const usedIds   = b.sesiIds || [];
+    const usedCount = usedIds.length;
+    const remaining = Math.max(0, paidCount - usedCount);
+
+    if(isCreditMode){
+      // Credit mode: tampilkan saldo kredit
+      rows.push(['Sessions Purchased', paidCount + ' sesi']);
+      if(usedCount > 0){
+        const usedLabels = usedIds.map(id=>{
+          const a = absensiList.find(x=>x.id===id);
+          return a ? tglFmt(a.tanggal) : '?';
+        }).join(', ');
+        rows.push(['Sessions Used (' + usedCount + 'x)', usedLabels]);
+      } else {
+        rows.push(['Sessions Used', '— (belum ada sesi)']);
+      }
+      rows.push([
+        'Remaining Credit',
+        remaining > 0 ? '⏳ ' + remaining + ' sesi belum terjadwal' : '✅ Semua sesi sudah digunakan'
+      ]);
+    } else {
+      // Link mode: tampilkan tanggal sesi seperti biasa
+      if(usedCount > 0){
+        const sesiLabels = usedIds.map(id=>{
+          const a = absensiList.find(x=>x.id===id);
+          return a ? tglFmt(a.tanggal) : id;
+        }).join(', ');
+        rows.push(['Sessions Paid ('+usedCount+'x)', sesiLabels]);
+      }
     }
   }
   return {rno,stc,stl,rows};
