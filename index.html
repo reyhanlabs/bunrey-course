@@ -550,13 +550,39 @@ td.nowrap { white-space:nowrap }
 }
 
 /* ── MOBILE HAMBURGER ── */
-.hamburger { display:none;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;padding:4px }
+.hamburger { display:none;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;padding:4px;flex-shrink:0 }
+
+/* ── SIDEBAR OVERLAY BACKDROP (mobile) ── */
+#sidebar-backdrop {
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:49;
+}
+#sidebar-backdrop.show { display:block }
+
 @media(max-width:768px){
-  #sidebar { position:fixed;left:-100%;transition:left .25s;box-shadow:4px 0 30px rgba(0,0,0,0.3) }
+  #sidebar { position:fixed;left:-100%;transition:left .25s;box-shadow:4px 0 30px rgba(0,0,0,0.3);z-index:50 }
   #sidebar.open { left:0 }
   .hamburger { display:block }
-  .page-content { padding:16px }
-  .topbar { padding:0 16px }
+  .page-content { padding:12px }
+  .topbar { padding:0 10px;gap:8px }
+
+  /* Search — icon only on mobile, expand on focus */
+  .global-search { max-width:36px;transition:max-width .25s }
+  .global-search.active { max-width:160px }
+  .global-search input { padding-left:32px }
+
+  /* Class switcher — lebih compact */
+  .class-switcher { max-width:120px;padding:4px 8px 4px 10px;font-size:0.75rem }
+
+  /* Sync — hanya dot, sembunyikan label */
+  #sync-label { display:none }
+
+  /* User chip — hanya avatar, sembunyikan nama */
+  #user-name { display:none }
+  .user-chip { padding:3px 6px }
+
+  /* Toast — naik dari atas MBN */
+  #toast-container { bottom:72px;right:12px;left:12px }
+  .toast { min-width:unset;width:100% }
 }
 
 /* ── SCROLLBAR ── */
@@ -1244,6 +1270,9 @@ td.nowrap { white-space:nowrap }
   </div>
 </div>
 
+<!-- SIDEBAR BACKDROP (mobile) -->
+<div id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
 <!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sb-logo">
@@ -1283,7 +1312,7 @@ td.nowrap { white-space:nowrap }
       <!-- Global Search -->
       <div class="global-search" id="global-search-wrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="global-search" placeholder="Search student profile…" oninput="globalSearch(this.value)" onblur="setTimeout(()=>closeSearch(),200)">
+        <input type="text" id="global-search" placeholder="Search student profile…" oninput="globalSearch(this.value)" onfocus="document.getElementById('global-search-wrap').classList.add('active')" onblur="setTimeout(()=>{closeSearch();document.getElementById('global-search-wrap').classList.remove('active')},200)">
         <div class="search-results" id="search-results"></div>
       </div>
       <!-- Class Switcher -->
@@ -2980,14 +3009,19 @@ function navigate(page){
   if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
   if(page==='payment') { setCurrentMonthFilter(); }
   if(page==='attendance') { setCurrentMonthAttFilter(); }
-  if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
+  if(window.innerWidth<=768) closeSidebar();
   // Sync mobile bottom nav
   document.querySelectorAll('.mbn-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.page===page);
   });
 }
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.page)));
-function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open') }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-backdrop').classList.toggle('show'); }
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('show');
+}
 
 // ════════════════════════════════════════════════
 //  THEME
