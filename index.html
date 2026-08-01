@@ -3146,6 +3146,15 @@ function _finishSaveStudent(id, finalId, data){
   if(id){
     const i=siswaList.findIndex(s=>s.id===id);
     if(i>-1) siswaList[i]={...siswaList[i],...data};
+    // Sync namaSiswa di absensi, evaluasi, dan bayar jika nama berubah
+    if(data.nama){
+      absensiList.forEach(a=>{ if(a.siswaId===id) a.namaSiswa=data.nama; });
+      evaluasiList.forEach(e=>{ if(e.siswaId===id) e.namaSiswa=data.nama; });
+      bayarList.forEach(b=>{ if(b.siswaId===id) b.namaSiswa=data.nama; });
+      DB.set('absensi',  absensiList);
+      DB.set('evaluasi', evaluasiList);
+      DB.set('bayar',    bayarList);
+    }
   } else {
     siswaList.push({id:finalId,...data});
   }
@@ -3153,14 +3162,59 @@ function _finishSaveStudent(id, finalId, data){
   _commitSchedules(finalId);
   DB.set('siswa',siswaList);
   DB.set('schedules',scheduleList);
-  closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge();
+  closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge(); updateMbnBadge();
   if(document.getElementById('page-payment').classList.contains('active')) renderPayment();
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+  showToast(`✅ Student ${id?'updated':'added'} successfully.`,'success');
 }
 function deleteStudent(id){
   const s = siswaList.find(x=>x.id===id);
-  dangerModal('🗑️ Delete Student', `Are you sure you want to delete <strong>${s?.nama||'this student'}</strong>? All their data will be removed.`,
-    ()=>{ siswaList=siswaList.filter(s=>s.id!==id); DB.set('siswa',siswaList); renderStudents(); updateSelects(); },
-    { okText:'Delete', cancelText:'Keep' }
+  if(!s) return;
+
+  // ── Hitung data terkait ──
+  const attCount  = absensiList.filter(a=>a.siswaId===id).length;
+  const payCount  = bayarList.filter(b=>b.siswaId===id).length;
+  const evalCount = evaluasiList.filter(e=>e.siswaId===id).length;
+
+  // ── BLOKIR jika ada payment ──
+  if(payCount > 0){
+    infoModal(
+      '🚫 Cannot Delete Student',
+      `<strong>${s.nama}</strong> has <strong style="color:var(--red)">${payCount} payment record(s)</strong> on file.<br><br>` +
+      `Please delete all payment records for this student first, then try again.`
+    );
+    return;
+  }
+
+  // ── BLOKIR jika ada absensi ──
+  if(attCount > 0){
+    infoModal(
+      '🚫 Cannot Delete Student',
+      `<strong>${s.nama}</strong> has <strong style="color:var(--yellow)">${attCount} attendance record(s)</strong> on file.<br><br>` +
+      `Please delete all attendance records for this student first, then try again.`
+    );
+    return;
+  }
+
+  // ── Boleh hapus: hanya ada evaluasi dan/atau jadwal (tidak ada jejak finansial/kehadiran) ──
+  const extraInfo = evalCount ? `and ${evalCount} evaluation record(s) ` : '';
+  dangerModal(
+    '🗑️ Delete Student',
+    `Are you sure you want to delete <strong>${s.nama}</strong>? ` +
+    (extraInfo ? `Their evaluation records ${extraInfo}will also be removed.` : '') +
+    `<br><br>This action cannot be undone.`,
+    ()=>{
+      siswaList    = siswaList.filter(x=>x.id!==id);
+      evaluasiList = evaluasiList.filter(e=>e.siswaId!==id);
+      scheduleList = scheduleList.filter(sc=>sc.siswaId!==id);
+      DB.set('siswa',    siswaList);
+      DB.set('evaluasi', evaluasiList);
+      DB.set('schedules',scheduleList);
+      renderStudents(); updateSelects(); updateUnpaidBadge(); updateMbnBadge();
+      if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+      showToast(`✅ ${s.nama} deleted.`, 'success');
+    },
+    { okText:'Delete', cancelText:'Cancel' }
   );
 }
 
@@ -4050,6 +4104,8 @@ function renderSesiChecksForEdit(sesiIds){
 // ════════════════════════════════════════════════
 function openPaymentForm(id){
   const b=id?bayarList.find(x=>x.id===id):null;
+  // Pastikan tab aktif adalah 'rekap' agar form payment terlihat
+  switchPayTab('rekap');
   // Reset flag: edit = sudah ada nilai (anggap manual), baru = belum ada
   _paymentAmountManuallyEdited = !!b;
   document.getElementById('b-id').value=b?.id||'';
@@ -4140,6 +4196,8 @@ function savePayment(){
   else bayarList.push({id:uid(),...data});
   DB.set('bayar',bayarList);
   closePaymentForm(); renderPayment(); updateUnpaidBadge(); updateMbnBadge();
+  // Refresh hutang tab jika sedang aktif
+  if(document.getElementById('ptab-hutang')?.classList.contains('active')) renderHutangSesi();
   if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
   showToast('✅ Payment saved!','success');
 }
@@ -4269,6 +4327,7 @@ function deletePayment(id){
       DB.set('bayar', bayarList);
       renderPayment();
       updateUnpaidBadge(); updateMbnBadge();
+      if(document.getElementById('ptab-hutang')?.classList.contains('active')) renderHutangSesi();
       if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
       showToast('✅ Payment deleted', 'success');
     },
@@ -5424,15 +5483,16 @@ function showToast(msg, type='info', duration=3500){
 function showModalDialog(title, message, onConfirm, options = {}) {
   const { okText = 'OK', cancelText = 'Cancel', type = 'confirm' } = options;
   const modalId = 'modal-dialog-' + Date.now();
+  const cancelBtn = cancelText !== null
+    ? `<button class="btn secondary" onclick="closeModalDialog('${modalId}')">${cancelText}</button>`
+    : '';
   const overlayHTML = `
     <div class="overlay open" id="${modalId}">
       <div class="modal modal-sm">
         <div class="modal-title">${title}</div>
         <div class="modal-content">${message}</div>
-        <div class="modal-footer">
-          <button class="btn secondary" onclick="closeModalDialog('${modalId}')">
-            ${cancelText}
-          </button>
+        <div class="modal-footer ${cancelText === null ? 'center' : ''}">
+          ${cancelBtn}
           <button class="btn ${type === 'danger' ? 'danger' : (type === 'success' ? 'success' : 'primary')}" 
                   onclick="confirmModalDialog('${modalId}')">
             ${okText}
@@ -5469,7 +5529,7 @@ function warningModal(title, message, onConfirm, options = {}) {
 function dangerModal(title, message, onConfirm, options = {}) {
   showModalDialog(title, message, onConfirm, {
     okText: options.okText || 'Delete',
-    cancelText: options.cancelText || 'Cancel',
+    cancelText: options.cancelText !== undefined ? options.cancelText : 'Cancel',
     type: 'danger'
   });
 }
