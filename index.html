@@ -2190,15 +2190,17 @@ td.nowrap { white-space:nowrap }
       <select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select Student --</option></select>
     </div>
 
-    <!-- ── MONTHLY BILLING PANEL ── -->
-    <div id="monthly-pay-panel" style="display:none;background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1.5px solid var(--accent);border-radius:14px;padding:16px 18px;margin-top:12px">
+    <!-- Period — selalu tampil untuk semua billing type (label di payment history) -->
+    <div class="form-group" style="margin-top:8px">
+      <label>Month / Period</label>
+      <input type="text" id="b-periode" placeholder="e.g. August 2026" oninput="refreshMonthlyPanel()">
+    </div>
+
+    <!-- ── MONTHLY BILLING PANEL (auto-fill, hanya untuk monthly) ── -->
+    <div id="monthly-pay-panel" style="display:none;background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1.5px solid var(--accent);border-radius:14px;padding:16px 18px;margin-top:4px">
       <div style="font-family:'Fredoka One',sans-serif;font-weight:800;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px">
         📅 Monthly Billing
         <span id="mpp-badge" style="font-size:0.72rem;font-weight:700;background:var(--accent);color:#fff;border-radius:20px;padding:2px 10px">Monthly</span>
-      </div>
-      <div class="form-group" style="margin-top:0;margin-bottom:10px">
-        <label style="color:var(--text)">Month / Period</label>
-        <input type="text" id="b-periode" placeholder="e.g. August 2026" oninput="refreshMonthlyPanel()">
       </div>
       <div id="monthly-pay-body" style="font-size:0.87rem;color:var(--text);line-height:2"></div>
       <div style="margin-top:12px">
