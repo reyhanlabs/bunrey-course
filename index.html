@@ -2435,6 +2435,8 @@ async function switchClass(classId){
   userDocRef = db.collection('workspace').doc(classId);
   localStorage.setItem('lastClassId', classId);
   updateClassSwitcherUI(cls);
+  // Update badge Active di daftar kelas
+  renderClassListUI();
   // Tutup semua form/modal yang sedang terbuka sebelum ganti kelas
   closeAllFormsAndModals();
   // Clear data before loading new class
