@@ -3080,6 +3080,30 @@ function saveStudent(){
   let finalId;
   if(id){
     finalId = id;
+
+    // ✅ FIX: Detect billing type change and migrate existing payment records
+    // When student switches from per_session ↔ monthly, old payments must be
+    // migrated so they remain visible in the payment tracker and outstanding calc.
+    const existing = siswaList.find(s=>s.id===id);
+    const oldBillingType = existing?.billingType || 'per_session';
+    if(existing && oldBillingType !== billingType){
+      const affectedPayments = bayarList.filter(b => b.siswaId === id);
+      if(affectedPayments.length > 0){
+        const oldLabel = oldBillingType === 'monthly' ? 'Monthly' : 'Per Session';
+        const newLabel = billingType === 'monthly' ? 'Monthly' : 'Per Session';
+        const confirmed = confirm(
+          `⚠️ Billing type change detected!\n\n` +
+          `Student "${nama}" is switching from ${oldLabel} → ${newLabel}.\n\n` +
+          `${affectedPayments.length} existing payment record(s) will have their billing type updated to match. ` +
+          `This ensures old payments remain visible in the payment tracker.\n\nContinue?`
+        );
+        if(!confirmed) return;
+        bayarList.forEach(b => { if(b.siswaId === id) b.billingType = billingType; });
+        DB.set('bayar', bayarList);
+        showToast(`✅ ${affectedPayments.length} payment record(s) updated to ${newLabel} billing.`, 'success');
+      }
+    }
+
     const i=siswaList.findIndex(s=>s.id===id);
     if(i>-1) siswaList[i]={...siswaList[i],...data};
   } else {
@@ -3093,6 +3117,7 @@ function saveStudent(){
   DB.set('siswa',siswaList);
   DB.set('schedules',scheduleList);
   closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge();
+  if(document.getElementById('page-payment').classList.contains('active')) renderPayment();
 }
 function deleteStudent(id){
   if(!confirm('Delete this student?')) return;
@@ -3826,6 +3851,12 @@ function loadSesiForPayment(){
   const siswaId = document.getElementById('b-siswa').value;
   const wrap    = document.getElementById('sesi-picker-wrap');
   const countEl = document.getElementById('sesi-selected-count');
+
+  // ✅ FIX: Always clear wrap + reset count display before rendering
+  // Prevents stale checkboxes from a previous form session being counted
+  wrap.innerHTML = '';
+  if(countEl) countEl.textContent = '';
+
   if(!siswaId){ wrap.innerHTML='<div style="color:var(--muted);font-size:0.83rem">Please select a student first.</div>'; return; }
 
   // Get the payment ID being edited (if any)
@@ -4001,8 +4032,14 @@ function openPaymentForm(id){
     const opts=siswaList.map(s=>`<option value="${s.id}"${s.id===b.siswaId?' selected':''}>${s.nama}</option>`).join('');
     document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
     onPaymentStudentChange();
+    // ✅ FIX: Only restore checked sessions when editing an existing payment
+    // For new payments (b is null), this block is skipped entirely — no stale sesiIds
     setTimeout(()=>renderSesiChecksForEdit(b.sesiIds||[]),50);
   } else {
+    // ✅ FIX: For new payment, explicitly clear tagihan & jumlah AFTER formatNumberInput
+    // to ensure no leftover value from a previous form session
+    document.getElementById('b-tagihan').value='';
+    document.getElementById('b-jumlah').value='';
     document.getElementById('b-siswa').value='';
     onPaymentStudentChange();
   }
@@ -4095,10 +4132,25 @@ function parsePeriodeToYearMonth(text){
 function onPaymentStudentChange(){
   // Ganti siswa = reset flag manual edit agar auto-kalkulasi aktif kembali
   // (kecuali sedang mode edit payment yang sudah ada)
-  if(!document.getElementById('b-id').value) _paymentAmountManuallyEdited = false;
+  const isEditMode = !!document.getElementById('b-id').value;
+  if(!isEditMode) _paymentAmountManuallyEdited = false;
   const siswaId=document.getElementById('b-siswa').value;
   const s=siswaId?siswaList.find(x=>x.id===siswaId):null;
   const isMonthly=(s?.billingType||'per_session')==='monthly';
+
+  // ✅ FIX: Clear sesi-picker and reset nominal when student changes (not edit mode)
+  // Prevents stale checkboxes from previous student causing wrong total
+  if(!isEditMode){
+    const wrap = document.getElementById('sesi-picker-wrap');
+    if(wrap) wrap.innerHTML='';
+    const countEl = document.getElementById('sesi-selected-count');
+    if(countEl) countEl.textContent='';
+    if(!_paymentAmountManuallyEdited){
+      document.getElementById('b-tagihan').value='';
+      document.getElementById('b-jumlah').value='';
+    }
+  }
+
   // show/hide panels
   document.getElementById('monthly-pay-panel').style.display=isMonthly?'block':'none';
   document.getElementById('sesi-picker-group').style.display=isMonthly?'none':'block';
