@@ -2660,22 +2660,31 @@ function _isEditFormOpen(){
 function subscribeToClassUpdates(){
   if(_unsubscribeSnapshot){ _unsubscribeSnapshot(); _unsubscribeSnapshot=null; }
   if(!userDocRef) return;
-  _unsubscribeSnapshot = userDocRef.onSnapshot({includeMetadataChanges: true}, snap => {
-    // Abaikan selama ada pending write (local echo belum confirm)
+
+  // Snapshot pertama dari onSnapshot SELALU berisi current state dokumen —
+  // bukan perubahan baru. Kita sudah punya data ini dari loadFromFirestore().
+  // Tandai snapshot pertama agar diabaikan.
+  let _isFirstSnapshot = true;
+
+  _unsubscribeSnapshot = userDocRef.onSnapshot(snap => {
+    // Snapshot pertama: abaikan, hanya set flag ready
+    if(_isFirstSnapshot){ _isFirstSnapshot = false; return; }
+
+    // Abaikan selama ada pending write milik kita (local echo)
     if(snap.metadata.hasPendingWrites) return;
     if(!snap.exists) return;
     const d = snap.data();
 
-    // Abaikan jika snapshot ini ditulis oleh session kita sendiri
+    // Abaikan jika session ID cocok = kita sendiri yang nulis
     if(d._sessionId === _sessionId) return;
 
-    // Jika form input sedang terbuka, warning saja
+    // Jika form input sedang terbuka, warning saja tanpa overwrite
     if(_isEditFormOpen()){
       showToast('⚠️ Data diperbarui dari device lain. Selesaikan/tutup form ini lalu refresh halaman.', 'warn', 8000);
       return;
     }
 
-    // Snapshot benar-benar dari device/session lain — terapkan
+    // Benar-benar dari device/session lain — terapkan
     siswaList    = d.siswa    || [];
     absensiList  = d.absensi  || [];
     materiList   = d.materi   || [];
