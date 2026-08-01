@@ -2291,8 +2291,9 @@ function signInGoogle(){
   });
 }
 function signOutUser(){
-  if(!confirm('Sign out?')) return;
-  auth.signOut();
+  showModalDialog('🚪 Sign Out', 'Are you sure you want to sign out?', ()=>auth.signOut(), {
+    okText:'Sign Out', cancelText:'Cancel', type:'danger'
+  });
 }
 
 auth.onAuthStateChanged(async user => {
@@ -2413,6 +2414,19 @@ async function saveClassesList(){
   await db.collection('workspace').doc('classes').set({ list: classesList });
 }
 
+function closeAllFormsAndModals(){
+  // Tutup semua .form-panel yang sedang open
+  document.querySelectorAll('.form-panel.open').forEach(p=>{
+    p.classList.add('hidden');
+    p.classList.remove('open');
+    p.style.maxHeight = '0';
+  });
+  // Tutup semua .overlay yang sedang open (modal), kecuali modal-classes
+  document.querySelectorAll('.overlay.open').forEach(m=>{
+    if(m.id !== 'modal-classes') m.classList.remove('open');
+  });
+}
+
 async function switchClass(classId){
   const cls = classesList.find(c=>c.id===classId);
   if(!cls) return;
@@ -2421,12 +2435,19 @@ async function switchClass(classId){
   userDocRef = db.collection('workspace').doc(classId);
   localStorage.setItem('lastClassId', classId);
   updateClassSwitcherUI(cls);
+  // Tutup semua form/modal yang sedang terbuka sebelum ganti kelas
+  closeAllFormsAndModals();
   // Clear data before loading new class
   siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+  // Reset ke dashboard dulu agar UI bersih sebelum data kelas baru dimuat
+  navigate('dashboard');
   renderAll(); setCurrentMonthDashFilter();
   await loadFromFirestore();
   subscribeToClassUpdates();
   closeModal('modal-classes');
+  // Setelah data kelas baru ter-load, restore halaman terakhir untuk kelas ini
+  const lastPage = localStorage.getItem('lastPage_' + classId) || 'dashboard';
+  navigate(lastPage);
 }
 
 function updateClassSwitcherUI(cls){
@@ -2458,7 +2479,7 @@ function renderClassListUI(){
 
 async function createClass(){
   const name = document.getElementById('new-class-name').value.trim();
-  if(!name){ alert('Class name is required!'); return; }
+  if(!name){ infoModal('Required Field', 'Class name is required!'); return; }
   const newClass = {
     id: 'class_' + uid(),
     name,
@@ -2477,18 +2498,20 @@ async function createClass(){
 }
 
 async function deleteClass(classId){
-  if(classesList.length<=1){ alert('Cannot delete the last class.'); return; }
+  if(classesList.length<=1){ infoModal('Cannot Delete', 'You must have at least one class. Create another class first before deleting this one.'); return; }
   const cls = classesList.find(c=>c.id===classId);
-  if(!confirm(`Delete class "${cls?.name}"?\n\nAll students, attendance, evaluations and payments in this class will be permanently deleted.`)) return;
-  // Delete class data document
-  try{ await db.collection('workspace').doc(classId).delete(); }catch(e){ console.error(e); }
-  classesList = classesList.filter(c=>c.id!==classId);
-  await saveClassesList();
-  renderClassListUI();
-  // If deleted current class, switch to first remaining
-  if(classId === currentClassId){
-    await switchClass(classesList[0].id);
-  }
+  dangerModal(
+    `🗑️ Delete Class "${cls?.name}"?`,
+    `All students, attendance, evaluations and payments in this class will be <strong style="color:var(--red)">permanently deleted</strong>. This cannot be undone.`,
+    async ()=>{
+      try{ await db.collection('workspace').doc(classId).delete(); }catch(e){ console.error(e); }
+      classesList = classesList.filter(c=>c.id!==classId);
+      await saveClassesList();
+      renderClassListUI();
+      if(classId === currentClassId){ await switchClass(classesList[0].id); }
+    },
+    { okText:'Delete Class', cancelText:'Keep It' }
+  );
 }
 
 function editClass(classId){
@@ -2506,7 +2529,7 @@ async function saveEditClass(){
   const idx = classesList.findIndex(c=>c.id===id);
   if(idx===-1) return;
   const name = document.getElementById('edit-cls-name').value.trim();
-  if(!name){ alert('Class name is required!'); return; }
+  if(!name){ infoModal('Required Field', 'Class name is required!'); return; }
   classesList[idx].name     = name;
   classesList[idx].schedule = document.getElementById('edit-cls-schedule').value.trim();
   classesList[idx].color    = document.getElementById('edit-cls-color').value;
@@ -2530,19 +2553,19 @@ async function addAllowedEmail(email){
   email=email.trim().toLowerCase();
   const doc=await db.collection('workspace').doc('access').get();
   const data=doc.data()||{};
-  if(data.owner!==currentUser.email){ alert('Only the owner can manage access.'); return; }
+  if(data.owner!==currentUser.email){ infoModal('Access Denied', 'Only the workspace owner can manage access.'); return; }
   const list=data.allowed_emails||[];
-  if(list.includes(email)){ alert('Email already in list.'); return; }
+  if(list.includes(email)){ infoModal('Already Added', `<strong>${email}</strong> is already in the access list.`); return; }
   list.push(email);
   await db.collection('workspace').doc('access').update({allowed_emails:list});
-  renderAccessPanel(); alert('✅ '+email+' added!');
+  renderAccessPanel(); showToast('✅ '+email+' added!', 'success');
 }
 async function removeAllowedEmail(email){
   if(!currentUser) return;
   const doc=await db.collection('workspace').doc('access').get();
   const data=doc.data()||{};
-  if(data.owner!==currentUser.email){ alert('Only the owner can manage access.'); return; }
-  if(email===data.owner){ alert('Cannot remove owner.'); return; }
+  if(data.owner!==currentUser.email){ infoModal('Access Denied', 'Only the workspace owner can manage access.'); return; }
+  if(email===data.owner){ infoModal('Cannot Remove Owner', 'The workspace owner cannot be removed from the access list.'); return; }
   const list=(data.allowed_emails||[]).filter(e=>e!==email);
   await db.collection('workspace').doc('access').update({allowed_emails:list});
   renderAccessPanel();
@@ -2821,6 +2844,8 @@ const pageActions = {
 };
 
 function navigate(page){
+  localStorage.setItem('lastPage', page);
+  if(currentClassId) localStorage.setItem('lastPage_' + currentClassId, page);
   document.querySelectorAll('.nav-item').forEach(n=>{
     n.classList.toggle('active', n.dataset.page===page);
   });
@@ -2845,6 +2870,10 @@ function navigate(page){
   if(page==='payment') { setCurrentMonthFilter(); }
   if(page==='attendance') { setCurrentMonthAttFilter(); }
   if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
+  // Sync mobile bottom nav
+  document.querySelectorAll('.mbn-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.page===page);
+  });
 }
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>navigate(n.dataset.page)));
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open') }
@@ -3056,7 +3085,7 @@ function openEditStudent(id){
 }
 function saveStudent(){
   const nama=document.getElementById('s-nama').value.trim();
-  if(!nama){ alert('Full name is required!'); return; }
+  if(!nama){ infoModal('Required Field', 'Full name is required!'); return; }
   const id=document.getElementById('s-id').value;
   const billingType=document.getElementById('s-billingtype').value||'per_session';
 
@@ -3077,13 +3106,11 @@ function saveStudent(){
     feeMonthly:billingType==='monthly'?Number(document.getElementById('s-feemonthly').value)||0:0,
   };
 
-  let finalId;
-  if(id){
-    finalId = id;
+  // Tentukan finalId dulu
+  const finalId = id || uid();
 
+  if(id){
     // ✅ FIX: Detect billing type change and migrate existing payment records
-    // When student switches from per_session ↔ monthly, old payments must be
-    // migrated so they remain visible in the payment tracker and outstanding calc.
     const existing = siswaList.find(s=>s.id===id);
     const oldBillingType = existing?.billingType || 'per_session';
     if(existing && oldBillingType !== billingType){
@@ -3091,38 +3118,48 @@ function saveStudent(){
       if(affectedPayments.length > 0){
         const oldLabel = oldBillingType === 'monthly' ? 'Monthly' : 'Per Session';
         const newLabel = billingType === 'monthly' ? 'Monthly' : 'Per Session';
-        const confirmed = confirm(
-          `⚠️ Billing type change detected!\n\n` +
-          `Student "${nama}" is switching from ${oldLabel} → ${newLabel}.\n\n` +
+        showModalDialog(
+          '⚠️ Billing Type Change',
+          `<strong>${nama}</strong> is switching from <em>${oldLabel}</em> → <em>${newLabel}</em>.<br><br>` +
           `${affectedPayments.length} existing payment record(s) will have their billing type updated to match. ` +
-          `This ensures old payments remain visible in the payment tracker.\n\nContinue?`
+          `This ensures old payments remain visible in the payment tracker.`,
+          ()=>{
+            bayarList.forEach(b => { if(b.siswaId === id) b.billingType = billingType; });
+            DB.set('bayar', bayarList);
+            showToast(`✅ ${affectedPayments.length} payment record(s) updated to ${newLabel} billing.`, 'success');
+            _finishSaveStudent(id, finalId, data);
+          },
+          { okText:'Yes, Update', cancelText:'Cancel', type:'confirm' }
         );
-        if(!confirmed) return;
-        bayarList.forEach(b => { if(b.siswaId === id) b.billingType = billingType; });
-        DB.set('bayar', bayarList);
-        showToast(`✅ ${affectedPayments.length} payment record(s) updated to ${newLabel} billing.`, 'success');
+        return; // tunggu callback modal
       }
     }
+  }
 
+  _finishSaveStudent(id, finalId, data);
+}
+
+function _finishSaveStudent(id, finalId, data){
+  // Update atau tambah student ke list
+  if(id){
     const i=siswaList.findIndex(s=>s.id===id);
     if(i>-1) siswaList[i]={...siswaList[i],...data};
   } else {
-    finalId = uid();
     siswaList.push({id:finalId,...data});
   }
-
-  // Commit pending schedules to the correct student id — this is the single source of truth
+  // Commit pending schedules
   _commitSchedules(finalId);
-
   DB.set('siswa',siswaList);
   DB.set('schedules',scheduleList);
   closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge();
   if(document.getElementById('page-payment').classList.contains('active')) renderPayment();
 }
 function deleteStudent(id){
-  if(!confirm('Delete this student?')) return;
-  siswaList=siswaList.filter(s=>s.id!==id);
-  DB.set('siswa',siswaList); renderStudents(); updateSelects();
+  const s = siswaList.find(x=>x.id===id);
+  dangerModal('🗑️ Delete Student', `Are you sure you want to delete <strong>${s?.nama||'this student'}</strong>? All their data will be removed.`,
+    ()=>{ siswaList=siswaList.filter(s=>s.id!==id); DB.set('siswa',siswaList); renderStudents(); updateSelects(); },
+    { okText:'Delete', cancelText:'Keep' }
+  );
 }
 
 // ── Schedule slot management ──
@@ -3365,8 +3402,8 @@ function loadAbsensi(){
 }
 function saveAbsensi(){
   const d=document.getElementById('absen-date').value;
-  if(!d){ alert('Select a date!'); return; }
-  if(!siswaList.length){ alert('No students found!'); return; }
+  if(!d){ showToast('Select a date first!','warn'); return; }
+  if(!siswaList.length){ showToast('No students found!','warn'); return; }
   // ── Simpan snapshot record lama sebelum dihapus ──
   // ID lama HARUS dipertahankan agar sesiIds di payment tidak putus
   const oldRecords={};
@@ -3381,7 +3418,7 @@ function saveAbsensi(){
       keterangan:document.getElementById(`att-ket-${s.id}`)?.value||'',
     });
   });
-  DB.set('absensi',absensiList); renderAttendance(); alert('✅ Attendance saved!');
+  DB.set('absensi',absensiList); renderAttendance(); showToast('✅ Attendance saved!','success');
 }
 // ════════════════════════════════════════════════
 //  SINGLE STUDENT ATTENDANCE
@@ -3682,7 +3719,7 @@ function openEditLesson(id){
 }
 function saveLesson(){
   const topik=document.getElementById('m-topik').value.trim();
-  if(!topik){ alert('Topic is required!'); return; }
+  if(!topik){ infoModal('Required Field', 'Topic is required!'); return; }
   const id=document.getElementById('m-id').value;
   const data={
     tanggal:document.getElementById('m-tanggal').value,
@@ -3700,8 +3737,11 @@ function saveLesson(){
   closePanel('form-lesson'); renderLessons();
 }
 function deleteLesson(id){
-  if(!confirm('Delete this lesson?')) return;
-  materiList=materiList.filter(m=>m.id!==id); DB.set('materi',materiList); renderLessons();
+  const m = materiList.find(x=>x.id===id);
+  dangerModal('🗑️ Delete Lesson', `Delete lesson <strong>${m?.topik||'this lesson'}</strong>?`,
+    ()=>{ materiList=materiList.filter(m=>m.id!==id); DB.set('materi',materiList); renderLessons(); },
+    { okText:'Delete', cancelText:'Keep' }
+  );
 }
 function renderLessons(){
   const rencana=materiList.filter(m=>m.status==='Rencana').sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
@@ -3731,7 +3771,7 @@ function renderLessons(){
 // ════════════════════════════════════════════════
 function saveEval(){
   const siswaId=document.getElementById('e-siswa').value;
-  if(!siswaId){ alert('Select a student!'); return; }
+  if(!siswaId){ infoModal('Required Field', 'Please select a student first!'); return; }
   const s=siswaList.find(x=>x.id===siswaId);
   const id=document.getElementById('e-id').value;
   const data={
@@ -3751,8 +3791,10 @@ function saveEval(){
   closeEvalForm(); renderEval();
 }
 function deleteEval(id){
-  if(!confirm('Delete?')) return;
-  evaluasiList=evaluasiList.filter(e=>e.id!==id); DB.set('evaluasi',evaluasiList); renderEval();
+  dangerModal('🗑️ Delete Evaluation', 'Are you sure you want to delete this evaluation record?',
+    ()=>{ evaluasiList=evaluasiList.filter(e=>e.id!==id); DB.set('evaluasi',evaluasiList); renderEval(); },
+    { okText:'Delete', cancelText:'Keep' }
+  );
 }
 function closeEvalForm(){
   document.getElementById('eval-form-card').style.display='none';
@@ -4682,7 +4724,7 @@ async function waImage(){
 }
 function copyReceipt(){
   const text=document.getElementById('modal-receipt').dataset.receiptText||'';
-  navigator.clipboard.writeText(text).then(()=>alert('✅ Copied!'));
+  navigator.clipboard.writeText(text).then(()=>showToast('✅ Copied to clipboard!','success'));
 }
 
 // ════════════════════════════════════════════════
@@ -4739,7 +4781,7 @@ function renderReports(){
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn wa" onclick="window.open('https://wa.me/?text='+encodeURIComponent(_reportTexts['${key}']),'_blank')">💬 Share via WhatsApp</button>
           <button class="btn" onclick="showReportPrint('${siswa.id}')">🖨️ Print Report</button>
-          <button class="btn" onclick="navigator.clipboard.writeText(_reportTexts['${key}']).then(()=>alert('✅ Copied!'))">📋 Copy</button>
+          <button class="btn" onclick="navigator.clipboard.writeText(_reportTexts['${key}']).then(()=>showToast('✅ Copied!','success'))">📋 Copy</button>
         </div>
       </div>
     </div>`;
@@ -4838,11 +4880,23 @@ function exportCSV(key){
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='LittleLume-'+key+'-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
 }
 function clearAllData(){
-  if(!confirm('⚠️ This will delete ALL data permanently. Are you sure?')) return;
-  if(!confirm('Last chance! Click OK to permanently erase all data.')) return;
-  siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
-  saveToFirestore();
-  renderAll(); renderBackupSummary(); showToast('✅ All data cleared.','success');
+  dangerModal(
+    '⚠️ Clear All Data',
+    `<strong style="color:var(--red)">This will permanently delete all students, attendance, evaluations, payments, and lessons in the current class.</strong><br><br>This action <em>cannot be undone</em>. Are you absolutely sure?`,
+    ()=>{
+      dangerModal(
+        '⚠️ Final Confirmation',
+        `Last chance! You are about to erase all data in <strong>${currentClassName||'this class'}</strong>. Click Delete to confirm.`,
+        ()=>{
+          siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
+          saveToFirestore();
+          renderAll(); renderBackupSummary(); showToast('✅ All data cleared.','success');
+        },
+        { okText:'Delete Everything', cancelText:'Cancel' }
+      );
+    },
+    { okText:'Yes, Continue', cancelText:'Cancel' }
+  );
 }
 function renderBackupSummary(){
   document.getElementById('backup-summary').innerHTML=`
@@ -5091,7 +5145,7 @@ async function docWaImage(type){
 
 function docCopyText(type){
   const text=_docStore[type]?.text||'';
-  navigator.clipboard.writeText(text).then(()=>alert('✅ Copied! Paste into WhatsApp.'));
+  navigator.clipboard.writeText(text).then(()=>showToast('✅ Copied! Paste into WhatsApp.','success'));
 }
 // ════════════════════════════════════════════════
 //  BULK EVALUATION — Manual + Template + Copy
@@ -5216,7 +5270,8 @@ function bulkQuickFill(){
 }
 
 function bulkReset(){
-  if(!confirm('Reset all fields?')) return;
+  showModalDialog('🔄 Reset All Fields', 'This will clear all scores, ratings, and notes filled in. Are you sure?',
+    ()=>{
   siswaList.forEach(s=>{
     const skip = document.getElementById('bulk-skip-'+s.id);
     if(skip){ skip.checked=false; toggleBulkSkip(s.id); }
@@ -5226,6 +5281,7 @@ function bulkReset(){
     const r=document.getElementById('bulk-rating-'+s.id); if(r) r.value='3';
   });
   updateBulkProgress();
+    }, { okText:'Reset', cancelText:'Cancel', type:'confirm' });
 }
 
 function updateBulkProgress(){
@@ -5262,10 +5318,10 @@ function renderTemplateList(){
 
 function saveAsTemplate(){
   const name = document.getElementById('bulk-tpl-name').value.trim();
-  if(!name){ alert('Enter a template name!'); return; }
+  if(!name){ infoModal('Required Field', 'Please enter a template name!'); return; }
   // Grab values from first non-skipped student as template baseline
   const first = siswaList.find(s=>!document.getElementById('bulk-skip-'+s.id)?.checked);
-  if(!first){ alert('No active student to save template from.'); return; }
+  if(!first){ infoModal('No Active Students', 'There are no active (non-skipped) students to save a template from.'); return; }
   const tpl = {
     name,
     nilai:    document.getElementById('bulk-nilai-'+first.id)?.value||'',
@@ -5277,7 +5333,7 @@ function saveAsTemplate(){
   saveEvalTemplates();
   document.getElementById('bulk-tpl-name').value='';
   renderTemplateList();
-  alert('✅ Template "'+name+'" saved!');
+  showToast('✅ Template "'+name+'" saved!', 'success');
 }
 
 function applyTemplate(idx){
@@ -5293,16 +5349,16 @@ function applyTemplate(idx){
 }
 
 function deleteTemplate(idx){
-  if(!confirm('Delete this template?')) return;
-  _evalTemplates.splice(idx,1);
-  saveEvalTemplates();
-  renderTemplateList();
+  dangerModal('🗑️ Delete Template', 'Are you sure you want to delete this evaluation template?',
+    ()=>{ _evalTemplates.splice(idx,1); saveEvalTemplates(); renderTemplateList(); },
+    { okText:'Delete', cancelText:'Keep' }
+  );
 }
 
 // ── SAVE ALL ──
 async function saveBulkEval(){
   const tanggal = document.getElementById('bulk-tanggal').value;
-  if(!tanggal){ alert('Please select an evaluation date first!'); return; }
+  if(!tanggal){ infoModal('Required Field', 'Please select an evaluation date first!'); return; }
   const commonProgress = document.getElementById('bulk-common-progress')?.value.trim()||'';
   const statusEl = document.getElementById('bulk-save-status');
   statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Saving…</span>';
@@ -6329,46 +6385,15 @@ _LittleLume English Course_`;
 //  MOBILE BOTTOM NAV
 // ════════════════════════════════════════════════
 function mbnNav(page){
-  // Call the original navigate directly (avoid our patched version)
-  document.querySelectorAll('.nav-item').forEach(n=>{
-    n.classList.toggle('active', n.dataset.page===page);
-  });
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const pg = document.getElementById('page-'+page);
-  if(pg) pg.classList.add('active');
-  document.getElementById('topbar-title').textContent = pageNames[page]||'';
-  const actEl = document.getElementById('topbar-actions');
-  const existing = document.getElementById('page-action-btn');
-  if(existing) existing.remove();
-  if(pageActions[page]){
-    const tmp=document.createElement('div');
-    tmp.id='page-action-btn'; tmp.style.display='contents';
-    tmp.innerHTML=pageActions[page];
-    actEl.insertBefore(tmp, actEl.firstChild);
-  }
-  if(page==='dashboard') setCurrentMonthDashFilter();
-  if(page==='analytics') renderAnalytics();
-  if(page==='reports')   renderReports();
-  if(page==='backup')  { renderBackupSummary(); renderAccessPanel(); }
-  if(page==='payment') { setCurrentMonthFilter(); }
-  if(page==='attendance') { setCurrentMonthAttFilter(); }
-  if(window.innerWidth<=768) document.getElementById('sidebar').classList.remove('open');
-
+  // Gunakan navigate() langsung agar lastPage tersimpan & konsisten
+  navigate(page);
   // Sync mobile bottom nav active state
   document.querySelectorAll('.mbn-item').forEach(el=>{
     el.classList.toggle('active', el.dataset.page===page);
   });
 }
 
-// Patch navigate to also sync mobile bottom nav (safe - no recursion)
-const _navItemClickHandlers = document.querySelectorAll('.nav-item');
-_navItemClickHandlers.forEach(n => {
-  n.addEventListener('click', () => {
-    document.querySelectorAll('.mbn-item').forEach(el => {
-      el.classList.toggle('active', el.dataset.page === n.dataset.page);
-    });
-  });
-});
+// Mobile bottom nav sync sudah dihandle di dalam navigate()
 
 // ════════════════════════════════════════════════
 //  ANALYTICS — KPIs & PROGRESS TRACKER
