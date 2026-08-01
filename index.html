@@ -1464,6 +1464,9 @@ td.nowrap { white-space:nowrap }
                 <option value="per_session">💳 Per Session</option>
                 <option value="monthly">📅 Monthly (flat)</option>
               </select>
+              <div id="billing-lock-hint" style="display:none;margin-top:6px;padding:8px 12px;border-radius:8px;background:rgba(255,179,71,0.12);border:1px solid rgba(255,179,71,0.3);font-size:0.78rem;color:var(--yellow);font-weight:600">
+                🔒 Billing mode is locked. This student has payment records — delete all payments first to change it.
+              </div>
             </div>
           </div>
           <div class="form-row">
@@ -2504,17 +2507,33 @@ async function createClass(){
 async function deleteClass(classId){
   if(classesList.length<=1){ infoModal('Cannot Delete', 'You must have at least one class. Create another class first before deleting this one.'); return; }
   const cls = classesList.find(c=>c.id===classId);
+  // Hitung data yang ada di kelas ini untuk warning
+  const isActive = classId === currentClassId;
+  const studentCount = isActive ? siswaList.length : '?';
+  const payCount = isActive ? bayarList.length : '?';
   dangerModal(
     `🗑️ Delete Class "${cls?.name}"?`,
-    `All students, attendance, evaluations and payments in this class will be <strong style="color:var(--red)">permanently deleted</strong>. This cannot be undone.`,
+    `<strong style="color:var(--red)">All data in this class will be permanently deleted:</strong>
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 14px;margin:10px 0;text-align:left;line-height:2">
+      ${isActive ? `👤 ${studentCount} student(s) &nbsp;·&nbsp; 💰 ${payCount} payment(s)` : 'All students, attendance, evaluations and payments'}
+    </div>
+    This action <strong>cannot be undone</strong>.`,
     async ()=>{
-      try{ await db.collection('workspace').doc(classId).delete(); }catch(e){ console.error(e); }
-      classesList = classesList.filter(c=>c.id!==classId);
-      await saveClassesList();
-      renderClassListUI();
-      if(classId === currentClassId){ await switchClass(classesList[0].id); }
+      dangerModal(
+        '⚠️ Final Confirmation',
+        `Type the class name to confirm: you are deleting <strong>"${cls?.name}"</strong> and all its data permanently.`,
+        async ()=>{
+          try{ await db.collection('workspace').doc(classId).delete(); }catch(e){ console.error(e); }
+          classesList = classesList.filter(c=>c.id!==classId);
+          await saveClassesList();
+          renderClassListUI();
+          if(classId === currentClassId){ await switchClass(classesList[0].id); }
+          showToast(`✅ Class "${cls?.name}" deleted.`, 'success');
+        },
+        { okText:'Delete Permanently', cancelText:'Cancel' }
+      );
     },
-    { okText:'Delete Class', cancelText:'Keep It' }
+    { okText:'Yes, Delete', cancelText:'Keep It' }
   );
 }
 
@@ -3052,9 +3071,12 @@ function openStudentForm(){
   document.getElementById('s-id').value='';
   ['s-nama','s-nick','s-kelas','s-hp','s-catatan','s-namaOrtu','s-fee','s-feemonthly'].forEach(i=>{ const el=document.getElementById(i); if(el) el.value=''; });
   document.getElementById('s-level').value='Beginner';
-  document.getElementById('s-billingtype').value='per_session';
+  const btEl=document.getElementById('s-billingtype');
+  btEl.value='per_session'; btEl.disabled=false; btEl.style.opacity=''; btEl.style.cursor='';
+  const btHint=document.getElementById('billing-lock-hint');
+  if(btHint) btHint.style.display='none';
   onBillingTypeChange();
-  renderSchedEntries([], '__new__');  // clean state, new student
+  renderSchedEntries([], '__new__');
   openPanel('form-student','900px');
 }
 function closeStudentForm(){ closePanel('form-student') }
@@ -3073,9 +3095,24 @@ function openEditStudent(id){
   document.getElementById('s-feemonthly').value=s.feeMonthly||'';
   document.getElementById('s-billingtype').value=s.billingType||'per_session';
   onBillingTypeChange();
+  // Kunci billing type jika sudah ada payment — tidak boleh diubah
+  const hasPayment = bayarList.some(b=>b.siswaId===id);
+  const btEl = document.getElementById('s-billingtype');
+  const btHint = document.getElementById('billing-lock-hint');
+  if(hasPayment){
+    btEl.disabled = true;
+    btEl.style.opacity = '0.55';
+    btEl.style.cursor = 'not-allowed';
+    if(btHint) btHint.style.display = 'block';
+  } else {
+    btEl.disabled = false;
+    btEl.style.opacity = '';
+    btEl.style.cursor = '';
+    if(btHint) btHint.style.display = 'none';
+  }
   // Load existing schedules for this student, keyed to their actual id
   const existing = scheduleList.filter(sc=>sc.siswaId===id);
-  renderSchedEntries(existing, id);  // pass id so _pendingSchedSiswaId is set correctly
+  renderSchedEntries(existing, id);
   openPanel('form-student','900px');
   document.getElementById('form-student').scrollIntoView({behavior:'smooth'});
 }
@@ -3106,28 +3143,30 @@ function saveStudent(){
   const finalId = id || uid();
 
   if(id){
-    // ✅ FIX: Detect billing type change and migrate existing payment records
+    // Cek perubahan billing type
     const existing = siswaList.find(s=>s.id===id);
     const oldBillingType = existing?.billingType || 'per_session';
     if(existing && oldBillingType !== billingType){
       const affectedPayments = bayarList.filter(b => b.siswaId === id);
       if(affectedPayments.length > 0){
+        // BLOKIR: ada payment → tidak boleh ganti billing type
         const oldLabel = oldBillingType === 'monthly' ? 'Monthly' : 'Per Session';
         const newLabel = billingType === 'monthly' ? 'Monthly' : 'Per Session';
-        showModalDialog(
-          '⚠️ Billing Type Change',
-          `<strong>${nama}</strong> is switching from <em>${oldLabel}</em> → <em>${newLabel}</em>.<br><br>` +
-          `${affectedPayments.length} existing payment record(s) will have their billing type updated to match. ` +
-          `This ensures old payments remain visible in the payment tracker.`,
-          ()=>{
-            bayarList.forEach(b => { if(b.siswaId === id) b.billingType = billingType; });
-            DB.set('bayar', bayarList);
-            showToast(`✅ ${affectedPayments.length} payment record(s) updated to ${newLabel} billing.`, 'success');
-            _finishSaveStudent(id, finalId, data);
-          },
-          { okText:'Yes, Update', cancelText:'Cancel', type:'confirm' }
+        infoModal(
+          '🚫 Cannot Change Billing Type',
+          `<strong>${nama}</strong> still has <strong style="color:var(--red)">${affectedPayments.length} payment record(s)</strong> with billing type <em>${oldLabel}</em>.<br><br>` +
+          `To switch to <em>${newLabel}</em>:<br>` +
+          `<ol style="margin:10px 0 0 18px;line-height:2">` +
+          `<li>Go to <strong>Payment</strong> page</li>` +
+          `<li>Delete all payment records for this student</li>` +
+          `<li>Come back here and change the billing type</li>` +
+          `<li>Re-enter the payments with the new billing type</li>` +
+          `</ol>`
         );
-        return; // tunggu callback modal
+        // Reset dropdown ke nilai lama agar tidak misleading
+        document.getElementById('s-billingtype').value = oldBillingType;
+        onBillingTypeChange();
+        return;
       }
     }
   }
@@ -4118,19 +4157,25 @@ function openPaymentForm(id){
     el.addEventListener('input', el._manualEditHandler);
   });
   
+  const siswaEl = document.getElementById('b-siswa');
   if(b){
+    // Edit mode — kunci dropdown siswa agar tidak bisa diganti
+    // (mengganti siswa akan memindahkan sesiIds ke siswa lain → data rusak)
     const opts=siswaList.map(s=>`<option value="${s.id}"${s.id===b.siswaId?' selected':''}>${s.nama}</option>`).join('');
-    document.getElementById('b-siswa').innerHTML='<option value="">-- Select --</option>'+opts;
+    siswaEl.innerHTML='<option value="">-- Select --</option>'+opts;
+    siswaEl.disabled = true;
+    siswaEl.style.opacity = '0.65';
+    siswaEl.style.cursor = 'not-allowed';
     onPaymentStudentChange();
-    // ✅ FIX: Only restore checked sessions when editing an existing payment
-    // For new payments (b is null), this block is skipped entirely — no stale sesiIds
     setTimeout(()=>renderSesiChecksForEdit(b.sesiIds||[]),50);
   } else {
-    // ✅ FIX: For new payment, explicitly clear tagihan & jumlah AFTER formatNumberInput
-    // to ensure no leftover value from a previous form session
+    // New payment — unlock dan reset siswa
+    siswaEl.disabled = false;
+    siswaEl.style.opacity = '';
+    siswaEl.style.cursor = '';
     document.getElementById('b-tagihan').value='';
     document.getElementById('b-jumlah').value='';
-    document.getElementById('b-siswa').value='';
+    siswaEl.value='';
     onPaymentStudentChange();
   }
   openPanel('form-payment','900px');
@@ -4888,38 +4933,60 @@ function exportBackup(){
 function importBackup(e){
   const file=e.target.files[0]; if(!file) return;
   const statusEl = document.getElementById('restore-status');
-  const reader=new FileReader();
-  reader.onload=async ev=>{
-    // Show saving overlay — prevent accidental interaction
-    statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Reading file…</span>';
+  // Reset input agar file yang sama bisa dipilih lagi jika batal
+  e.target.value = '';
+
+  // Baca dulu untuk preview info sebelum konfirmasi
+  const previewReader = new FileReader();
+  previewReader.onload = ev => {
+    let data, preview = '';
     try{
-      const data=JSON.parse(ev.target.result);
-      // Merge data
-      if(data.siswa)     { siswaList    = data.siswa.map(n=>({...n})); }
-      if(data.absensi)   { absensiList  = data.absensi.map(n=>({...n})); }
-      if(data.materi)    { materiList   = data.materi.map(n=>({...n})); }
-      if(data.evaluasi)  { evaluasiList = data.evaluasi.map(n=>({...n})); }
-      if(data.bayar)     { bayarList    = data.bayar.map(n=>({...n})); }
-      if(data.schedules) { scheduleList = data.schedules.map(n=>({...n})); }
-
-      statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Saving to cloud… <strong>do not refresh!</strong></span>';
-
-      // Immediate flush — await fully
-      await _flushToFirestore();
-
-      statusEl.innerHTML=`<span style="color:var(--green)">
-        ✅ <strong>Import complete!</strong> 
-        ${siswaList.length} students, ${bayarList.length} payments saved to cloud.<br>
-        <span style="font-size:0.8rem;opacity:0.8">You can now refresh safely.</span>
-      </span>`;
-
-      renderAll(); renderBackupSummary();
-    }catch(err){
-      statusEl.innerHTML='<span style="color:var(--red)">❌ Error: '+err.message+'</span>';
-      console.error('Import error:', err);
+      data = JSON.parse(ev.target.result);
+      const s   = (data.siswa||[]).length;
+      const ab  = (data.absensi||[]).length;
+      const pay = (data.bayar||[]).length;
+      const ev2 = (data.evaluasi||[]).length;
+      const cls = data.className ? `<strong>${data.className}</strong>` : 'unknown class';
+      const exp = data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : 'unknown date';
+      preview = `
+        <div style="background:var(--bg3);border-radius:8px;padding:12px 16px;margin:12px 0;text-align:left;line-height:2">
+          <div>📁 File: <strong>${file.name}</strong></div>
+          <div>🏫 Class: ${cls}</div>
+          <div>📅 Exported: ${exp}</div>
+          <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+            👤 ${s} students &nbsp;·&nbsp; 📋 ${ab} attendance &nbsp;·&nbsp; 💰 ${pay} payments &nbsp;·&nbsp; ⭐ ${ev2} evaluations
+          </div>
+        </div>
+        <p style="color:var(--red);font-weight:700">⚠️ This will REPLACE all current data in <strong>${currentClassName||'this class'}</strong>.</p>`;
+    } catch(err){
+      statusEl.innerHTML='<span style="color:var(--red)">❌ Invalid backup file: '+err.message+'</span>';
+      return;
     }
+    dangerModal(
+      '⬆️ Restore Backup',
+      `Are you sure you want to restore this backup?${preview}`,
+      async ()=>{
+        statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Reading file…</span>';
+        try{
+          if(data.siswa)     { siswaList    = data.siswa.map(n=>({...n})); }
+          if(data.absensi)   { absensiList  = data.absensi.map(n=>({...n})); }
+          if(data.materi)    { materiList   = data.materi.map(n=>({...n})); }
+          if(data.evaluasi)  { evaluasiList = data.evaluasi.map(n=>({...n})); }
+          if(data.bayar)     { bayarList    = data.bayar.map(n=>({...n})); }
+          if(data.schedules) { scheduleList = data.schedules.map(n=>({...n})); }
+          statusEl.innerHTML='<span style="color:var(--yellow)">⏳ Saving to cloud… <strong>do not refresh!</strong></span>';
+          await _flushToFirestore();
+          statusEl.innerHTML=`<span style="color:var(--green)">✅ <strong>Import complete!</strong> ${siswaList.length} students, ${bayarList.length} payments saved to cloud.<br><span style="font-size:0.8rem;opacity:0.8">You can now refresh safely.</span></span>`;
+          renderAll(); renderBackupSummary();
+        } catch(err2){
+          statusEl.innerHTML='<span style="color:var(--red)">❌ Error: '+err2.message+'</span>';
+          console.error('Import error:', err2);
+        }
+      },
+      { okText:'Yes, Restore', cancelText:'Cancel' }
+    );
   };
-  reader.readAsText(file);
+  previewReader.readAsText(file);
 }
 function exportCSV(key){
   let rows=[],headers=[];
@@ -5430,12 +5497,8 @@ async function saveBulkEval(){
   DB.set('evaluasi', evaluasiList);
   renderEval();
   statusEl.innerHTML=`<span style="color:var(--green)">✅ ${saved} evaluations saved!${skipped>0?' ('+skipped+' skipped)':''}</span>`;
-  // Toast notification
-  const toast=document.createElement('div');
-  toast.style.cssText='position:fixed;bottom:28px;right:28px;background:var(--green);color:#111;padding:13px 24px;border-radius:12px;font-weight:800;font-size:0.92rem;z-index:9999;box-shadow:0 8px 30px rgba(0,214,143,0.4);animation:fadeIn .3s ease';
-  toast.textContent='✅ '+saved+' evaluations saved!';
-  document.body.appendChild(toast);
-  setTimeout(()=>{ toast.remove(); statusEl.innerHTML=''; }, 3500);
+  showToast(`✅ ${saved} evaluations saved!${skipped>0?' ('+skipped+' skipped)':''}`, 'success');
+  setTimeout(()=>{ statusEl.innerHTML=''; }, 3500);
 }
 
 function init(){
