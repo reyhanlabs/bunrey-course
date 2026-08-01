@@ -2648,38 +2648,34 @@ async function loadFromFirestore(){
 // ════════════════════════════════════════════════
 let _unsubscribeSnapshot = null;
 
-// Flag: kita sendiri yang lagi nulis ke Firestore.
-// Selama flag ini true, semua snapshot yang masuk DIABAIKAN —
-// karena pasti echo dari write kita sendiri, bukan dari device lain.
-let _ownWriteInFlight = false;
+// Simpan session ID unik untuk device ini.
+// Setiap write menyertakan sessionId ini di dokumen Firestore.
+// Snapshot yang punya sessionId sama = echo dari kita sendiri → abaikan.
+const _sessionId = Math.random().toString(36).slice(2);
 
 function _isEditFormOpen(){
-  // Hanya blokir realtime sync jika user sedang mengetik di form input
   return !!document.querySelector('.form-panel.open');
 }
-
-function _tsMillis(ts){ return ts?.toMillis ? ts.toMillis() : null; }
 
 function subscribeToClassUpdates(){
   if(_unsubscribeSnapshot){ _unsubscribeSnapshot(); _unsubscribeSnapshot=null; }
   if(!userDocRef) return;
-  _unsubscribeSnapshot = userDocRef.onSnapshot(snap => {
-    // 1. Abaikan snapshot sementara kita sendiri lagi nulis (write in-flight)
-    if(_ownWriteInFlight) return;
-
-    // 2. Abaikan jika snapshot masih berisi pending write kita sendiri
+  _unsubscribeSnapshot = userDocRef.onSnapshot({includeMetadataChanges: true}, snap => {
+    // Abaikan selama ada pending write (local echo belum confirm)
     if(snap.metadata.hasPendingWrites) return;
-
     if(!snap.exists) return;
     const d = snap.data();
 
-    // 3. Jika form input sedang terbuka, tampilkan warning saja tanpa overwrite
+    // Abaikan jika snapshot ini ditulis oleh session kita sendiri
+    if(d._sessionId === _sessionId) return;
+
+    // Jika form input sedang terbuka, warning saja
     if(_isEditFormOpen()){
       showToast('⚠️ Data diperbarui dari device lain. Selesaikan/tutup form ini lalu refresh halaman.', 'warn', 8000);
       return;
     }
 
-    // 4. Snapshot ini memang dari device lain — terapkan
+    // Snapshot benar-benar dari device/session lain — terapkan
     siswaList    = d.siswa    || [];
     absensiList  = d.absensi  || [];
     materiList   = d.materi   || [];
@@ -2704,23 +2700,18 @@ async function _flushToFirestore(){
   if(!userDocRef) return;
   clearTimeout(_saveTimer);
   setSyncing();
-
-  // Tandai: kita yang nulis — abaikan semua snapshot sampai selesai
-  _ownWriteInFlight = true;
   try{
     await userDocRef.set({
       siswa:siswaList, absensi:absensiList, materi:materiList,
       evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      _sessionId,   // ← tandai write ini milik session kita
     },{merge:true});
     setSynced();
     console.log('✅ Saved → '+currentClassName+' | students:'+siswaList.length);
   } catch(e){
     setSyncErr(e.code || e.message);
     console.error('❌ Save failed:', e.code, e.message);
-  } finally{
-    // Tunda reset flag sedikit agar snapshot echo sempat diabaikan sebelum flag turun
-    setTimeout(()=>{ _ownWriteInFlight = false; }, 2000);
   }
 }
 
