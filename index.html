@@ -1768,16 +1768,22 @@ td.nowrap { white-space:nowrap }
         <div class="form-panel hidden" id="form-payment" style="max-height:0">
           <div style="font-weight:800;font-size:1rem;margin-bottom:14px" id="form-payment-title">Record Payment</div>
           <input type="hidden" id="b-id">
-          <div class="form-row">
-            <div class="form-group"><label>Student *</label><select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select --</option></select></div>
-            <div class="form-group"><label>Month / Period</label><input type="text" id="b-periode" placeholder="e.g. June 2026" oninput="refreshMonthlyPanel()"></div>
+          <!-- STEP 1: Pilih siswa -->
+          <div class="form-group">
+            <label>Student *</label>
+            <select id="b-siswa" onchange="onPaymentStudentChange()"><option value="">-- Select Student --</option></select>
           </div>
 
-          <!-- ── MONTHLY BILLING PANEL ── -->
+          <!-- ── MONTHLY BILLING PANEL (muncul jika siswa = monthly) ── -->
           <div id="monthly-pay-panel" style="display:none;background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1.5px solid var(--accent);border-radius:14px;padding:16px 18px;margin-bottom:14px">
             <div style="font-family:'Fredoka One',sans-serif;font-weight:800;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px">
               📅 Monthly Billing
               <span id="mpp-badge" style="font-size:0.72rem;font-weight:700;background:var(--accent);color:#fff;border-radius:20px;padding:2px 10px">Monthly</span>
+            </div>
+            <!-- Period masuk ke dalam monthly panel, bukan di baris utama -->
+            <div class="form-group" style="margin-top:0;margin-bottom:10px">
+              <label style="color:var(--text)">Month / Period</label>
+              <input type="text" id="b-periode" placeholder="e.g. August 2026" oninput="refreshMonthlyPanel()">
             </div>
             <div id="monthly-pay-body" style="font-size:0.87rem;color:var(--text);line-height:2"></div>
             <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
@@ -1785,9 +1791,9 @@ td.nowrap { white-space:nowrap }
             </div>
           </div>
 
-          <!-- SESSION PICKER -->
+          <!-- STEP 2: Pilih sesi (per-session billing) -->
           <div class="form-group" id="sesi-picker-group">
-            <label>📅 Sessions to Pay <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(select from attendance records)</span></label>
+            <label>📋 Sessions to Pay <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0">(select from attendance records)</span></label>
             <div id="sesi-picker-wrap" style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg3);max-height:220px;overflow-y:auto">
               <div style="color:var(--muted);font-size:0.83rem">Select a student to see their available sessions.</div>
             </div>
@@ -1798,12 +1804,13 @@ td.nowrap { white-space:nowrap }
             </div>
           </div>
 
+          <!-- STEP 3: Detail pembayaran -->
           <div class="form-row">
-            <div class="form-group"><label>Payment Date</label><input type="date" id="b-tanggal"></div>
+            <div class="form-group"><label>Total Invoice (Rp)</label><input type="text" inputmode="numeric" id="b-tagihan" placeholder="e.g. Rp 150.000" style="text-align:right"></div>
             <div class="form-group"><label>Amount Paid (Rp)</label><input type="text" inputmode="numeric" id="b-jumlah" placeholder="e.g. Rp 150.000" style="text-align:right"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label>Total Invoice (Rp)</label><input type="text" inputmode="numeric" id="b-tagihan" placeholder="e.g. Rp 150.000" style="text-align:right"></div>
+            <div class="form-group"><label>Payment Date</label><input type="date" id="b-tanggal"></div>
             <div class="form-group"><label>Status</label>
               <select id="b-status">
                 <option value="Lunas">✅ Paid in Full</option>
@@ -4135,6 +4142,8 @@ function openPaymentForm(id){
   const b=id?bayarList.find(x=>x.id===id):null;
   // Pastikan tab aktif adalah 'rekap' agar form payment terlihat
   switchPayTab('rekap');
+  // Update title form sesuai mode
+  document.getElementById('form-payment-title').textContent = b ? '✏️ Edit Payment' : '💰 Record Payment';
   // Reset flag: edit = sudah ada nilai (anggap manual), baru = belum ada
   _paymentAmountManuallyEdited = !!b;
   document.getElementById('b-id').value=b?.id||'';
@@ -4180,7 +4189,7 @@ function openPaymentForm(id){
   }
   openPanel('form-payment','900px');
 }
-function closePaymentForm(){ closePanel('form-payment') }
+function closePaymentForm(){ closePanel('form-payment'); document.getElementById('form-payment-title').textContent='💰 Record Payment'; }
 function openEditBayar(id){ openPaymentForm(id) }
 function savePayment(){
   const siswaId=document.getElementById('b-siswa').value;
