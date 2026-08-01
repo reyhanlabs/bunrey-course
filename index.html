@@ -4834,78 +4834,214 @@ function _buildReceiptBodyHTML(b,siswa){
   const stl=b.status==='Lunas'?'✅ PAID IN FULL':b.status==='Cicil'?'⚠️ PARTIAL':'❌ UNPAID';
   const isMonthly = b.billingType==='monthly';
   const rows=[
-    ['Student',   b.namaSiswa],
-    siswa?.nick      ? ['Nickname', siswa.nick]     : null,
-    siswa?.namaOrtu  ? ['Parent',   siswa.namaOrtu] : null,
-    ['Billing',   isMonthly ? '📆 Monthly (Flat)' : '📅 Per Session'],
-    ['Period',    b.periode||'-'],
     ['Payment Date', tglFmt(b.tanggal)],
+    siswa?.namaOrtu  ? ['Parent', siswa.namaOrtu] : null,
     ['Total Invoice', fmt(b.tagihan)],
   ].filter(Boolean);
 
   if(isMonthly){
-    if(siswa?.hari) rows.push(['Class Schedule', siswa.hari]);
-    rows.push(['Coverage', 'All sessions in period covered']);
+    rows.push(['Coverage', 'All sessions in period']);
   } else {
-    // Per Session: show each session date that was paid
     if(b.sesiIds && b.sesiIds.length){
       const sesiLabels = b.sesiIds.map(id=>{
         const a = absensiList.find(x=>x.id===id);
         return a ? tglFmt(a.tanggal) : id;
       }).join(', ');
-      rows.push(['Sessions Paid ('+b.sesiIds.length+'x)', sesiLabels]);
+      rows.push(['Sessions ('+b.sesiIds.length+'×)', sesiLabels]);
     }
   }
-  return {rno,stc,stl,rows};
+  const paidPct = b.tagihan>0 ? Math.round((b.jumlah/b.tagihan)*100) : 0;
+  return {rno,stc,stl,rows,isMonthly,paidPct};
 }
 function showReceipt(id){
   const b=bayarList.find(x=>x.id===id); if(!b) return;
   const siswa=siswaList.find(s=>s.id===b.siswaId);
-  const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
+  const {rno,stc,stl,rows,isMonthly,paidPct}=_buildReceiptBodyHTML(b,siswa);
+  const initials=(b.namaSiswa||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const billingLabel=isMonthly?'Monthly':'Per Session';
   const html=`
-    <div style="text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:2px dashed var(--border)">
-      <div style="font-family:'Fredoka One',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)">🎓 LittleLume English Course</div>
-      <div style="font-size:0.82rem;color:var(--muted);margin-top:3px">Tuition Payment Receipt</div>
-      <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">No: ${rno}</div>
+    <div style="background:#ccfbf1;padding:16px;display:flex;align-items:center;gap:12px;margin:-16px -16px 0;border-radius:10px 10px 0 0">
+      <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">
+        <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:100%;height:100%;object-fit:cover">
+      </div>
+      <div style="flex:1">
+        <div style="font-size:0.95rem;font-weight:800;line-height:1.2">
+          <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span>
+          <span style="color:#f472b6"> English</span><span style="color:#0d9488"> Course</span>
+        </div>
+        <div style="color:#0d9488;font-size:0.62rem;margin-top:2px">Tuition Payment Receipt</div>
+      </div>
+      <div style="background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace">${rno}</div>
     </div>
-    ${rows.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:0.88rem;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">${k}</span><strong>${v}</strong></div>`).join('')}
-    <div style="display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid var(--accent);margin-top:8px;color:var(--accent)"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
-    <div style="text-align:center;margin:10px 0;font-weight:800;color:${stc}">${stl}</div>
-    ${b.catatan?`<div style="font-size:0.78rem;text-align:center;color:var(--muted)">Note: ${b.catatan}</div>`:''}
-    <div style="text-align:center;margin-top:16px;font-size:0.75rem;color:var(--muted)">Thank you for your trust! 🌟<br><strong style="color:var(--accent)">LittleLume English Course</strong></div>`;
+    <div style="background:#ccfbf1;margin:0 -16px;line-height:0">
+      <svg viewBox="0 0 300 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q15,18 30,0 Q45,18 60,0 Q75,18 90,0 Q105,18 120,0 Q135,18 150,0 Q165,18 180,0 Q195,18 210,0 Q225,18 240,0 Q255,18 270,0 Q285,18 300,0 L300,18 L0,18 Z" fill="#f0fdfa"/></svg>
+    </div>
+    <div style="background:#f0fdfa;margin:0 -16px;padding:12px 16px">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4">
+        <div style="width:34px;height:34px;border-radius:50%;background:#99f6e4;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#0f4c4c;flex-shrink:0">${initials}</div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:800;color:#0f4c4c">${b.namaSiswa||'-'}</div>
+          <div style="font-size:0.68rem;color:#0d9488;margin-top:1px">${billingLabel} · ${b.periode||'-'}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
+        ${rows.map(([k,v])=>`<div style="background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px"><div style="font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div><div style="font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px">${v}</div></div>`).join('')}
+        <div style="background:#0d9488;border-radius:8px;padding:8px 10px">
+          <div style="font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>
+          <div style="font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px">${fmt(b.jumlah)}</div>
+        </div>
+      </div>
+      ${b.status==='Cicil'?`
+      <div style="background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:#0d9488;border-radius:6px;height:7px;width:${paidPct}%"></div></div>
+      <div style="font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`:''}
+      <div style="text-align:center;padding:9px;background:${stc==='#00d68f'?'#e0fdf4':stc==='#ffb347'?'#fff7ed':'#fef2f2'};border-radius:8px;border:1px solid ${stc==='#00d68f'?'#5eead4':stc==='#ffb347'?'#fed7aa':'#fca5a5'}">
+        <span style="font-size:0.72rem;font-weight:800;color:${stc==='#00d68f'?'#0f4c4c':stc==='#ffb347'?'#7c2d12':'#7f1d1d'}">${stl}</span>
+      </div>
+      ${b.catatan?`<div style="font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic">Note: ${b.catatan}</div>`:''}
+    </div>
+    <div style="background:#d0f9f1;margin:0 -16px;line-height:0">
+      <svg viewBox="0 0 300 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q15,0 30,18 Q45,0 60,18 Q75,0 90,18 Q105,0 120,18 Q135,0 150,18 Q165,0 180,18 Q195,0 210,18 Q225,0 240,18 Q255,0 270,18 Q285,0 300,18 L300,0 L0,0 Z" fill="#f0fdfa"/></svg>
+    </div>
+    <div style="background:#d0f9f1;margin:0 -16px -16px;padding:10px 16px;text-align:center;border-radius:0 0 10px 10px">
+      <div style="font-size:0.62rem;font-weight:700">
+        <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span>
+        <span style="color:#f472b6"> English</span><span style="color:#0d9488"> Course</span>
+      </div>
+    </div>`;
   document.getElementById('receipt-content').innerHTML=html;
   document.getElementById('modal-receipt').dataset.receiptId=id;
   document.getElementById('modal-receipt').dataset.receiptText=
-    `🎓 LITTLELUME ENGLISH COURSE\nPayment Receipt — ${rno}\n\n${rows.map(([k,v])=>k.padEnd(14)+': '+v).join('\n')}\n\nAmount Paid    : ${fmt(b.jumlah)}\nStatus         : ${b.status}\n${b.catatan?'Note           : '+b.catatan+'\n':''}\nThank you for your trust! 🌟`;
+    `LITTLELUME ENGLISH COURSE\nPayment Receipt — ${rno}\n\n${rows.map(([k,v])=>k.padEnd(16)+': '+v).join('\n')}\n\nAmount Paid     : ${fmt(b.jumlah)}\nStatus          : ${b.status}\n${b.catatan?'Note            : '+b.catatan+'\n':''}\nThank you for your trust!`;
   document.getElementById('wa-status').style.display='none';
   openModal('modal-receipt');
 }
 function _buildReceiptPrintHTML(b,siswa){
-  const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
+  const {rno,stc,stl,rows,isMonthly,paidPct}=_buildReceiptBodyHTML(b,siswa);
+  const initials=(b.namaSiswa||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const billingLabel=isMonthly?'Monthly':'Per Session';
+  const stBg=b.status==='Lunas'?'#e0fdf4':b.status==='Cicil'?'#fff7ed':'#fef2f2';
+  const stBorder=b.status==='Lunas'?'#5eead4':b.status==='Cicil'?'#fed7aa':'#fca5a5';
+  const stText=b.status==='Lunas'?'#0f4c4c':b.status==='Cicil'?'#7c2d12':'#7f1d1d';
+  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#f0fdfa"/></svg>`;
+  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#f0fdfa"/></svg>`;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${rno}</title>
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:32px;max-width:380px;margin:auto;color:#1a1f36;background:#fff}@page{size:A5 portrait;margin:12mm}.hdr{text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:3px dashed #ddd}.logo{font-size:1.4rem;font-weight:800;color:#6c63ff}.sub{font-size:0.78rem;color:#888;margin-top:3px}.no{font-size:0.7rem;color:#bbb;margin-top:2px}.row{display:flex;justify-content:space-between;padding:7px 0;font-size:0.87rem;border-bottom:1px solid #f0f0f0}.row span{color:#888}.row strong{text-align:right;padding-left:10px}.total{display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid #6c63ff;margin-top:8px;color:#6c63ff}.status{text-align:center;margin:12px 0;font-weight:800}.footer{text-align:center;margin-top:18px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa;line-height:1.8}.footer strong{color:#6c63ff}</style></head><body>
-  <div class="hdr"><div class="logo">🎓 LittleLume English Course</div><div class="sub">Tuition Payment Receipt</div><div class="no">No: ${rno}</div></div>
-  ${rows.map(([k,v])=>`<div class="row"><span>${k}</span><strong>${v}</strong></div>`).join('')}
-  <div class="total"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
-  <div class="status" style="color:${stc}">${stl}</div>
-  ${b.catatan?`<div style="font-size:0.75rem;color:#888;text-align:center">Note: ${b.catatan}</div>`:''}
-  <div class="footer">Thank you for your trust! 🌟<br><strong>LittleLume English Course</strong></div>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;max-width:380px;margin:auto;background:#f0fdfa;color:#0f4c4c}
+    @page{size:A5 portrait;margin:8mm}
+    .hdr{background:#ccfbf1;padding:18px 16px;display:flex;align-items:center;gap:12px}
+    .logo-img{width:44px;height:44px;border-radius:12px;border:2px solid #5eead4;overflow:hidden;flex-shrink:0}
+    .logo-img img{width:100%;height:100%;object-fit:cover}
+    .brand{font-size:0.95rem;font-weight:800;line-height:1.3}
+    .sub{color:#0d9488;font-size:0.62rem;margin-top:2px}
+    .rno{margin-left:auto;background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace;white-space:nowrap}
+    .body{background:#f0fdfa;padding:12px 16px}
+    .student{display:flex;align-items:center;gap:10px;padding:10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4}
+    .avatar{width:34px;height:34px;border-radius:50%;background:#99f6e4;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#0f4c4c;flex-shrink:0}
+    .sname{font-size:0.85rem;font-weight:800;color:#0f4c4c}
+    .smeta{font-size:0.68rem;color:#0d9488;margin-top:1px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+    .cell{background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px}
+    .clabel{font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700}
+    .cval{font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px}
+    .cell-amt{background:#0d9488;border-radius:8px;padding:8px 10px}
+    .amt-label{font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700}
+    .amt-val{font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px}
+    .status{text-align:center;padding:9px;border-radius:8px;font-size:0.75rem;font-weight:800}
+    .note{font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic}
+    .footer{background:#d0f9f1;padding:10px 16px;text-align:center}
+    .fbrand{font-size:0.65rem;font-weight:700}
+    .prog-track{background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px}
+    .prog-fill{background:#0d9488;border-radius:6px;height:7px}
+    .prog-text{font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600}
+  </style></head><body>
+  <div class="hdr">
+    <div class="logo-img"><img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico"></div>
+    <div>
+      <div class="brand"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span> <span style="color:#f472b6">English</span> <span style="color:#0d9488">Course</span></div>
+      <div class="sub">Tuition Payment Receipt</div>
+    </div>
+    <div class="rno">${rno}</div>
+  </div>
+  <div style="background:#ccfbf1;line-height:0">${scTop}</div>
+  <div class="body">
+    <div class="student">
+      <div class="avatar">${initials}</div>
+      <div><div class="sname">${b.namaSiswa||'-'}</div><div class="smeta">${billingLabel} · ${b.periode||'-'}</div></div>
+    </div>
+    <div class="grid">
+      ${rows.map(([k,v])=>`<div class="cell"><div class="clabel">${k}</div><div class="cval">${v}</div></div>`).join('')}
+      <div class="cell-amt"><div class="amt-label">Amount Paid</div><div class="amt-val">${fmt(b.jumlah)}</div></div>
+    </div>
+    ${b.status==='Cicil'?`<div class="prog-track"><div class="prog-fill" style="width:${paidPct}%"></div></div><div class="prog-text">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`:''}
+    <div class="status" style="background:${stBg};border:1px solid ${stBorder};color:${stText}">${stl}</div>
+    ${b.catatan?`<div class="note">Note: ${b.catatan}</div>`:''}
+  </div>
+  <div style="background:#d0f9f1;line-height:0">${scBot}</div>
+  <div class="footer">
+    <div class="fbrand"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span> <span style="color:#f472b6">English</span> <span style="color:#0d9488">Course</span></div>
+    <div style="font-size:0.6rem;color:#0d9488;margin-top:2px">Thank you for your trust!</div>
+  </div>
   </body></html>`;
 }
 function _buildReceiptRenderHTML(b,siswa){
-  const {rno,stc,stl,rows}=_buildReceiptBodyHTML(b,siswa);
-  return `<div style="text-align:center;padding-bottom:14px;margin-bottom:14px;border-bottom:3px dashed #ddd"><div style="font-size:1.45rem;font-weight:800;color:#6c63ff">🎓 LittleLume English Course</div><div style="font-size:0.8rem;color:#888;margin-top:3px">Tuition Payment Receipt</div><div style="font-size:0.7rem;color:#bbb;margin-top:2px">No: ${rno}</div></div>
-  ${rows.map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;font-size:0.87rem;border-bottom:1px solid #f0f0f0"><span style="color:#888">${k}</span><strong>${v}</strong></div>`).join('')}
-  <div style="display:flex;justify-content:space-between;padding:11px 0;font-size:1rem;font-weight:800;border-top:2px solid #6c63ff;margin-top:8px;color:#6c63ff"><span>Amount Paid</span><span>${fmt(b.jumlah)}</span></div>
-  <div style="text-align:center;margin:12px 0;font-weight:800;color:${stc}">${stl}</div>
-  ${b.catatan?`<div style="font-size:0.75rem;color:#888;text-align:center">Note: ${b.catatan}</div>`:''}
-  <div style="text-align:center;margin-top:18px;padding-top:12px;border-top:2px dashed #ddd;font-size:0.72rem;color:#aaa;line-height:1.8">Thank you for your trust! 🌟<br><strong style="color:#6c63ff">LittleLume English Course</strong></div>`;
+  const {rno,stc,stl,rows,isMonthly,paidPct}=_buildReceiptBodyHTML(b,siswa);
+  const initials=(b.namaSiswa||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const billingLabel=isMonthly?'Monthly':'Per Session';
+  const stBg=b.status==='Lunas'?'#e0fdf4':b.status==='Cicil'?'#fff7ed':'#fef2f2';
+  const stBorder=b.status==='Lunas'?'#5eead4':b.status==='Cicil'?'#fed7aa':'#fca5a5';
+  const stText=b.status==='Lunas'?'#0f4c4c':b.status==='Cicil'?'#7c2d12':'#7f1d1d';
+  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:380px"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#f0fdfa"/></svg>`;
+  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:380px"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#f0fdfa"/></svg>`;
+  return `<div style="background:#ccfbf1;padding:16px;display:flex;align-items:center;gap:12px">
+    <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">
+      <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:44px;height:44px;object-fit:cover">
+    </div>
+    <div style="flex:1">
+      <div style="font-size:0.95rem;font-weight:800;line-height:1.2">
+        <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span>
+        <span style="color:#f472b6"> English</span><span style="color:#0d9488"> Course</span>
+      </div>
+      <div style="color:#0d9488;font-size:0.62rem;margin-top:2px">Tuition Payment Receipt</div>
+    </div>
+    <div style="background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace">${rno}</div>
+  </div>
+  <div style="background:#ccfbf1;line-height:0">${scTop}</div>
+  <div style="background:#f0fdfa;padding:12px 16px">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4">
+      <div style="width:34px;height:34px;border-radius:50%;background:#99f6e4;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#0f4c4c;flex-shrink:0">${initials}</div>
+      <div>
+        <div style="font-size:0.85rem;font-weight:800;color:#0f4c4c">${b.namaSiswa||'-'}</div>
+        <div style="font-size:0.68rem;color:#0d9488;margin-top:1px">${billingLabel} · ${b.periode||'-'}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
+      ${rows.map(([k,v])=>`<div style="background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px"><div style="font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div><div style="font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px">${v}</div></div>`).join('')}
+      <div style="background:#0d9488;border-radius:8px;padding:8px 10px">
+        <div style="font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>
+        <div style="font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px">${fmt(b.jumlah)}</div>
+      </div>
+    </div>
+    ${b.status==='Cicil'?`<div style="background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:#0d9488;border-radius:6px;height:7px;width:${paidPct}%"></div></div><div style="font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`:''}
+    <div style="text-align:center;padding:9px;background:${stBg};border-radius:8px;border:1px solid ${stBorder}">
+      <span style="font-size:0.72rem;font-weight:800;color:${stText}">${stl}</span>
+    </div>
+    ${b.catatan?`<div style="font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic">Note: ${b.catatan}</div>`:''}
+  </div>
+  <div style="background:#d0f9f1;line-height:0">${scBot}</div>
+  <div style="background:#d0f9f1;padding:10px 16px;text-align:center">
+    <div style="font-size:0.65rem;font-weight:700">
+      <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span>
+      <span style="color:#f472b6"> English</span><span style="color:#0d9488"> Course</span>
+    </div>
+    <div style="font-size:0.6rem;color:#0d9488;margin-top:2px">Thank you for your trust!</div>
+  </div>`;
 }
 async function _renderToCanvas(b,siswa){
   const panel=document.getElementById('receipt-render-panel');
   panel.innerHTML=_buildReceiptRenderHTML(b,siswa);
   await new Promise(r=>setTimeout(r,150));
-  const canvas=await html2canvas(panel,{scale:3,useCORS:true,backgroundColor:'#ffffff',width:380,windowWidth:380});
+  const canvas=await html2canvas(panel,{scale:3,useCORS:true,backgroundColor:'#ccfbf1',width:380,windowWidth:380});
   panel.innerHTML=''; return canvas;
 }
 function printReceipt(){
