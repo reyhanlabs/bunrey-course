@@ -2440,15 +2440,17 @@ async function switchClass(classId){
   // Tutup semua form/modal yang sedang terbuka sebelum ganti kelas
   closeAllFormsAndModals();
   // Clear data before loading new class
-  siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
+  siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
+  // Baca lastPage SEBELUM navigate('dashboard') agar tidak tertimpa
+  const lastPage = localStorage.getItem('lastPage_' + classId) || 'dashboard';
   // Reset ke dashboard dulu agar UI bersih sebelum data kelas baru dimuat
-  navigate('dashboard');
+  // Gunakan _navigateRaw agar lastPage_classId tidak ditimpa 'dashboard'
+  _navigateRaw('dashboard');
   renderAll(); setCurrentMonthDashFilter();
   await loadFromFirestore();
   subscribeToClassUpdates();
   closeModal('modal-classes');
-  // Setelah data kelas baru ter-load, restore halaman terakhir untuk kelas ini
-  const lastPage = localStorage.getItem('lastPage_' + classId) || 'dashboard';
+  // Setelah data kelas baru ter-load, navigate ke halaman terakhir kelas ini
   navigate(lastPage);
 }
 
@@ -2609,10 +2611,8 @@ async function loadFromFirestore(){
       evaluasiList = d.evaluasi || [];
       bayarList    = d.bayar    || [];
       scheduleList = d.schedules|| [];
-      _lastKnownUpdatedAt = d.updatedAt || null;
     } else {
-      siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];
-      _lastKnownUpdatedAt = null;
+      siswaList=[];absensiList=[];materiList=[];evaluasiList=[];bayarList=[];scheduleList=[];
     }
     setSynced();
     renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
@@ -2625,14 +2625,18 @@ async function loadFromFirestore(){
 }
 
 // ════════════════════════════════════════════════
-//  REALTIME CROSS-DEVICE SYNC (mitigasi race condition)
+//  REALTIME CROSS-DEVICE SYNC
 // ════════════════════════════════════════════════
 let _unsubscribeSnapshot = null;
-let _lastKnownUpdatedAt  = null;  // timestamp Firestore terakhir yang kita tahu — dipakai buat deteksi konflik
+
+// Flag: kita sendiri yang lagi nulis ke Firestore.
+// Selama flag ini true, semua snapshot yang masuk DIABAIKAN —
+// karena pasti echo dari write kita sendiri, bukan dari device lain.
+let _ownWriteInFlight = false;
 
 function _isEditFormOpen(){
-  // Cek apakah ada form/modal yang sedang dibuka (biar update remote gak nimpa input yang lagi diketik)
-  return !!document.querySelector('.form-panel.open, .overlay.open');
+  // Hanya blokir realtime sync jika user sedang mengetik di form input
+  return !!document.querySelector('.form-panel.open');
 }
 
 function _tsMillis(ts){ return ts?.toMillis ? ts.toMillis() : null; }
@@ -2641,34 +2645,30 @@ function subscribeToClassUpdates(){
   if(_unsubscribeSnapshot){ _unsubscribeSnapshot(); _unsubscribeSnapshot=null; }
   if(!userDocRef) return;
   _unsubscribeSnapshot = userDocRef.onSnapshot(snap => {
-    // Abaikan echo dari write milik device ini sendiri (biar gak infinite loop / re-render sia-sia)
+    // 1. Abaikan snapshot sementara kita sendiri lagi nulis (write in-flight)
+    if(_ownWriteInFlight) return;
+
+    // 2. Abaikan jika snapshot masih berisi pending write kita sendiri
     if(snap.metadata.hasPendingWrites) return;
+
     if(!snap.exists) return;
     const d = snap.data();
 
-    // Kalau updatedAt-nya sama persis dengan yang terakhir kita catat, ini cuma konfirmasi
-    // dari write kita sendiri yang barusan sukses — bukan perubahan baru dari device lain.
-    const newMs   = _tsMillis(d.updatedAt);
-    const knownMs = _tsMillis(_lastKnownUpdatedAt);
-    if(newMs && knownMs && newMs === knownMs) return;
-
+    // 3. Jika form input sedang terbuka, tampilkan warning saja tanpa overwrite
     if(_isEditFormOpen()){
-      // Ada form yang lagi diisi — jangan timpa diam-diam, cuma kasih peringatan.
-      // Sengaja TIDAK update _lastKnownUpdatedAt di sini, supaya nanti saat form ini
-      // di-save, pengecekan stale-write di _flushToFirestore() akan menangkap konfliknya.
-      showToast('⚠️ Data diperbarui dari device lain. Selesaikan/tutup form ini lalu refresh halaman untuk melihat data terbaru.', 'warn', 8000);
+      showToast('⚠️ Data diperbarui dari device lain. Selesaikan/tutup form ini lalu refresh halaman.', 'warn', 8000);
       return;
     }
 
+    // 4. Snapshot ini memang dari device lain — terapkan
     siswaList    = d.siswa    || [];
     absensiList  = d.absensi  || [];
     materiList   = d.materi   || [];
     evaluasiList = d.evaluasi || [];
     bayarList    = d.bayar    || [];
     scheduleList = d.schedules|| [];
-    _lastKnownUpdatedAt = d.updatedAt || null;
     renderAll(); setCurrentMonthDashFilter(); loadAbsensi();
-    showToast('🔄 Data diperbarui otomatis dari device lain', 'info', 3500);
+    showToast('🔄 Data diperbarui dari device lain', 'info', 3500);
   }, err => {
     console.error('[Snapshot listener error]', err);
   });
@@ -2685,39 +2685,23 @@ async function _flushToFirestore(){
   if(!userDocRef) return;
   clearTimeout(_saveTimer);
   setSyncing();
+
+  // Tandai: kita yang nulis — abaikan semua snapshot sampai selesai
+  _ownWriteInFlight = true;
   try{
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(userDocRef);
-      const serverUpdatedAt = snap.exists ? snap.data().updatedAt : null;
-      const serverMs = _tsMillis(serverUpdatedAt);
-      const knownMs  = _tsMillis(_lastKnownUpdatedAt);
-      // Kalau versi di server lebih baru dari versi terakhir yang kita tahu,
-      // berarti ada device lain yang sudah nulis duluan — jangan ditimpa!
-      if(serverMs && knownMs && serverMs > knownMs){
-        const err = new Error('Data sudah diubah oleh device lain sebelum tersimpan.');
-        err.code = 'stale-write';
-        throw err;
-      }
-      tx.set(userDocRef, {
-        siswa:siswaList, absensi:absensiList, materi:materiList,
-        evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      },{merge:true});
-    });
-    // Ambil ulang updatedAt yang baru saja ke-resolve di server, buat pembanding berikutnya
-    const freshSnap = await userDocRef.get();
-    _lastKnownUpdatedAt = freshSnap.data()?.updatedAt || null;
+    await userDocRef.set({
+      siswa:siswaList, absensi:absensiList, materi:materiList,
+      evaluasi:evaluasiList, bayar:bayarList, schedules:scheduleList,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    },{merge:true});
     setSynced();
     console.log('✅ Saved → '+currentClassName+' | students:'+siswaList.length);
   } catch(e){
-    if(e.code === 'stale-write'){
-      setSyncErr('stale');
-      showToast('⚠️ Gagal simpan: data sudah berubah di device lain sebelum tersimpan. Perubahanmu belum tersimpan. <span style="text-decoration:underline;cursor:pointer;font-weight:800" onclick="location.reload()">Muat ulang halaman</span> lalu ulangi perubahannya.', 'warn', 15000);
-      return;
-    }
     setSyncErr(e.code || e.message);
     console.error('❌ Save failed:', e.code, e.message);
-    throw e;
+  } finally{
+    // Tunda reset flag sedikit agar snapshot echo sempat diabaikan sebelum flag turun
+    setTimeout(()=>{ _ownWriteInFlight = false; }, 2000);
   }
 }
 
@@ -2744,11 +2728,12 @@ async function migrateLocalStorage(){
 // ════════════════════════════════════════════════
 const DB = {
   set: (k, v) => {
-    if(k==='siswa')    siswaList    = v;
-    if(k==='absensi')  absensiList  = v;
-    if(k==='materi')   materiList   = v;
-    if(k==='evaluasi') evaluasiList = v;
-    if(k==='bayar')    bayarList    = v;
+    if(k==='siswa')     siswaList    = v;
+    if(k==='absensi')   absensiList  = v;
+    if(k==='materi')    materiList   = v;
+    if(k==='evaluasi')  evaluasiList = v;
+    if(k==='bayar')     bayarList    = v;
+    if(k==='schedules') scheduleList = v;
     saveToFirestore();
   }
 };
@@ -2845,6 +2830,15 @@ const pageActions = {
   payment:  `<button class="btn-topbar primary" onclick="openPaymentForm()">＋ Record Payment</button>`,
 };
 
+function _navigateRaw(page){
+  // Navigate tanpa update lastPage — dipakai internal (e.g. switchClass reset sementara)
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('page-'+page);
+  if(pg) pg.classList.add('active');
+  document.getElementById('topbar-title').textContent = pageNames[page]||'';
+  document.querySelectorAll('.mbn-item').forEach(el=>el.classList.toggle('active', el.dataset.page===page));
+}
 function navigate(page){
   localStorage.setItem('lastPage', page);
   if(currentClassId) localStorage.setItem('lastPage_' + currentClassId, page);
@@ -3146,22 +3140,20 @@ function _finishSaveStudent(id, finalId, data){
   if(id){
     const i=siswaList.findIndex(s=>s.id===id);
     if(i>-1) siswaList[i]={...siswaList[i],...data};
-    // Sync namaSiswa di absensi, evaluasi, dan bayar jika nama berubah
+    // Sync namaSiswa di absensi, evaluasi, bayar — update variabel lokal langsung
+    // (tidak pakai DB.set per koleksi agar tidak trigger 3x saveToFirestore)
     if(data.nama){
       absensiList.forEach(a=>{ if(a.siswaId===id) a.namaSiswa=data.nama; });
       evaluasiList.forEach(e=>{ if(e.siswaId===id) e.namaSiswa=data.nama; });
       bayarList.forEach(b=>{ if(b.siswaId===id) b.namaSiswa=data.nama; });
-      DB.set('absensi',  absensiList);
-      DB.set('evaluasi', evaluasiList);
-      DB.set('bayar',    bayarList);
     }
   } else {
     siswaList.push({id:finalId,...data});
   }
-  // Commit pending schedules
+  // Commit pending schedules ke scheduleList
   _commitSchedules(finalId);
-  DB.set('siswa',siswaList);
-  DB.set('schedules',scheduleList);
+  // Satu kali saveToFirestore() untuk semua perubahan sekaligus
+  saveToFirestore();
   closeStudentForm(); renderStudents(); updateSelects(); updateUnpaidBadge(); updateMbnBadge();
   if(document.getElementById('page-payment').classList.contains('active')) renderPayment();
   if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
@@ -3207,9 +3199,7 @@ function deleteStudent(id){
       siswaList    = siswaList.filter(x=>x.id!==id);
       evaluasiList = evaluasiList.filter(e=>e.siswaId!==id);
       scheduleList = scheduleList.filter(sc=>sc.siswaId!==id);
-      DB.set('siswa',    siswaList);
-      DB.set('evaluasi', evaluasiList);
-      DB.set('schedules',scheduleList);
+      saveToFirestore();
       renderStudents(); updateSelects(); updateUnpaidBadge(); updateMbnBadge();
       if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
       showToast(`✅ ${s.nama} deleted.`, 'success');
@@ -5582,7 +5572,7 @@ function closeModalDialog(modalId) {
 
 function confirmModalDialog(modalId) {
   const callback = window['modalCallback_' + modalId];
-  if(callback) callback();
+  if(typeof callback === 'function') callback();
   closeModalDialog(modalId);
 }
 
