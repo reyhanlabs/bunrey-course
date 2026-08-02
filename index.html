@@ -486,8 +486,9 @@ td.nowrap { white-space:nowrap }
 
 /* ── RECEIPT RENDER PANEL (off-screen) ── */
 #receipt-render-panel {
-  position:fixed;left:-9999px;top:0;width:380px;background:#fff;
-  padding:28px;font-family:'Fredoka One',Arial,sans-serif;color:#1a1f36;z-index:-1;
+  position:fixed;left:-9999px;top:0;width:380px;background:#ccfbf1;
+  padding:0;font-family:Arial,sans-serif;color:#0f4c4c;z-index:-1;
+  border-radius:12px;overflow:hidden;
 }
 #sp-render-panel {
   position:fixed;left:-9999px;top:0;width:560px;background:#fff;
@@ -2160,22 +2161,17 @@ td.nowrap { white-space:nowrap }
 
 <!-- ══ MODAL: RECEIPT ══ -->
 <div class="overlay" id="modal-receipt">
-  <div class="modal modal-sm">
-    <div class="modal-title">🧾 Payment Receipt</div>
+  <div class="modal" style="max-width:400px;padding:0;overflow:hidden">
     <div id="receipt-content"></div>
-    <div style="margin-top:20px">
-      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">📲 Send to WhatsApp</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <button class="btn wa sm" onclick="waText()">💬 Text Receipt</button>
-        <button class="btn wa2 sm" id="btn-wa-img" onclick="waImage()">🖼️ Image + WA</button>
-        <button class="btn wa3 sm" onclick="downloadPNG()">⬇️ Save PNG</button>
-      </div>
-      <div style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">🖨️ Print / Download</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="padding:14px 16px 16px;border-top:1px solid var(--border)">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn wa sm" onclick="waText()">💬 WA Text</button>
+        <button class="btn wa2 sm" id="btn-wa-img" onclick="waImage()">🖼️ WA Image</button>
+        <button class="btn wa3 sm" onclick="downloadPNG()">⬇️ PNG</button>
         <button class="btn sm" onclick="printReceipt()">🖨️ Print</button>
         <button class="btn sm primary" onclick="downloadPDF()">⬇️ PDF</button>
-        <button class="btn sm success" onclick="copyReceipt()">📋 Copy Text</button>
-        <button class="btn sm" onclick="closeModal('modal-receipt')">Close</button>
+        <button class="btn sm success" onclick="copyReceipt()">📋 Copy</button>
+        <button class="btn sm" onclick="closeModal('modal-receipt')">✕ Close</button>
       </div>
       <div id="wa-status"></div>
     </div>
@@ -4860,7 +4856,7 @@ function showReceipt(id){
   const initials=(b.namaSiswa||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const billingLabel=isMonthly?'Monthly':'Per Session';
   const html=`
-    <div style="background:#ccfbf1;padding:16px;display:flex;align-items:center;gap:12px;margin:-16px -16px 0;border-radius:10px 10px 0 0">
+    <div style="background:#ccfbf1;padding:16px;display:flex;align-items:center;gap:12px;">
       <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">
         <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:100%;height:100%;object-fit:cover">
       </div>
@@ -4872,10 +4868,10 @@ function showReceipt(id){
       </div>
       <div style="background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace;white-space:nowrap">${rno}</div>
     </div>
-    <div style="background:#ccfbf1;margin:0 -16px;line-height:0">
+    <div style="background:#ccfbf1;line-height:0">
       <svg viewBox="0 0 300 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q15,18 30,0 Q45,18 60,0 Q75,18 90,0 Q105,18 120,0 Q135,18 150,0 Q165,18 180,0 Q195,18 210,0 Q225,18 240,0 Q255,18 270,0 Q285,18 300,0 L300,18 L0,18 Z" fill="#f0fdfa"/></svg>
     </div>
-    <div style="background:#f0fdfa;margin:0 -16px;padding:12px 16px">
+    <div style="background:#f0fdfa;padding:12px 16px">
       <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4">
         <div style="width:34px;height:34px;border-radius:50%;background:#99f6e4;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#0f4c4c;flex-shrink:0">${initials}</div>
         <div>
@@ -4898,10 +4894,10 @@ function showReceipt(id){
       </div>
       ${b.catatan?`<div style="font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic">Note: ${b.catatan}</div>`:''}
     </div>
-    <div style="background:#d0f9f1;margin:0 -16px;line-height:0">
+    <div style="background:#d0f9f1;line-height:0">
       <svg viewBox="0 0 300 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q15,0 30,18 Q45,0 60,18 Q75,0 90,18 Q105,0 120,18 Q135,0 150,18 Q165,0 180,18 Q195,0 210,18 Q225,0 240,18 Q255,0 270,18 Q285,0 300,18 L300,0 L0,0 Z" fill="#f0fdfa"/></svg>
     </div>
-    <div style="background:#d0f9f1;margin:0 -16px -16px;padding:10px 16px;text-align:center;border-radius:0 0 10px 10px">
+    <div style="background:#d0f9f1;padding:10px 16px;text-align:center">
       <div style="font-size:0.62rem;font-weight:700">
         <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span>
         <span style="color:#f472b6"> English</span><span style="color:#0d9488"> Course</span>
