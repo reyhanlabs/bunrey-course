@@ -5069,8 +5069,10 @@ async function downloadPNG(){
   ws.style.display='block'; ws.textContent='⏳ Generating image…';
   try{
     const canvas=await _renderToCanvas(b,siswa);
+    const _safeName1=(b.namaSiswa||'Student').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/ +/g,'_');
+    const _safeDate1=(b.tanggal||'').slice(0,10);
     const a=document.createElement('a');
-    a.download='Receipt-BREC-'+b.id.slice(-6).toUpperCase()+'.png';
+    a.download='Receipt-'+_safeName1+'-'+_safeDate1+'.png';
     a.href=canvas.toDataURL('image/png'); a.click();
     ws.textContent='✅ Saved to Downloads.';
     setTimeout(()=>ws.style.display='none',4000);
@@ -5089,8 +5091,10 @@ async function waImage(){
   ws.style.display='block'; ws.textContent='⏳ Generating image…'; btn.disabled=true;
   try{
     const canvas=await _renderToCanvas(b,siswa);
+    const _safeName2=(b.namaSiswa||'Student').replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/ +/g,'_');
+    const _safeDate2=(b.tanggal||'').slice(0,10);
     const a=document.createElement('a');
-    a.download='Receipt-BREC-'+b.id.slice(-6).toUpperCase()+'.png';
+    a.download='Receipt-'+_safeName2+'-'+_safeDate2+'.png';
     a.href=canvas.toDataURL('image/png'); a.click();
     await new Promise(r=>setTimeout(r,600));
     const hp=(siswa?.hp||'').replace(/\D/g,'');
