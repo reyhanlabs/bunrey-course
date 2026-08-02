@@ -4853,56 +4853,62 @@ function showReceipt(id){
   const b=bayarList.find(x=>x.id===id); if(!b) return;
   const siswa=siswaList.find(s=>s.id===b.siswaId);
   const {rno,stc,stl,rows,isMonthly,paidPct}=_buildReceiptBodyHTML(b,siswa);
-  const initials=(b.namaSiswa||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const initials=(b.namaSiswa||'?').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
   const billingLabel=isMonthly?'Monthly':'Per Session';
-  const html=`
-    <div style="background:#ccfbf1;padding:16px;display:flex;align-items:center;gap:12px;">
-      <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">
-        <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:100%;height:100%;object-fit:cover">
-      </div>
-      <div style="flex:1">
-        <div>
-        <div style="font-size:0.88rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span></div>
-        <div style="font-size:0.88rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>
-        <div style="color:#0d9488;font-size:0.6rem;margin-top:3px">Tuition Payment Receipt</div>
-      </div>
-      <div style="background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace;white-space:nowrap">${rno}</div>
-    </div>
-    <div style="background:#ccfbf1;line-height:0">
-      <svg viewBox="0 0 300 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q15,18 30,0 Q45,18 60,0 Q75,18 90,0 Q105,18 120,0 Q135,18 150,0 Q165,18 180,0 Q195,18 210,0 Q225,18 240,0 Q255,18 270,0 Q285,18 300,0 L300,18 L0,18 Z" fill="#f0fdfa"/></svg>
-    </div>
-    <div style="background:#f0fdfa;padding:12px 16px">
-      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4">
-        <div style="width:34px;height:34px;border-radius:50%;background:#99f6e4;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#0f4c4c;flex-shrink:0">${initials}</div>
-        <div>
-          <div style="font-size:0.85rem;font-weight:800;color:#0f4c4c;word-spacing:2px;letter-spacing:0.2px">${b.namaSiswa||'-'}</div>
-          <div style="font-size:0.68rem;color:#0d9488;margin-top:1px">${billingLabel}${b.periode ? ' · ' + b.periode : ''}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
-        ${rows.map(([k,v])=>`<div style="background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px"><div style="font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div><div style="font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px">${v}</div></div>`).join('')}
-        <div style="background:#0d9488;border-radius:8px;padding:8px 10px">
-          <div style="font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>
-          <div style="font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px">${fmt(b.jumlah)}</div>
-        </div>
-      </div>
-      ${b.status==='Cicil'?`
-      <div style="background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:#0d9488;border-radius:6px;height:7px;width:${paidPct}%"></div></div>
-      <div style="font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`:''}
-      <div style="text-align:center;padding:9px;background:${stc==='#00d68f'?'#e0fdf4':stc==='#ffb347'?'#fff7ed':'#fef2f2'};border-radius:8px;border:1px solid ${stc==='#00d68f'?'#5eead4':stc==='#ffb347'?'#fed7aa':'#fca5a5'}">
-        <span style="font-size:0.72rem;font-weight:800;color:${stc==='#00d68f'?'#0f4c4c':stc==='#ffb347'?'#7c2d12':'#7f1d1d'}">${stl}</span>
-      </div>
-      ${b.catatan?`<div style="font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic">Note: ${b.catatan}</div>`:''}
-    </div>
-    <div style="background:#d0f9f1;line-height:0">
-      <svg viewBox="0 0 300 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q15,0 30,18 Q45,0 60,18 Q75,0 90,18 Q105,0 120,18 Q135,0 150,18 Q165,0 180,18 Q195,0 210,18 Q225,0 240,18 Q255,0 270,18 Q285,0 300,18 L300,0 L0,0 Z" fill="#f0fdfa"/></svg>
-    </div>
-    <div style="background:#d0f9f1;padding:10px 16px;text-align:center">
-      <div style="font-size:0.62rem;font-weight:700">
-        <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span>
-        <span style="color:#f472b6"> English</span><span style="color:#0d9488"> Course</span>
-      </div>
-    </div>`;
+  const stBg=b.status==='Lunas'?'#e0fdf4':b.status==='Cicil'?'#fff7ed':'#fef2f2';
+  const stBorder=b.status==='Lunas'?'#5eead4':b.status==='Cicil'?'#fed7aa':'#fca5a5';
+  const stText=b.status==='Lunas'?'#0f4c4c':b.status==='Cicil'?'#7c2d12':'#7f1d1d';
+  const gridItems=rows.map(([k,v])=>
+    `<div style="background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px">
+      <div style="font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div>
+      <div style="font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px;word-break:break-word">${v}</div>
+    </div>`
+  ).join('');
+  const html=
+    `<div style="background:#ccfbf1;padding:14px 16px;display:flex;align-items:center;gap:10px">` +
+      `<div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">` +
+        `<img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:44px;height:44px;object-fit:cover">` +
+      `</div>` +
+      `<div style="flex:1;min-width:0">` +
+        `<div style="font-size:0.85rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span></div>` +
+        `<div style="font-size:0.85rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>` +
+        `<div style="color:#0d9488;font-size:0.58rem;margin-top:2px">Tuition Payment Receipt</div>` +
+      `</div>` +
+      `<div style="background:#99f6e4;border-radius:20px;padding:3px 9px;font-size:0.58rem;font-weight:800;color:#0f4c4c;font-family:monospace;white-space:nowrap;flex-shrink:0">${rno}</div>` +
+    `</div>` +
+    `<div style="background:#ccfbf1;line-height:0">` +
+      `<svg viewBox="0 0 300 16" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q15,16 30,0 Q45,16 60,0 Q75,16 90,0 Q105,16 120,0 Q135,16 150,0 Q165,16 180,0 Q195,16 210,0 Q225,16 240,0 Q255,16 270,0 Q285,16 300,0 L300,16 L0,16 Z" fill="#f0fdfa"/></svg>` +
+    `</div>` +
+    `<div style="background:#f0fdfa;padding:12px 14px">` +
+      `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4">` +
+        `<div style="width:34px;height:34px;border-radius:50%;background:#0d9488;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;flex-shrink:0">${initials}</div>` +
+        `<div style="min-width:0">` +
+          `<div style="font-size:0.85rem;font-weight:800;color:#0f4c4c">${b.namaSiswa||'-'}</div>` +
+          `<div style="font-size:0.68rem;color:#0d9488;margin-top:1px">${billingLabel}${b.periode?' · '+b.periode:''}</div>` +
+        `</div>` +
+      `</div>` +
+      `<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">` +
+        gridItems +
+        `<div style="background:#0d9488;border-radius:8px;padding:8px 10px">` +
+          `<div style="font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>` +
+          `<div style="font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px">${fmt(b.jumlah)}</div>` +
+        `</div>` +
+      `</div>` +
+      (b.status==='Cicil'?
+        `<div style="background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:#0d9488;border-radius:6px;height:7px;width:${paidPct}%"></div></div>` +
+        `<div style="font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`
+      :'') +
+      `<div style="text-align:center;padding:9px;background:${stBg};border-radius:8px;border:1px solid ${stBorder}">` +
+        `<span style="font-size:0.72rem;font-weight:800;color:${stText}">${stl}</span>` +
+      `</div>` +
+      (b.catatan?`<div style="font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic">Note: ${b.catatan}</div>`:'') +
+    `</div>` +
+    `<div style="background:#d0f9f1;line-height:0">` +
+      `<svg viewBox="0 0 300 16" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,16 Q15,0 30,16 Q45,0 60,16 Q75,0 90,16 Q105,0 120,16 Q135,0 150,16 Q165,0 180,16 Q195,0 210,16 Q225,0 240,16 Q255,0 270,16 Q285,0 300,16 L300,0 L0,0 Z" fill="#f0fdfa"/></svg>` +
+    `</div>` +
+    `<div style="background:#d0f9f1;padding:10px 16px;text-align:center">` +
+      `<div style="font-size:0.62rem;font-weight:700"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span> <span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>` +
+    `</div>`;
   document.getElementById('receipt-content').innerHTML=html;
   document.getElementById('modal-receipt').dataset.receiptId=id;
   document.getElementById('modal-receipt').dataset.receiptText=
