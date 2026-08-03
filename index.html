@@ -486,8 +486,8 @@ td.nowrap { white-space:nowrap }
 
 /* ── RECEIPT RENDER PANEL (off-screen) ── */
 #receipt-render-panel {
-  position:fixed;left:-9999px;top:0;width:380px;background:#ccfbf1;
-  padding:0;font-family:Arial,sans-serif;color:#0f4c4c;z-index:-1;
+  position:fixed;left:-9999px;top:0;width:380px;background:#fdf2f8;
+  padding:0;font-family:Arial,sans-serif;color:#4a1942;z-index:-1;
   border-radius:12px;overflow:hidden;
 }
 #sp-render-panel {
@@ -4859,55 +4859,55 @@ function showReceipt(id){
   const stBorder=b.status==='Lunas'?'#5eead4':b.status==='Cicil'?'#fed7aa':'#fca5a5';
   const stText=b.status==='Lunas'?'#0f4c4c':b.status==='Cicil'?'#7c2d12':'#7f1d1d';
   const gridItems=rows.map(([k,v])=>
-    `<div style="background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px">
-      <div style="font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div>
-      <div style="font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px;word-break:break-word">${v}</div>
+    `<div style="background:#fff;border:1px solid #f9a8d4;border-radius:8px;padding:8px 10px">
+      <div style="font-size:0.6rem;color:#ec4899;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div>
+      <div style="font-size:0.78rem;font-weight:700;color:#4a1942;margin-top:3px;word-break:break-word">${v}</div>
     </div>`
   ).join('');
   const html=
-    `<div style="background:#ccfbf1;padding:14px 16px;display:flex;align-items:center;gap:10px">` +
-      `<div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">` +
+    `<div style="background:linear-gradient(135deg,#fdf2f8,#f0fdfa);padding:14px 16px;display:flex;align-items:center;gap:10px">` +
+      `<div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #f9a8d4">` +
         `<img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" crossorigin="anonymous" style="width:44px;height:44px;object-fit:cover">` +
       `</div>` +
       `<div style="flex:1;min-width:0">` +
-        `<div style="font-size:0.85rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span></div>` +
-        `<div style="font-size:0.85rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>` +
+        `<div style="font-size:0.85rem;font-weight:800;line-height:1.2"><span style="color:#ec4899">Little</span><span style="color:#0d9488">Lume</span></div>` +
+        `<div style="font-size:0.85rem;font-weight:800;line-height:1.2"><span style="color:#ec4899">English</span><span style="color:#0d9488"> Course</span></div>` +
         `<div style="color:#0d9488;font-size:0.58rem;margin-top:2px">Tuition Payment Receipt</div>` +
       `</div>` +
-      `<div style="background:#99f6e4;border-radius:20px;padding:3px 9px;font-size:0.58rem;font-weight:800;color:#0f4c4c;font-family:monospace;white-space:nowrap;flex-shrink:0">${rno}</div>` +
+      `<div style="background:linear-gradient(135deg,#fce7f3,#d1fae5);border-radius:20px;padding:3px 9px;font-size:0.58rem;font-weight:800;color:#4a1942;font-family:monospace;white-space:nowrap;flex-shrink:0;border:1px solid #f9a8d4">${rno}</div>` +
     `</div>` +
-    `<div style="background:#ccfbf1;line-height:0">` +
-      `<svg viewBox="0 0 300 16" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q15,16 30,0 Q45,16 60,0 Q75,16 90,0 Q105,16 120,0 Q135,16 150,0 Q165,16 180,0 Q195,16 210,0 Q225,16 240,0 Q255,16 270,0 Q285,16 300,0 L300,16 L0,16 Z" fill="#f0fdfa"/></svg>` +
+    `<div style="background:linear-gradient(135deg,#fdf2f8,#f0fdfa);line-height:0">` +
+      `<svg viewBox="0 0 300 16" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q15,16 30,0 Q45,16 60,0 Q75,16 90,0 Q105,16 120,0 Q135,16 150,0 Q165,16 180,0 Q195,16 210,0 Q225,16 240,0 Q255,16 270,0 Q285,16 300,0 L300,16 L0,16 Z" fill="#fef9ff"/></svg>` +
     `</div>` +
-    `<div style="background:#f0fdfa;padding:12px 14px">` +
-      `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4">` +
-        `<div style="width:34px;height:34px;border-radius:50%;background:#0d9488;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;flex-shrink:0">${initials}</div>` +
+    `<div style="background:#fef9ff;padding:12px 14px">` +
+      `<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;background:linear-gradient(135deg,#fce7f3,#d1fae5);border-radius:10px;margin-bottom:10px;border:1px solid #f9a8d4">` +
+        `<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#0d9488);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;color:#fff;flex-shrink:0">${initials}</div>` +
         `<div style="min-width:0">` +
-          `<div style="font-size:0.85rem;font-weight:800;color:#0f4c4c">${b.namaSiswa||'-'}</div>` +
+          `<div style="font-size:0.85rem;font-weight:800;color:#4a1942">${b.namaSiswa||'-'}</div>` +
           `<div style="font-size:0.68rem;color:#0d9488;margin-top:1px">${billingLabel}${b.periode?' · '+b.periode:''}</div>` +
         `</div>` +
       `</div>` +
       `<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">` +
         gridItems +
-        `<div style="background:#0d9488;border-radius:8px;padding:8px 10px">` +
-          `<div style="font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>` +
+        `<div style="background:linear-gradient(135deg,#db2777,#0d9488);border-radius:8px;padding:8px 10px">` +
+          `<div style="font-size:0.6rem;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>` +
           `<div style="font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px">${fmt(b.jumlah)}</div>` +
         `</div>` +
       `</div>` +
       (b.status==='Cicil'?
-        `<div style="background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:#0d9488;border-radius:6px;height:7px;width:${paidPct}%"></div></div>` +
-        `<div style="font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`
+        `<div style="background:#fce7f3;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:linear-gradient(90deg,#ec4899,#0d9488);border-radius:6px;height:7px;width:${paidPct}%"></div></div>` +
+        `<div style="font-size:0.65rem;color:#db2777;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`
       :'') +
       `<div style="text-align:center;padding:9px;background:${stBg};border-radius:8px;border:1px solid ${stBorder}">` +
         `<span style="font-size:0.72rem;font-weight:800;color:${stText}">${stl}</span>` +
       `</div>` +
       (b.catatan?`<div style="font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic">Note: ${b.catatan}</div>`:'') +
     `</div>` +
-    `<div style="background:#d0f9f1;line-height:0">` +
-      `<svg viewBox="0 0 300 16" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,16 Q15,0 30,16 Q45,0 60,16 Q75,0 90,16 Q105,0 120,16 Q135,0 150,16 Q165,0 180,16 Q195,0 210,16 Q225,0 240,16 Q255,0 270,16 Q285,0 300,16 L300,0 L0,0 Z" fill="#f0fdfa"/></svg>` +
+    `<div style="background:linear-gradient(135deg,#fce7f3,#d1fae5);line-height:0">` +
+      `<svg viewBox="0 0 300 16" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,16 Q15,0 30,16 Q45,0 60,16 Q75,0 90,16 Q105,0 120,16 Q135,0 150,16 Q165,0 180,16 Q195,0 210,16 Q225,0 240,16 Q255,0 270,16 Q285,0 300,16 L300,0 L0,0 Z" fill="#fef9ff"/></svg>` +
     `</div>` +
-    `<div style="background:#d0f9f1;padding:10px 16px;text-align:center">` +
-      `<div style="font-size:0.62rem;font-weight:700"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span> <span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>` +
+    `<div style="background:linear-gradient(135deg,#fce7f3,#d1fae5);padding:10px 16px;text-align:center">` +
+      `<div style="font-size:0.62rem;font-weight:700"><span style="color:#ec4899">Little</span><span style="color:#0d9488">Lume</span> <span style="color:#ec4899">English</span><span style="color:#0d9488"> Course</span></div>` +
     `</div>`;
   document.getElementById('receipt-content').innerHTML=html;
   document.getElementById('modal-receipt').dataset.receiptId=id;
@@ -4923,49 +4923,49 @@ function _buildReceiptPrintHTML(b,siswa){
   const stBg=b.status==='Lunas'?'#e0fdf4':b.status==='Cicil'?'#fff7ed':'#fef2f2';
   const stBorder=b.status==='Lunas'?'#5eead4':b.status==='Cicil'?'#fed7aa':'#fca5a5';
   const stText=b.status==='Lunas'?'#0f4c4c':b.status==='Cicil'?'#7c2d12':'#7f1d1d';
-  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#f0fdfa"/></svg>`;
-  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#f0fdfa"/></svg>`;
+  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#fef9ff"/></svg>`;
+  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#fef9ff"/></svg>`;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${rno}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;max-width:380px;margin:auto;background:#f0fdfa;color:#0f4c4c}
+    body{font-family:Arial,sans-serif;max-width:380px;margin:auto;background:#fef9ff;color:#4a1942}
     @page{size:A5 portrait;margin:8mm}
-    .hdr{background:#ccfbf1;padding:18px 16px;display:flex;align-items:center;gap:12px}
-    .logo-img{width:44px;height:44px;border-radius:12px;border:2px solid #5eead4;overflow:hidden;flex-shrink:0}
+    .hdr{background:linear-gradient(135deg,#fdf2f8,#f0fdfa);padding:18px 16px;display:flex;align-items:center;gap:12px}
+    .logo-img{width:44px;height:44px;border-radius:12px;border:2px solid #f9a8d4;overflow:hidden;flex-shrink:0}
     .logo-img img{width:100%;height:100%;object-fit:cover}
     .brand1{font-size:0.92rem;font-weight:800;line-height:1.15}.brand2{font-size:0.92rem;font-weight:800;line-height:1.15}
     .sub{color:#0d9488;font-size:0.62rem;margin-top:2px}
-    .rno{margin-left:auto;background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace;white-space:nowrap}
-    .body{background:#f0fdfa;padding:12px 16px}
-    .student{display:flex;align-items:center;gap:10px;padding:10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4}
-    .avatar{width:34px;height:34px;border-radius:50%;background:#99f6e4;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#0f4c4c;flex-shrink:0}
-    .sname{font-size:0.85rem;font-weight:800;color:#0f4c4c}
+    .rno{margin-left:auto;background:linear-gradient(135deg,#fce7f3,#d1fae5);border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#4a1942;font-family:monospace;white-space:nowrap;border:1px solid #f9a8d4}
+    .body{background:#fef9ff;padding:12px 16px}
+    .student{display:flex;align-items:center;gap:10px;padding:10px;background:linear-gradient(135deg,#fce7f3,#d1fae5);border-radius:10px;margin-bottom:10px;border:1px solid #f9a8d4}
+    .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#0d9488);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#fff;flex-shrink:0}
+    .sname{font-size:0.85rem;font-weight:800;color:#4a1942}
     .smeta{font-size:0.68rem;color:#0d9488;margin-top:1px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
-    .cell{background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px}
-    .clabel{font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700}
-    .cval{font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px}
-    .cell-amt{background:#0d9488;border-radius:8px;padding:8px 10px}
-    .amt-label{font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700}
+    .cell{background:#fff;border:1px solid #f9a8d4;border-radius:8px;padding:8px 10px}
+    .clabel{font-size:0.6rem;color:#ec4899;text-transform:uppercase;letter-spacing:0.5px;font-weight:700}
+    .cval{font-size:0.78rem;font-weight:700;color:#4a1942;margin-top:3px}
+    .cell-amt{background:linear-gradient(135deg,#db2777,#0d9488);border-radius:8px;padding:8px 10px}
+    .amt-label{font-size:0.6rem;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:0.5px;font-weight:700}
     .amt-val{font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px}
     .status{text-align:center;padding:9px;border-radius:8px;font-size:0.75rem;font-weight:800}
     .note{font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic}
-    .footer{background:#d0f9f1;padding:10px 16px;text-align:center}
+    .footer{background:linear-gradient(135deg,#fce7f3,#d1fae5);padding:10px 16px;text-align:center}
     .fbrand{font-size:0.65rem;font-weight:700}
-    .prog-track{background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px}
-    .prog-fill{background:#0d9488;border-radius:6px;height:7px}
-    .prog-text{font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600}
+    .prog-track{background:#fce7f3;border-radius:6px;height:7px;margin-bottom:5px}
+    .prog-fill{background:linear-gradient(90deg,#ec4899,#0d9488);border-radius:6px;height:7px}
+    .prog-text{font-size:0.65rem;color:#db2777;text-align:right;margin-bottom:10px;font-weight:600}
   </style></head><body>
   <div class="hdr">
     <div class="logo-img"><img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico"></div>
     <div>
-      <div class="brand1"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span></div>
-      <div class="brand2"><span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>
+      <div class="brand1"><span style="color:#ec4899">Little</span><span style="color:#0d9488">Lume</span></div>
+      <div class="brand2"><span style="color:#ec4899">English</span><span style="color:#0d9488"> Course</span></div>
       <div class="sub">Tuition Payment Receipt</div>
     </div>
     <div class="rno">${rno}</div>
   </div>
-  <div style="background:#ccfbf1;line-height:0">${scTop}</div>
+  <div style="background:linear-gradient(135deg,#fdf2f8,#f0fdfa);line-height:0">${scTop}</div>
   <div class="body">
     <div class="student">
       <div class="avatar">${initials}</div>
@@ -4979,9 +4979,9 @@ function _buildReceiptPrintHTML(b,siswa){
     <div class="status" style="background:${stBg};border:1px solid ${stBorder};color:${stText}">${stl}</div>
     ${b.catatan?`<div class="note">Note: ${b.catatan}</div>`:''}
   </div>
-  <div style="background:#d0f9f1;line-height:0">${scBot}</div>
+  <div style="background:linear-gradient(135deg,#fce7f3,#d1fae5);line-height:0">${scBot}</div>
   <div class="footer">
-    <div class="fbrand"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span> <span style="color:#f472b6">English</span> <span style="color:#0d9488">Course</span></div>
+    <div class="fbrand"><span style="color:#ec4899">Little</span><span style="color:#0d9488">Lume</span> <span style="color:#ec4899">English</span> <span style="color:#0d9488">Course</span></div>
     <div style="font-size:0.6rem;color:#0d9488;margin-top:2px">Thank you for your trust!</div>
   </div>
   </body></html>`;
@@ -4993,47 +4993,47 @@ function _buildReceiptRenderHTML(b,siswa){
   const stBg=b.status==='Lunas'?'#e0fdf4':b.status==='Cicil'?'#fff7ed':'#fef2f2';
   const stBorder=b.status==='Lunas'?'#5eead4':b.status==='Cicil'?'#fed7aa':'#fca5a5';
   const stText=b.status==='Lunas'?'#0f4c4c':b.status==='Cicil'?'#7c2d12':'#7f1d1d';
-  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#f0fdfa"/></svg>`;
-  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#f0fdfa"/></svg>`;
-  return `<div style="background:#ccfbf1;padding:16px;display:flex;align-items:center;gap:12px">
-    <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">
+  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#fef9ff"/></svg>`;
+  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#fef9ff"/></svg>`;
+  return `<div style="background:linear-gradient(135deg,#fdf2f8,#f0fdfa);padding:16px;display:flex;align-items:center;gap:12px">
+    <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #f9a8d4">
       <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" crossorigin="anonymous" style="width:44px;height:44px;object-fit:cover">
     </div>
     <div style="flex:1">
       <div style="font-size:0.95rem;font-weight:800;line-height:1.2">
-        <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span></div>
-      <div style="font-size:0.88rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>
+        <span style="color:#ec4899">Little</span><span style="color:#0d9488">Lume</span></div>
+      <div style="font-size:0.88rem;font-weight:800;line-height:1.2"><span style="color:#ec4899">English</span><span style="color:#0d9488"> Course</span></div>
       <div style="color:#0d9488;font-size:0.6rem;margin-top:3px">Tuition Payment Receipt</div>
     </div>
-    <div style="background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace">${rno}</div>
+    <div style="background:linear-gradient(135deg,#fce7f3,#d1fae5);border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#4a1942;font-family:monospace;border:1px solid #f9a8d4">${rno}</div>
   </div>
-  <div style="background:#ccfbf1;line-height:0">${scTop}</div>
-  <div style="background:#f0fdfa;padding:12px 16px">
-    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#e0fdf4;border-radius:10px;margin-bottom:10px;border:1px solid #99f6e4">
-      <div style="width:34px;height:34px;border-radius:50%;background:#99f6e4;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#0f4c4c;flex-shrink:0">${initials}</div>
+  <div style="background:linear-gradient(135deg,#fdf2f8,#f0fdfa);line-height:0">${scTop}</div>
+  <div style="background:#fef9ff;padding:12px 16px">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;background:linear-gradient(135deg,#fce7f3,#d1fae5);border-radius:10px;margin-bottom:10px;border:1px solid #f9a8d4">
+      <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#0d9488);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:800;color:#fff;flex-shrink:0">${initials}</div>
       <div>
-        <div style="font-size:0.85rem;font-weight:800;color:#0f4c4c;word-spacing:2px;letter-spacing:0.2px">${b.namaSiswa||'-'}</div>
+        <div style="font-size:0.85rem;font-weight:800;color:#4a1942;word-spacing:2px;letter-spacing:0.2px">${b.namaSiswa||'-'}</div>
         <div style="font-size:0.68rem;color:#0d9488;margin-top:1px">${billingLabel}${b.periode ? ' · ' + b.periode : ''}</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
-      ${rows.map(([k,v])=>`<div style="background:#fff;border:1px solid #99f6e4;border-radius:8px;padding:8px 10px"><div style="font-size:0.6rem;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div><div style="font-size:0.78rem;font-weight:700;color:#0f4c4c;margin-top:3px">${v}</div></div>`).join('')}
-      <div style="background:#0d9488;border-radius:8px;padding:8px 10px">
-        <div style="font-size:0.6rem;color:rgba(255,255,255,0.75);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>
+      ${rows.map(([k,v])=>`<div style="background:#fff;border:1px solid #f9a8d4;border-radius:8px;padding:8px 10px"><div style="font-size:0.6rem;color:#ec4899;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">${k}</div><div style="font-size:0.78rem;font-weight:700;color:#4a1942;margin-top:3px">${v}</div></div>`).join('')}
+      <div style="background:linear-gradient(135deg,#db2777,#0d9488);border-radius:8px;padding:8px 10px">
+        <div style="font-size:0.6rem;color:rgba(255,255,255,0.85);text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Amount Paid</div>
         <div style="font-size:0.85rem;font-weight:800;color:#fff;margin-top:3px">${fmt(b.jumlah)}</div>
       </div>
     </div>
-    ${b.status==='Cicil'?`<div style="background:#99f6e4;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:#0d9488;border-radius:6px;height:7px;width:${paidPct}%"></div></div><div style="font-size:0.65rem;color:#0d9488;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`:''}
+    ${b.status==='Cicil'?`<div style="background:#fce7f3;border-radius:6px;height:7px;margin-bottom:5px"><div style="background:linear-gradient(90deg,#ec4899,#0d9488);border-radius:6px;height:7px;width:${paidPct}%"></div></div><div style="font-size:0.65rem;color:#db2777;text-align:right;margin-bottom:10px;font-weight:600">${paidPct}% paid — ${fmt(b.tagihan-b.jumlah)} remaining</div>`:''}
     <div style="text-align:center;padding:9px;background:${stBg};border-radius:8px;border:1px solid ${stBorder}">
       <span style="font-size:0.72rem;font-weight:800;color:${stText}">${stl}</span>
     </div>
     ${b.catatan?`<div style="font-size:0.72rem;color:#0d9488;text-align:center;margin-top:8px;font-style:italic">Note: ${b.catatan}</div>`:''}
   </div>
-  <div style="background:#d0f9f1;line-height:0">${scBot}</div>
-  <div style="background:#d0f9f1;padding:10px 16px;text-align:center">
+  <div style="background:linear-gradient(135deg,#fce7f3,#d1fae5);line-height:0">${scBot}</div>
+  <div style="background:linear-gradient(135deg,#fce7f3,#d1fae5);padding:10px 16px;text-align:center">
     <div style="font-size:0.65rem;font-weight:700">
-      <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span>
-      <span style="color:#f472b6"> English</span><span style="color:#0d9488"> Course</span>
+      <span style="color:#ec4899">Little</span><span style="color:#0d9488">Lume</span>
+      <span style="color:#ec4899"> English</span><span style="color:#0d9488"> Course</span>
     </div>
     <div style="font-size:0.6rem;color:#0d9488;margin-top:2px">Thank you for your trust!</div>
   </div>`;
@@ -5055,7 +5055,7 @@ async function _renderToCanvas(b,siswa){
     scale: 3,
     useCORS: true,
     allowTaint: true,
-    backgroundColor: '#ccfbf1',
+    backgroundColor: '#fdf2f8',
     width: 380,
     windowWidth: 380,
     imageTimeout: 8000,
