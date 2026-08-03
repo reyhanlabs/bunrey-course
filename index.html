@@ -4867,7 +4867,7 @@ function showReceipt(id){
   const html=
     `<div style="background:#ccfbf1;padding:14px 16px;display:flex;align-items:center;gap:10px">` +
       `<div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">` +
-        `<img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:44px;height:44px;object-fit:cover">` +
+        `<img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" crossorigin="anonymous" style="width:44px;height:44px;object-fit:cover">` +
       `</div>` +
       `<div style="flex:1;min-width:0">` +
         `<div style="font-size:0.85rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span></div>` +
@@ -4993,17 +4993,17 @@ function _buildReceiptRenderHTML(b,siswa){
   const stBg=b.status==='Lunas'?'#e0fdf4':b.status==='Cicil'?'#fff7ed':'#fef2f2';
   const stBorder=b.status==='Lunas'?'#5eead4':b.status==='Cicil'?'#fed7aa':'#fca5a5';
   const stText=b.status==='Lunas'?'#0f4c4c':b.status==='Cicil'?'#7c2d12':'#7f1d1d';
-  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:380px"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#f0fdfa"/></svg>`;
-  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:380px"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#f0fdfa"/></svg>`;
+  const scTop=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,0 Q19,18 38,0 Q57,18 76,0 Q95,18 114,0 Q133,18 152,0 Q171,18 190,0 Q209,18 228,0 Q247,18 266,0 Q285,18 304,0 Q323,18 342,0 Q361,18 380,0 L380,18 L0,18 Z" fill="#f0fdfa"/></svg>`;
+  const scBot=`<svg viewBox="0 0 380 18" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%"><path d="M0,18 Q19,0 38,18 Q57,0 76,18 Q95,0 114,18 Q133,0 152,18 Q171,0 190,18 Q209,0 228,18 Q247,0 266,18 Q285,0 304,18 Q323,0 342,18 Q361,0 380,18 L380,0 L0,0 Z" fill="#f0fdfa"/></svg>`;
   return `<div style="background:#ccfbf1;padding:16px;display:flex;align-items:center;gap:12px">
     <div style="width:44px;height:44px;border-radius:12px;overflow:hidden;flex-shrink:0;border:2px solid #5eead4">
-      <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" style="width:44px;height:44px;object-fit:cover">
+      <img src="https://raw.githubusercontent.com/reyhanlabs/bunrey-course/refs/heads/main/favicon.ico" crossorigin="anonymous" style="width:44px;height:44px;object-fit:cover">
     </div>
     <div style="flex:1">
       <div style="font-size:0.95rem;font-weight:800;line-height:1.2">
         <span style="color:#f472b6">Little</span><span style="color:#0d9488">Lume</span></div>
       <div style="font-size:0.88rem;font-weight:800;line-height:1.2"><span style="color:#f472b6">English</span><span style="color:#0d9488"> Course</span></div>
-      <div style="color:#0d9488;font-size:0.6rem;margin-top:3px">Tuition Payment Receipt</div
+      <div style="color:#0d9488;font-size:0.6rem;margin-top:3px">Tuition Payment Receipt</div>
     </div>
     <div style="background:#99f6e4;border-radius:20px;padding:3px 10px;font-size:0.6rem;font-weight:800;color:#0f4c4c;font-family:monospace">${rno}</div>
   </div>
@@ -5041,9 +5041,28 @@ function _buildReceiptRenderHTML(b,siswa){
 async function _renderToCanvas(b,siswa){
   const panel=document.getElementById('receipt-render-panel');
   panel.innerHTML=_buildReceiptRenderHTML(b,siswa);
-  await new Promise(r=>setTimeout(r,150));
-  const canvas=await html2canvas(panel,{scale:3,useCORS:true,backgroundColor:'#ccfbf1',width:380,windowWidth:380});
-  panel.innerHTML=''; return canvas;
+  // Tunggu semua <img> dalam panel selesai load sebelum capture
+  await Promise.all(
+    [...panel.querySelectorAll('img')].map(img =>
+      img.complete
+        ? Promise.resolve()
+        : new Promise(r => { img.onload = r; img.onerror = r; setTimeout(r, 5000); })
+    )
+  );
+  // Beri sedikit jeda agar browser selesai layout
+  await new Promise(r => setTimeout(r, 80));
+  const canvas = await html2canvas(panel, {
+    scale: 3,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#ccfbf1',
+    width: 380,
+    windowWidth: 380,
+    imageTimeout: 8000,
+    logging: false
+  });
+  panel.innerHTML = '';
+  return canvas;
 }
 function printReceipt(){
   const id=document.getElementById('modal-receipt').dataset.receiptId;
